@@ -14,8 +14,12 @@ int Graphics::loadTexture(const char* path) {
 }
 
 void Graphics::applyTexture(int texture_ID, int x, int y) {
+	SDL_Rect dst;
+	SDL_QueryTexture(textures[texture_ID], NULL, NULL, &dst.w, &dst.h);
+	dst.x = x;
+	dst.y = y;
 	if(textures[texture_ID] == nullptr) return;
-	SDL_RenderCopy(ren, textures[texture_ID], NULL, NULL);
+	SDL_RenderCopy(ren, textures[texture_ID], NULL, &dst);
 }
 
 void Graphics::renderScene() {
