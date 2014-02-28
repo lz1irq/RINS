@@ -4,7 +4,7 @@ CXXINCS = -I"include/SDL2"
 RM = rm -f
 
 all:
-	g++ Graphics.cpp main.cpp -o Release/RINS.exe $(LIBS) $(CXXINCS) -std=c++11
+	g++ Platform.cpp main.cpp -o Release/RINS.exe $(LIBS) $(CXXINCS) -std=c++11
 
 clean:
 	RM *.exe

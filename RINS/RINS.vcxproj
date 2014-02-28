@@ -55,11 +55,14 @@
     <None Include="readme.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Platform.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Graphics.h" />
+    <ClInclude Include="Platform.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="TODO.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

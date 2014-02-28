@@ -1,52 +1,45 @@
-#include "Graphics.h"
-#include <iostream>
-using namespace std;
-
-class SDLerror{
-	const char* err;
-public:
-	SDLerror(const char* err): err(err){}
-	const char* getError(){ return err; }
-};
-
-class Game{
-	SDL_Event event;
-public:
-	virtual void mainLoop() = 0;
-	Game(){
-		if (SDL_Init(SDL_INIT_EVERYTHING) != 0)throw SDLerror(SDL_GetError());
-	}
-	void loop(){
-		bool quit = false;
-		while (!quit) {
-			while (SDL_PollEvent(&event)) if (event.type == SDL_QUIT) quit = true;
-			mainLoop();
-		}
-	}
-	~Game(){
-		SDL_Quit();
-	}
-};
-
+#include "Platform.h"
 
 class RINS : public Game{
 	int doge;
-	Graphics gui;
+	Renderer rend;
+	char ak;
+	unsigned int a;
 	void mainLoop() final{
-		gui.applyTexture(doge, 10, 100);
-		gui.renderScene();
+		try{
+			++ak;
+			if (ak < 0){
+				ak = 0;
+				bool A = a & 1;
+				bool B = a & 2;
+				++a;
+				rend.renderPart(2, 2, A, B);
+			}
+			rend.applyTexture(doge, rend.getRendererWidth() / 4, rend.getRendererHeight() / 4, 0.5, 0.5);
+			rend.renderScene();
+		}
+		catch (Error e){
+			//these aren't so fatal
+			cout << e.getError() << endl;
+		}
 	}
 public:
-	RINS() : gui(640, 640, "RINS"){
-		doge = gui.loadTexture("doge.jpeg");
+	RINS() try : rend(640, 640, "RINS"){
+		doge = rend.loadTexture("Textures/testure.png");
+		a = 0;
 		loop();
+	}
+	catch (Error e){
+		cout << e.getError() << endl;
 	}
 };
 
-
-
-
 int main(int argc, char** argv) {
-	RINS rins;
+	try{
+		RINS rins;
+	}
+	catch (...){
+		system("pause");
+	}
 	return 0;
 }
