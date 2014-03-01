@@ -20,24 +20,24 @@ int Renderer::loadTexture(const char* path) {
 	return current_textures++;
 }
 
-void Renderer::applyTexture(int texture_ID, int x, int y, double width, double height) {
+void Renderer::applyTexture(int texture_ID, float x, float y, double width, double height) {
 	if (textures[texture_ID] == nullptr)throw Error("Bad texture ID!");
 	SDL_Rect dst;
 	SDL_Rect src;
 	if (SDL_QueryTexture(textures[texture_ID], NULL, NULL, &dst.w, &dst.h) != 0)throw Error(SDL_GetError());
-	dst.x = x;
-	dst.y = y;
+	dst.x = W*x;
+	dst.y = H*y;
 	if (part.x != 0 && part.y != 0){
-		src.x = ((1.0 / (double)part.x)*dst.w)*part.w;
-		src.y = ((1.0 / (double)part.y)*dst.h)*part.h;
-		src.w = ((1.0 / (double)part.x)*dst.w)*(part.w + 1);
-		src.h = ((1.0 / (double)part.y)*dst.h)*(part.h + 1);
+		src.x = 1.0/part.x*dst.w*part.w;
+		src.y = 1.0/part.y*dst.h*part.h;
+		src.w = 1.0/part.x*dst.w*(part.w + 1);
+		src.h = 1.0/part.y*dst.h*(part.h + 1);
 	}
 	else{
-		part.x = 0;
-		part.y = 0;
-		part.w = W;
-		part.h = H;
+		src.x = 0;
+		src.y = 0;
+		src.w = dst.w;
+		src.h = dst.h;
 	}
 	double w = W*width;
 	double h = H*height;
@@ -49,14 +49,6 @@ void Renderer::applyTexture(int texture_ID, int x, int y, double width, double h
 		dst.h = h;
 	}
 	if (SDL_RenderCopy(ren, textures[texture_ID], &src, &dst) != 0)throw Error(SDL_GetError());
-}
-
-int Renderer::getRendererWidth(){
-	return W;
-}
-
-int Renderer::getRendererHeight(){
-	return H;
 }
 
 void Renderer::renderPart(int xparts, int yparts, int xpartnum, int ypartnum){
@@ -76,6 +68,7 @@ Renderer::~Renderer() {
 	SDL_DestroyRenderer(ren);
 	SDL_DestroyWindow(win);
 }
+
 int Renderer::current_textures = 0;
 
 Game::Game(){

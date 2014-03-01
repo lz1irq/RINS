@@ -15,7 +15,7 @@ class RINS : public Game{
 				++a;
 				rend.renderPart(2, 2, A, B);
 			}
-			rend.applyTexture(doge, rend.getRendererWidth() / 4, rend.getRendererHeight() / 4, 0.5, 0.5);
+			rend.applyTexture(doge, 0.25, 0.25, 0.5, 0.5);
 			rend.renderScene();
 		}
 		catch (Error e){

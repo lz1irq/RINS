@@ -23,10 +23,8 @@ class Renderer {
 public:
 	Renderer(int width, int height, const char* title);
 	int loadTexture(const char* path);
-	void applyTexture(int texture_ID, int x, int y, double width, double heigth);
+	void applyTexture(int texture_ID, float x, float y, double width, double heigth);
 	void renderScene();
-	int getRendererWidth();
-	int getRendererHeight();
 	void renderPart(int xparts, int yparts, int xpartnum, int ypartnum);
 	~Renderer();
 };
