@@ -83,6 +83,10 @@ void Game::loop(){
 	}
 }
 
+int Game::getTicks() {
+	return SDL_GetTicks();
+}
+
 Game::~Game(){
 	SDL_Quit();
 }

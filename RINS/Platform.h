@@ -33,6 +33,7 @@ class Game{
 	SDL_Event event;
 public:
 	virtual void mainLoop() = 0;
+	int getTicks();
 	Game();
 	void loop();
 	~Game();
