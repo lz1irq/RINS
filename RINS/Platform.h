@@ -35,10 +35,10 @@ class Game{
 	bool quit;
 public:
 	virtual void mainLoop() = 0;
+	virtual void graphicsLoop() = 0;
 	unsigned int getTicks();
 	Game();
 	void loop();
-	virtual void graphicsLoop() = 0;
 	~Game();
 };
 #endif
