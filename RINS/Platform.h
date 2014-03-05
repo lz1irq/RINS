@@ -35,7 +35,7 @@ class Game{
 	bool quit;
 public:
 	virtual void mainLoop() = 0;
-	int getTicks();
+	unsigned int getTicks();
 	Game();
 	void loop();
 	virtual void graphicsLoop() = 0;

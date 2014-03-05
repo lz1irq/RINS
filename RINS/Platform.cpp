@@ -97,7 +97,7 @@ void Game::graphicsLoop() {
 
 }
 
-int Game::getTicks() {
+unsigned int Game::getTicks() {
 	return SDL_GetTicks();
 }
 
