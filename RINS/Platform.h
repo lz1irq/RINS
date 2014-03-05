@@ -31,11 +31,14 @@ public:
 
 class Game{
 	SDL_Event event;
+	static int secondaryLoop(void* param);
+	bool quit;
 public:
 	virtual void mainLoop() = 0;
 	int getTicks();
 	Game();
 	void loop();
+	virtual void graphicsLoop() = 0;
 	~Game();
 };
 #endif

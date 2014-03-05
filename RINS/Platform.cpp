@@ -71,16 +71,30 @@ Renderer::~Renderer() {
 
 int Renderer::current_textures = 0;
 
-Game::Game(){
+Game::Game() {
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)throw Error(SDL_GetError());
 }
 
 void Game::loop(){
-	bool quit = false;
+	SDL_Thread* thread;
+	if( (thread = SDL_CreateThread(secondaryLoop, "secondaryThread", (void *)this)) == NULL) throw Error( SDL_GetError() );
 	while (!quit) {
 		while (SDL_PollEvent(&event)) if (event.type == SDL_QUIT) quit = true;
 		mainLoop();
 	}
+	 SDL_WaitThread(thread, NULL);
+}
+
+int Game::secondaryLoop(void* param) {
+	Game* instance = (Game*)param;
+	while(!(instance->quit)) {
+		instance->graphicsLoop();
+	}
+	return 0;
+}
+
+void Game::graphicsLoop() {
+
 }
 
 int Game::getTicks() {

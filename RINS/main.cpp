@@ -5,7 +5,7 @@ class RINS : public Game{
 	Renderer rend;
 	char ak;
 	unsigned int a;
-	void mainLoop() final{
+	void graphicsLoop() final {
 		try{
 			++ak;
 			if (ak < 0){
@@ -23,8 +23,17 @@ class RINS : public Game{
 			cout << e.getError() << endl;
 		}
 	}
+
+	void mainLoop() final {
+		try {
+
+		}
+		catch (Error e) {
+			SDL_Delay(10);
+		}
+	}
 public:
-	RINS() try : rend(640, 640, "RINS"){
+	RINS() try : rend(640, 640, "RINS") {
 		doge = rend.loadTexture("Textures/testure.png");
 		a = 0;
 		loop();
