@@ -26,10 +26,10 @@ class RINS : public Game{
 
 	void mainLoop() final {
 		try {
-
+			SDL_Delay(10);
 		}
 		catch (Error e) {
-			SDL_Delay(10);
+			cout << e.getError() << endl;
 		}
 	}
 public:
