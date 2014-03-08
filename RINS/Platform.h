@@ -33,10 +33,12 @@ class Game{
 	SDL_Event event;
 	static int secondaryLoop(void* param);
 	bool quit;
+	bool has_event;
 public:
 	virtual void mainLoop() = 0;
 	virtual void graphicsLoop() = 0;
 	unsigned int getTicks();
+	char getKey(bool pressed);
 	Game();
 	void loop();
 	~Game();

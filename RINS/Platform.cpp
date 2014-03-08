@@ -79,7 +79,8 @@ void Game::loop(){
 	SDL_Thread* thread;
 	if( (thread = SDL_CreateThread(secondaryLoop, "secondaryThread", (void *)this)) == NULL) throw Error( SDL_GetError() );
 	while (!quit) {
-		while (SDL_PollEvent(&event)) if (event.type == SDL_QUIT) quit = true;
+		has_event = SDL_PollEvent(&event);
+		if (has_event && event.type == SDL_QUIT) quit = true;
 		mainLoop();
 	}
 	 SDL_WaitThread(thread, NULL);
@@ -99,6 +100,20 @@ void Game::graphicsLoop() {
 
 unsigned int Game::getTicks() {
 	return SDL_GetTicks();
+}
+
+char Game::getKey(bool pressed){
+	if (!has_event)return 0;
+	switch (event.type) {
+		case SDL_KEYDOWN:
+			if (pressed) return event.key.keysym.sym;
+		break;
+		case SDL_KEYUP:
+			if (!pressed) return event.key.keysym.sym;
+		break;
+		default:
+			return 0;
+	}
 }
 
 Game::~Game(){
