@@ -7,7 +7,7 @@ class RINS : public Game{
 	bool w, s, a, d;
 	void graphicsLoop() final {
 		try{
-			rend.applyTexture(move, 0.5+x, 0.5+y, 0.01, 0.01);
+			rend.applyTexture(move, 0.45+x, 0.45+y, 0.1, 0.1);
 			rend.renderScene();
 		}
 		catch (Error e){
