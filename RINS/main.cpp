@@ -43,7 +43,7 @@ public:
 	RINS() try : rend(640, 640, "RINS") {
 		x = 0, y = 0;
 		w = false, s = false, a = false, d = false;
-		move = rend.loadTexture("Textures/doge.jpeg");
+		move = rend.loadTexture("Textures/testure.png");
 		loop();
 	}
 	catch (Error e){
