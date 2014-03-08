@@ -55,10 +55,12 @@
     <None Include="readme.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Being.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Platform.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Being.h" />
     <ClInclude Include="Platform.h" />
   </ItemGroup>
   <ItemGroup>
