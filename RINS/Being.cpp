@@ -25,3 +25,10 @@ int Being::getOrientation() {
 double Being::getStep(){
 	return move_step;
 }
+
+void Being::stepTo(double tx, double ty) {
+		if(tx < x) move(LEFT);
+		if(tx > x) move(RIGHT);
+		if(ty < y) move(UP);
+		if(ty > y) move(DOWN);
+}
