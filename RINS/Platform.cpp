@@ -4,12 +4,15 @@ Error::Error(const char* err) : err(err){}
 
 const char* Error::getError(){ return err; }
 
-Renderer::Renderer(int width, int height, const char* title) : textures(), W(width), H(height) {
+Renderer::Renderer(int width, int height, const char* title) : textures(), fonts(){
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)throw Error(SDL_GetError());
-	if ((win = SDL_CreateWindow(title, 100, 100, width, height, SDL_WINDOW_SHOWN)) == nullptr)throw Error(SDL_GetError());
+	if ((win = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI)) == nullptr)throw Error(SDL_GetError());
 	if ((ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC)) == nullptr)throw Error(SDL_GetError());
-	part.x = 0;
-	part.y = 0;
+	SDL_GetWindowSize(win, &W, &H);
+	part.x = H;
+	part.y = H;
+	cout << W << " " << H << endl;
+	if (TTF_Init() != 0)throw Error(TTF_GetError());
 }
 
 int Renderer::loadTexture(const char* path) {
@@ -20,18 +23,17 @@ int Renderer::loadTexture(const char* path) {
 	return current_textures++;
 }
 
-void Renderer::applyTexture(int texture_ID, float x, float y, double width, double height) {
-	if (textures[texture_ID] == nullptr)throw Error("Bad texture ID!");
+void Renderer::applyTexture(SDL_Texture* t, double x, double y, double width, double height){
 	SDL_Rect dst;
 	SDL_Rect src;
-	if (SDL_QueryTexture(textures[texture_ID], NULL, NULL, &dst.w, &dst.h) != 0)throw Error(SDL_GetError());
-	dst.x = W*x;
+	if (SDL_QueryTexture(t, NULL, NULL, &dst.w, &dst.h) != 0)throw Error(SDL_GetError());
+	dst.x = H*x;
 	dst.y = H*y;
 	if (part.x != 0 && part.y != 0){
-		src.x = 1.0/part.x*dst.w*part.w;
-		src.y = 1.0/part.y*dst.h*part.h;
-		src.w = 1.0/part.x*dst.w*(part.w + 1);
-		src.h = 1.0/part.y*dst.h*(part.h + 1);
+		src.x = 1.0 / part.x*dst.w*part.w;
+		src.y = 1.0 / part.y*dst.h*part.h;
+		src.w = 1.0 / part.x*dst.w*(part.w + 1);
+		src.h = 1.0 / part.y*dst.h*(part.h + 1);
 	}
 	else{
 		src.x = 0;
@@ -39,7 +41,7 @@ void Renderer::applyTexture(int texture_ID, float x, float y, double width, doub
 		src.w = dst.w;
 		src.h = dst.h;
 	}
-	double w = W*width;
+	double w = H*width;
 	double h = H*height;
 	double ratio = dst.w / dst.h;
 	if (w == 0)w = h*ratio;
@@ -48,7 +50,13 @@ void Renderer::applyTexture(int texture_ID, float x, float y, double width, doub
 		dst.w = w;
 		dst.h = h;
 	}
-	if (SDL_RenderCopy(ren, textures[texture_ID], &src, &dst) != 0)throw Error(SDL_GetError());
+	dst.x += (W - H) / 2;
+	if (SDL_RenderCopy(ren, t, &src, &dst) != 0)throw Error(SDL_GetError());
+}
+
+void Renderer::applyTexture(int texture_ID, double x, double y, double width, double height) {
+	if (textures[texture_ID] == nullptr)throw Error("Bad texture ID!");
+	applyTexture(textures[texture_ID], x, y, width, height);
 }
 
 void Renderer::renderPart(int xparts, int yparts, int xpartnum, int ypartnum){
@@ -63,13 +71,34 @@ void Renderer::renderScene() {
 	if (SDL_RenderClear(ren) != 0)throw Error(SDL_GetError());
 }
 
+int Renderer::loadFont(const char* font, int size){
+	TTF_Font *Font;
+	if ((Font = TTF_OpenFont(font, size)) == nullptr)throw Error(TTF_GetError());
+	fonts[current_fonts] = Font;
+	return current_fonts++;
+}
+
+void Renderer::displayText(int font, const Uint16* text, RGBA color, double x, double y, double w, double h){
+	SDL_Surface *surf;
+	SDL_Texture *texture;
+	if ((surf = TTF_RenderUNICODE_Blended(fonts[font], text, color.col)) == nullptr)throw Error(TTF_GetError());
+	if ((texture = SDL_CreateTextureFromSurface(ren, surf)) == 0)throw Error(SDL_GetError());
+	SDL_FreeSurface(surf);
+	applyTexture(texture, x, y, w, h);
+	SDL_DestroyTexture(texture);
+}
+
 Renderer::~Renderer() {
 	for (int i = 0; i<current_textures; ++i) SDL_DestroyTexture(textures[i]);
+	for (int i = 0; i<current_fonts; ++i) TTF_CloseFont(fonts[i]);
 	SDL_DestroyRenderer(ren);
 	SDL_DestroyWindow(win);
+	TTF_Quit();
 }
 
 int Renderer::current_textures = 0;
+int Renderer::current_fonts = 0;
+
 
 Game::Game() {
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)throw Error(SDL_GetError());
