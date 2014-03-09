@@ -1,5 +1,6 @@
 #include "Being.h"
-Being::Being(double x, double y, Direction orient): x(x), y(y), orientation(orient) {}
+//0.015625 = 1/64 (one being = one screen square;
+Being::Being(double x, double y, Direction orient): x(x), y(y), orientation(orient), move_step(0.015625) {}
 
 void Being::move(Direction dir) {
 	orientation = dir;

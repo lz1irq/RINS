@@ -2,9 +2,9 @@
 #define _GLIBCXX_BEING_H
 
 class Being{
-	enum Direction{LEFT=1,RIGHT=2,UP=4,DOWN=8}
+	enum Direction{LEFT=1,RIGHT=2,UP=4,DOWN=8};
 	double x,y;
-	static double move_step = 1.0/64;
+	const double move_step;
 	Direction orientation;
 public:
 	Being(double x, double y, Direction dir);
