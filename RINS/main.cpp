@@ -1,10 +1,15 @@
 #include "Platform.h"
+#include "Being.h"
 
 class RINS : public Game{
 	Renderer rend;
 	int move;
 	double x, y;
 	int dir;
+	struct being_resources{
+		Being b;
+		int texture;
+	};
 	void graphicsLoop() final {
 		try{
 			rend.applyTexture(move, 0.45+x, 0.45+y, 0.1, 0.1);
