@@ -4,7 +4,7 @@ class RINS : public Game{
 	Renderer rend;
 	int move;
 	double x, y;
-	bool w, s, a, d;
+	int dir;
 	void graphicsLoop() final {
 		try{
 			rend.applyTexture(move, 0.45+x, 0.45+y, 0.1, 0.1);
@@ -18,18 +18,11 @@ class RINS : public Game{
 
 	void mainLoop() final {
 		try {
-			if (getKey(1) == 'w')w = true;
-			if (getKey(0) == 'w')w = false;
-			if (getKey(0) == 's')s = false;
-			if (getKey(1) == 's')s = true;
-			if (getKey(1) == 'a')a = true;
-			if (getKey(0) == 'a')a = false;
-			if (getKey(1) == 'd')d = true;
-			if (getKey(0) == 'd')d = false;
-			if (w)y -= 1/100.0;
-			if (s)y += 1/100.0;
-			if (a)x -= 1/100.0;
-			if (d)x += 1/100.0;
+			getdir();
+			if (dir & 4)y -= 1/100.0;
+			if (dir & 8)y += 1/100.0;
+			if (dir & 1)x -= 1/100.0;
+			if (dir & 2)x += 1/100.0;
 
 			//cout << x << y << endl;
 
@@ -39,10 +32,20 @@ class RINS : public Game{
 			cout << e.getError() << endl;
 		}
 	}
+
+	void getdir(){
+		if (getKey(1) == 'a')dir |= 1 << 0;
+		if (getKey(0) == 'a')dir &= ~(1 << 0);
+		if (getKey(1) == 'd')dir |= 1 << 1;
+		if (getKey(0) == 'd')dir &= ~(1 << 1);
+		if (getKey(1) == 'w')dir |= 1 << 2;
+		if (getKey(0) == 'w')dir &= ~(1 << 2);
+		if (getKey(1) == 's')dir |= 1 << 3;
+		if (getKey(0) == 's')dir &= ~(1 << 3);
+	}
 public:
-	RINS() try : rend(640, 640, "RINS") {
+	RINS() try : rend(640, 640, "RINS"), dir(0) {
 		x = 0, y = 0;
-		w = false, s = false, a = false, d = false;
 		move = rend.loadTexture("Textures/testure.png");
 		loop();
 	}
