@@ -2,8 +2,6 @@
 #include "Being.h"
 #include <math.h>
 
-#define MAX_MONSTERS 10
-
 class RINS : public Game{
 	Renderer rend;
 	int move;
@@ -122,6 +120,9 @@ public:
 		mticks = getTicks();
 		main_font = rend.loadFont("Fonts/ARIALUNI.ttf", 70);
 		bg = rend.loadTexture("Textures/bg.jpg");
+
+		//marine class weapons
+
 		loop();
 	}
 	catch (Error e){
