@@ -20,33 +20,6 @@ Derived::Derived(Primary prim, int level):
 	dmg_res = prim.agility*1.5;
 }
 
-template<class T> int BeingResources<T>::getTextureID() const{
-	return texture_ID;
-}
-
-template<class T> void BeingResources<T>::setTextureID(int newID) {
-	texture_ID = newID;
-}
-
-template<class T> int BeingResources<T>::getTextureX() const {
-	return texture_x;
-}
-
-template<class T> void BeingResources<T>::setTextureX(int newx) {
-	texture_x = newx;
-}
-
-template<class T> int BeingResources<T>::getTextureY() const {
-	return texture_y;
-}
-
-template<class T> void BeingResources<T>::setTextureY(int newy) {
-	texture_y = newy;
-}
-
-
-
-
 Being::Being(double x, double y): 
 	x(x), y(y),
 	orientation(UP), move_step(1.0/64), 
@@ -55,12 +28,15 @@ Being::Being(double x, double y):
 		rnd.seed(time(0));
 	}
 
-void Being::move(int dir) {
+map<const char*, int> BeingResources::textures;
+
+void Being::move(int dir, bool reverse) {
 	orientation = dir;
-	if (dir & LEFT) x-= move_step;
-	if (dir & RIGHT) x += move_step;
-	if (dir & UP) y -= move_step;
-	if (dir & DOWN) y += move_step;
+	double move = reverse ? -move_step : move_step;
+	if (dir & LEFT) x-= move;
+	if (dir & RIGHT) x += move;
+	if (dir & UP) y -= move;
+	if (dir & DOWN) y += move;
 }
 
 int Being::getHealth() {
@@ -73,6 +49,14 @@ double Being::getX() const {
 
 double Being::getY() const {
 	return y;
+}
+
+void Being::setX(double newX) {
+	x = newX;
+}
+
+void Being::setY(double newY) {
+	y = newY;
 }
 
 int Being::getOrientation() const {
@@ -119,8 +103,7 @@ Being::~Being() {
 
 Marine::Marine(double sx, double yx): 
 	Being(sx,yx), small_guns_bonus(0), 
-	big_guns_bonus(0), energy_weapons_bonus(0),
-	BeingResources(BeingResources<Marine>())			{
+	big_guns_bonus(0), energy_weapons_bonus(0)	{
 	small_guns = 2 + prim_stats.agility<<1 + prim_stats.luck>>1;
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
 	energy_weapons = 2 + prim_stats.perception* + prim_stats.luck>>1;
@@ -134,8 +117,7 @@ void Marine::action() {
 
 Pyro::Pyro(double sx, double yx): 
 	Being(sx,yx), explosives_bonus(0),
-	big_guns_bonus(0), fire_bonus(0),
-	BeingResources(BeingResources<Pyro>())			{
+	big_guns_bonus(0), fire_bonus(0)	{
 	explosives = 2 + prim_stats.perception<<1 + prim_stats.luck>>1;
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
 	fire = 2 + prim_stats.agility* + prim_stats.luck>>1;
@@ -149,8 +131,7 @@ void Pyro::action() {
 
 Psychokinetic::Psychokinetic(double sx, double yx): 
 	Being(sx,yx), mind_infiltration_bonus(0), 
-	mental_power_bonus(0), fire_bonus(0),
-	BeingResources(BeingResources<Psychokinetic>())			{
+	mental_power_bonus(0), fire_bonus(0)	{
 	mind_infiltration = 2 + prim_stats.intelligence<<1 + prim_stats.luck>>1;
 	mental_power = 2 + prim_stats.endurance + prim_stats.intelligence + prim_stats.luck>>1;
 	fire = 2 + prim_stats.agility* + prim_stats.luck>>1;
@@ -163,8 +144,7 @@ void Psychokinetic::action() {
 }
 
 Zombie::Zombie(double sx, double yx): 
-	Being(sx,yx), target(nullptr),
-	BeingResources(BeingResources<Zombie>()) {
+	Being(sx,yx), target(nullptr) {
 	biting = 2 + prim_stats.strength<<1 + prim_stats.luck>>1;
 
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Bite(biting)));
@@ -178,24 +158,24 @@ void Zombie::action() {
 	bool there=true;
 
 	if(x < tx) {
-		move(LEFT);
+		move(LEFT, false);
 		there = false;
 	}
 	if(y < ty) {
-		move(DOWN);
+		move(DOWN, false);
 		there = false;
 	}
 	if(x > tx) {
-		move(RIGHT);
+		move(RIGHT, false);
 		there = false;
 	}
 	if(y > ty) {
-		move(UP);
+		move(UP, false);
 		there = false;
 	}
 
 	if(there) {
-		move(RIGHT);
+		move(RIGHT, false);
 		shootWeapon(LEFT);
 	}
 	

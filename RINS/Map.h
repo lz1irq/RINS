@@ -11,13 +11,13 @@ using namespace std;
 class Map{
 	double roomX, roomY;
 	mt19937 pattern;
-	const int xsize = 16, ysize = 16;
 	uint32_t curr_seed;
 	enum walls{ LEFT, DOWN, UP, RIGHT };
 	bool last_entry = true;
 	double offsetx = 0, offsety = 0;
 	int map_type;
 public:
+	const int xsize = 16, ysize = 16;
 	struct Coord{
 		double x;
 		double y;

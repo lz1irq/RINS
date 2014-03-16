@@ -6,113 +6,58 @@
 
 class RINS : public Game, public Map{
 	Renderer rend;
-	int move;
-	int dir;
-	int main_font;
+
 	int bg[3];
-	//struct being_resources{
-	//	being b;
-	//	int texture;
-	//	int x,y;
-	//	being_resources(being b, int texture): b(b), texture(texture){}
-	//};
-	//========game
-	//being_resources Player;
-	//being_resources Mob;
-	unsigned int last_tick;
-	unsigned mticks;
-	double xpos, ypos;
-	double step = 1 / 64.0;
 	int wall[3];
-	int hero;
+
+	int dir, lastdir = 1, tmpdir2;
+	int lastxpos, lastypos;
 	Coord c;
+	Being* player;
+
+
+
+	int last_tick = 0;
+
 	mutex lock1;
-	//========game
 
-	//void set_texture(being_resources& bres) {
-	//		int ori = bres.b.getOrientation();
-	//		if (ori == 8){ bres.x = 0; bres.y = 0; }
-	//		if (ori == 4){ bres.x = 1; bres.y = 0; }
-	//		if (ori == 2){ bres.x = 0; bres.y = 1; }
-	//		if (ori == 1){ bres.x = 1; bres.y = 1; }
-	//}
-
-	//unsigned int get_tile_x(being_resources bres) {
-	//	return (bres.b.getX()/bres.b.getStep() + bres.b.getStep()*2)/4;
-	//}
-	//unsigned int get_tile_y(being_resources bres) {
-	//	return (bres.b.getY()/bres.b.getStep() + bres.b.getStep()*4)/4;
-	//}
-
-	int getTileX(double x){
-		return ((x+step) / step) / 4;
-	}
-	
-	int getTileY(double y){
-		return ((y+step*3) / step) / 4;
-	}
 	void graphicsLoop() final {
 		try{
-
-			//set_texture(Player);
-			//set_texture(Mob);
 			int maptype = getMapType();
-			rend.renderPart(0, 0, 0, 0);
-			rend.applyTexture(bg[maptype], -(xpos - alterBeingPosX(xpos)), -(ypos - alterBeingPosY(ypos)), (double)(getMapIndex().size() / 16.0), (double)(getMapIndex()[0].size() / 16.0));
-
-			//rend.renderPart(2,2,Mob.x,Mob.y);
-			//rend.applyTexture(Mob.texture, Mob.b.getX(), Mob.b.getY(), Mob.b.getStep()*4, Mob.b.getStep()*4);
-
-			//rend.renderPart(2, 2, Player.x, Player.y);
-			//rend.applyTexture(Player.texture, Player.b.getX(), Player.b.getY(), Player.b.getStep()*4, Player.b.getStep()*4);
-
-
-			//Uint16* xtext = itow(get_tile_x(Player));
-			//Uint16* ytext = itow(get_tile_y(Player));
-			//rend.renderPart(3, 2, 1, 1);
-			//rend.displayText(main_font, xtext, RGBA(1,127,255,1), 0.1, 0.1, 0, 0);
-			//rend.displayText(main_font, ytext, RGBA(1,127,255,1), 0.3, 0.1, 0, 0);
-			//delete [] xtext;
-			//delete [] ytext;
-
-
-
+			rend.renderPart(0,0,0,0);
+			rend.applyTexture(bg[maptype], -(player->getX() - alterBeingPosX(player->getX())), -(player->getY() - alterBeingPosY(player->getY())), (double)(getMapIndex().size() / 16.0), (double)(getMapIndex()[0].size() / 16.0));
 			lock1.lock();
 			for (int i = 0; i < getMapObjects().size(); ++i){
+				double x = getMapObjects().at(i).x - (player->getX() - alterBeingPosX(player->getX()));
+				double y = getMapObjects().at(i).y - (player->getY() - alterBeingPosY(player->getY()));
 				switch (getMapObjects().at(i).type){
 				case 1:
-					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)) - step * 2, getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)), step * 4, step * 4);
-					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)), getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)), step * 4, step * 4);
-					break;
-				case 2:
-					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)), getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)), step * 4, step * 4);
-					break;
-				case 3:
-					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)), getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)) - step * 2, step * 4, step * 4);
-					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)), getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)), step * 4, step * 4);
-					break;
-				case 4:
-					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)), getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)) - step * 2, step * 4, step * 4);
-					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)) - step * 2, getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)), step * 4, step * 4);
-					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)), getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)), step * 4, step * 4);
-					break;
+					 rend.applyTexture(wall[maptype], x - 1.0/(2*xsize), y, 1.0/xsize, 1.0/ysize);
+					 rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+				 break;        
+				case 2:         
+					 rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+				 break;        
+				case 3:         
+					 rend.applyTexture(wall[maptype], x, y - 1.0 / (2 * ysize), 1.0 / xsize, 1.0 / ysize);
+					 rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+				 break;        
+				case 4:         
+					 rend.applyTexture(wall[maptype], x, y - 1.0 / (2 * ysize), 1.0 / xsize, 1.0 / ysize);
+					 rend.applyTexture(wall[maptype], x - 1.0 / (2 * xsize), y, 1.0 / xsize, 1.0 / ysize);
+					 rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+				 break;
 				default:
-					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)), getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)), step * 4, step * 4);
-					break;
-			}
-			}
-			lock1.unlock();
+					 rend.applyTexture(wall[maptype], x, y, 1.0/xsize, 1.0/ysize);
+				 break;
+				}
+		}
+   lock1.unlock();
 
-			int tx, ty;
-
-			if (dir == 8){ tx = 0; ty = 0; }
-			if (dir == 4){ tx = 1; ty = 0; }
-			if (dir == 2){ tx = 0; ty = 1; }
-			if (dir == 1){ tx = 1; ty = 1; }
-			if (dir == 0){ tx = 1; ty = 1; }
-			rend.renderPart(2, 2, tx, ty);
-
-			rend.applyTexture(hero, alterBeingPosX(xpos), alterBeingPosY(ypos), step * 4, step * 4);
+			rend.renderPart(2,2,(int)log2(lastdir)>>1,1-((int)log2(lastdir)%2));
+			rend.applyTexture(BeingResources::getTextureID(typeid(player).name()), alterBeingPosX(player->getX()), alterBeingPosY(player->getY()), 1/xsize, 1/ysize);
+			
+			
 			rend.renderScene();
 		}
 		catch (Error e){
@@ -122,50 +67,55 @@ class RINS : public Game, public Map{
 
 	void mainLoop() final {
 		try {
-			int tmpdir = dir;
+
+			tmpdir2 = dir;
 			getdir();
-			if (updateInternalMapState())dir = 0;
-			double lastxpos = xpos;
-			double  lastypos = ypos;
-			if (getTicks() - last_tick > 33 || tmpdir!= dir){
-				if (dir & 1)xpos -= step;
-				if (dir & 2)xpos += step;
-				if (dir & 4)ypos -= step;
-				if (dir & 8)ypos += step;
+
+			if(updateInternalMapState()) dir = 0;
+			int pos_tile_x = ((player->getX()+player->getStep())/player->getStep())/((1.0/xsize)/player->getStep());
+			int pos_tile_y = ((player->getY()+player->getStep()*3)/player->getStep())/((1.0/ysize)/player->getStep());
+
+			cout << pos_tile_x << " " << pos_tile_y << endl;
+
+			if(dir != 0) lastdir = dir;
+
+			lastxpos = player->getX();
+			lastypos = player->getY();
+
+
+			if (getTicks() - last_tick > 33 || tmpdir2!= dir){
+				player->move(dir, false);
 				last_tick = getTicks();
 			}
-			int pos_tile_x = getTileX(xpos);
-			int pos_tile_y = getTileY(ypos);
-			//cout << pos_tile_x << " " <<  pos_tile_y << endl;
-			bool mustlock = false;
-			if (!(pos_tile_x < 0 || pos_tile_x >= getMapIndex().size())){
-				if (!(pos_tile_y < 0 || pos_tile_y >= getMapIndex()[pos_tile_x].size())){
-					if (getMapIndex()[pos_tile_x][pos_tile_y]){
-					xpos = lastxpos;
-					ypos = lastypos;
-				}
-				}
-				else{ xpos = lastxpos; mustlock = true; }
-			}
-			else{ ypos = lastypos; mustlock = true; }
-			if (mustlock){
-				lock1.lock();
-				if (tryRoomChange(pos_tile_x, pos_tile_y)){
-					c = getMapEntry();
-					xpos = c.x;
-					ypos = c.y;
-				}
-				mustlock = false;
-				lock1.unlock();
-			}
-				//if (block_tile_y == pos_tile_y && xpos*4 == blocks.at(i).x)ypos = lastypos;
 
-			//}
-			//if(getTicks() - mticks > 80) {
-			//	Mob.b.stepTo(Player.b.getX(),Player.b.getY());
-			//	mticks = getTicks();
-			//	
-			//}
+			   bool mustlock = false;
+				if (!(pos_tile_x < 0 || pos_tile_x >= getMapIndex().size())){
+					if (!(pos_tile_y < 0 || pos_tile_y >= getMapIndex()[pos_tile_x].size())){
+						if (getMapIndex()[pos_tile_x][pos_tile_y]){
+							player->move(dir, true);
+						}
+					}
+					else { 
+						player->setX(lastxpos);
+						mustlock = true; 
+					}
+				}
+				else {
+					player->setY(lastypos);
+					mustlock = true;
+				}
+				
+				 if (mustlock){
+					lock1.lock();
+					if (tryRoomChange(pos_tile_x, pos_tile_y)){
+						c = getMapEntry();
+						player->setX(c.x);
+						player->setY(c.y);
+					}
+					mustlock = false;
+					lock1.unlock();
+				}
+
 			SDL_Delay(10);
 		}
 		catch (Error e) {
@@ -197,37 +147,38 @@ class RINS : public Game, public Map{
 	}
 public:
 	RINS() try : 
-		rend(640, 640, "RINS"), dir(0)
-		//,Player(Being(0, 0), rend.loadTexture("Textures/devil.png")),
-		//Mob(Being(0.7,0.7),rend.loadTexture("Textures/gangsta.png")) 
-		{
-		//move = rend.loadTexture("Textures/testure.png");
-		//last_tick = getTicks();
-		//mticks = getTicks();
-		//main_font = rend.loadFont("Fonts/ARIALUNI.ttf", 70);
+		rend(640, 640, "RINS"), dir(0) {
+		loadMap("do u even seed, bro?");
+		c = getMapEntry();
 
+		int pclass;
+		cout << "Chose class: " << endl << "0. Marine " << endl << "1. Pyro " << endl << "2. Psychokinetic" << endl;
+		cin >> pclass;
+		pclass = pclass%3;
+		if(pclass == 0) player = new Marine(c.x,c.y);
+		else if(pclass == 1) player = new Pyro(c.x, c.y);
+		else if(pclass == 2) player = new Psychokinetic(c.x, c.y);
+
+		BeingResources::addTextureID(rend.loadTexture("Textures/devil.png"), typeid(Marine).name());
+		BeingResources::addTextureID(rend.loadTexture("Textures/devil.png"), typeid(Pyro).name());
+		BeingResources::addTextureID(rend.loadTexture("Textures/devil.png"), typeid(Psychokinetic).name());
 
 		bg[0] = rend.loadTexture("Textures/floor1.jpg");
-		wall[0] = rend.loadTexture("Textures/brick3.png");
-		hero = rend.loadTexture("Textures/prince.png");
-
 		bg[1] = rend.loadTexture("Textures/cement.jpg");
-		wall[1] = rend.loadTexture("Textures/brick4.png");
-
 		bg[2] = rend.loadTexture("Textures/dirt2.jpg");
-		wall[2] = rend.loadTexture("Textures/brick5.png");
 
+		wall[0]  = rend.loadTexture("Textures/brick3.png");
+		wall[1]  = rend.loadTexture("Textures/brick4.png");
+		wall[2]  = rend.loadTexture("Textures/brick5.png");
 
-		//marine class weapons
-		loadMap("g");
-		//for (auto c : blocks)cout << c.x << " " << c.y << endl;
-		c = getMapEntry();
-		xpos = c.x;
-		ypos = c.y;
 		loop();
 	}
 	catch (Error e){
 		cout << e.getError() << endl;
+	}
+
+	~RINS() {
+		delete player;
 	}
 };
 
