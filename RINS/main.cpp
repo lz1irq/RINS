@@ -99,7 +99,7 @@ class RINS : public Game, public Map{
 				default:
 					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)), getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)), step * 4, step * 4);
 					break;
-				}
+			}
 			}
 			lock1.unlock();
 
@@ -141,9 +141,9 @@ class RINS : public Game, public Map{
 			if (!(pos_tile_x < 0 || pos_tile_x >= getMapIndex().size())){
 				if (!(pos_tile_y < 0 || pos_tile_y >= getMapIndex()[pos_tile_x].size())){
 					if (getMapIndex()[pos_tile_x][pos_tile_y]){
-						xpos = lastxpos;
-						ypos = lastypos;
-					}
+					xpos = lastxpos;
+					ypos = lastypos;
+				}
 				}
 				else{ xpos = lastxpos; mustlock = true; }
 			}
@@ -197,7 +197,7 @@ class RINS : public Game, public Map{
 	}
 public:
 	RINS() try : 
-		rend(640, 480, "RINS"), dir(0)
+		rend(640, 640, "RINS"), dir(0)
 		//,Player(Being(0, 0), rend.loadTexture("Textures/devil.png")),
 		//Mob(Being(0.7,0.7),rend.loadTexture("Textures/gangsta.png")) 
 		{
