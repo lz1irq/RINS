@@ -142,7 +142,8 @@ class RINS : public Game, public Map{
 		return text;
 	}
 public:
-	RINS() try : 
+	RINS() try :
+
 		rend(640, 640, "RINS"), dir(0)
 		//,Player(Being(0, 0), rend.loadTexture("Textures/devil.png")),
 		//Mob(Being(0.7,0.7),rend.loadTexture("Textures/gangsta.png")) 
