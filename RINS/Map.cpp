@@ -5,7 +5,6 @@ Map::Map() : roomX(1), roomY(1){
 	room_exit_y = roomX/2*ysize;
 	room_entry_x = 0;
 	room_entry_y = roomX / 2 * ysize;
-	generateRoom(curr_seed, true);
 }
 
 double Map::alterBeingPosX(double absoluteX){
@@ -27,6 +26,8 @@ void Map::loadMap(string seed){
 	uint32_t seeds[1];
 	Seed.generate(&seeds[0], &seeds[1]);
 	curr_seed = seeds[0];
+	curr_seed = system_clock::to_time_t(system_clock::now()); //SHOULD BE FIXED 
+	generateRoom(curr_seed, true);
 }
 
 Map::Coord Map::getMapEntry(){
@@ -72,6 +73,10 @@ bool Map::tryRoomChange(int x, int y){
 	}
 	return exit;
 
+}
+
+int Map::getMapType(){
+	return map_type;
 }
 
 void Map::generateRoom(uint32_t seed_, bool exited){
@@ -280,6 +285,88 @@ void Map::generateRoom(uint32_t seed_, bool exited){
 	room[room_entry_x][room_entry_y] = 0;
 	room[room_exit_x][room_exit_y] = 0;
 
+	//generate some basic structures
+	int numstructs = pattern() % 20;
+	numstructs *= roomX*roomY;
+	for (int i = 0; i < numstructs; ++i){
+		int structsize = 2 + (pattern() % 5);
+		int structori = pattern() % 2;//X:Y
+		int structdir = pattern() % 2;
+		int initialx = pattern() % xmax;
+		int initialy = pattern() % ymax;
+
+		int endx, endy;
+		bool begin;
+		switch (structori){
+		case 0: //orientation X
+			endx = initialx + structsize;
+			endy = initialy;
+			if (!structdir)endx = initialx + structsize;
+			else endx = initialx - structsize;
+			begin = true;
+			for (int a = min(initialx, endx); a < max(initialx, endx); ++a){
+				int x = a;
+				int y = endy;
+				try{
+					if (!room.at(x-1).at(y-1)){
+						if (!room.at(x).at(y - 1)){
+							if (!room.at(x + 1).at(y - 1)){
+								if (!room.at(x + 1).at(y)){
+									if (!room.at(x + 1).at(y + 1)){
+										if (!room.at(x).at(y + 1)){
+											if (!room.at(x - 1).at(y + 1)){
+												if (!room.at(x - 1).at(y) || begin == false){
+													room[x][y] = 1;
+												}
+											}
+										}
+									}
+
+								}
+							}
+						}
+					}
+				}
+				catch (...){}
+				begin = false;
+			}
+			break;
+		case 1: //orientation Y
+			endx = initialx;
+			if (!structdir)endy = initialy + structsize;
+			else endy = initialy - structsize;
+			begin = true;
+			for (int a = min(initialy, endy); a < max(initialy, endy); ++a){
+				int x = endx;
+				int y = a;
+				try{
+					if (!room.at(x - 1).at(y - 1)){
+						if (!room.at(x).at(y - 1) || begin == false){
+							if (!room.at(x + 1).at(y - 1)){
+								if (!room.at(x + 1).at(y)){
+									if (!room.at(x + 1).at(y + 1)){
+										if (!room.at(x).at(y + 1)){
+											if (!room.at(x - 1).at(y + 1)){
+												if (!room.at(x - 1).at(y)){
+													room[x][y] = 3;
+												}
+											}
+										}
+									}
+
+								}
+							}
+						}
+					}
+				}
+				catch (...){}
+				begin = false;
+			}
+			break;
+		}
+	}
+	map_type = pattern() % 3;
+	//generate some basic structures
 
 	//create map map
 	blocks.clear();

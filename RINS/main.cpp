@@ -2,13 +2,14 @@
 #include "Being.h"
 #include "Map.h"
 #include <math.h>
+#include <mutex>
 
 class RINS : public Game, public Map{
 	Renderer rend;
 	int move;
 	int dir;
 	int main_font;
-	int bg;
+	int bg[3];
 	//struct being_resources{
 	//	being b;
 	//	int texture;
@@ -22,8 +23,10 @@ class RINS : public Game, public Map{
 	unsigned mticks;
 	double xpos, ypos;
 	double step = 1 / 64.0;
-	int wall;
-	vector<Coord> blocks;
+	int wall[3];
+	int hero;
+	Coord c;
+	mutex lock1;
 	//========game
 
 	//void set_texture(being_resources& bres) {
@@ -42,20 +45,20 @@ class RINS : public Game, public Map{
 	//}
 
 	int getTileX(double x){
-		return (x / step) / 4;
+		return ((x+step) / step) / 4;
 	}
 	
 	int getTileY(double y){
-		return (y / step + step * 2) / 4;
+		return ((y+step*3) / step) / 4;
 	}
 	void graphicsLoop() final {
 		try{
 
 			//set_texture(Player);
 			//set_texture(Mob);
-
+			int maptype = getMapType();
 			rend.renderPart(0, 0, 0, 0);
-			rend.applyTexture(bg,0,0,1,1);
+			rend.applyTexture(bg[maptype], -(xpos - alterBeingPosX(xpos)), -(ypos - alterBeingPosY(ypos)), (double)(getMapIndex().size() / 16.0), (double)(getMapIndex()[0].size() / 16.0));
 
 			//rend.renderPart(2,2,Mob.x,Mob.y);
 			//rend.applyTexture(Mob.texture, Mob.b.getX(), Mob.b.getY(), Mob.b.getStep()*4, Mob.b.getStep()*4);
@@ -66,15 +69,50 @@ class RINS : public Game, public Map{
 
 			//Uint16* xtext = itow(get_tile_x(Player));
 			//Uint16* ytext = itow(get_tile_y(Player));
-			rend.renderPart(0, 0, 0, 0);
+			//rend.renderPart(3, 2, 1, 1);
 			//rend.displayText(main_font, xtext, RGBA(1,127,255,1), 0.1, 0.1, 0, 0);
 			//rend.displayText(main_font, ytext, RGBA(1,127,255,1), 0.3, 0.1, 0, 0);
 			//delete [] xtext;
 			//delete [] ytext;
-			for (int i = 0; i < blocks.size(); ++i){
-				rend.applyTexture(wall, blocks.at(i).x - (xpos - alterBeingPosX(xpos)), blocks.at(i).y - (ypos - alterBeingPosY(ypos)), step * 4, step * 4);
+
+
+
+			lock1.lock();
+			for (int i = 0; i < getMapObjects().size(); ++i){
+				switch (getMapObjects().at(i).type){
+				case 1:
+					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)) - step * 2, getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)), step * 4, step * 4);
+					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)), getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)), step * 4, step * 4);
+					break;
+				case 2:
+					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)), getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)), step * 4, step * 4);
+					break;
+				case 3:
+					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)), getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)) - step * 2, step * 4, step * 4);
+					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)), getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)), step * 4, step * 4);
+					break;
+				case 4:
+					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)), getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)) - step * 2, step * 4, step * 4);
+					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)) - step * 2, getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)), step * 4, step * 4);
+					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)), getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)), step * 4, step * 4);
+					break;
+				default:
+					rend.applyTexture(wall[maptype], getMapObjects().at(i).x - (xpos - alterBeingPosX(xpos)), getMapObjects().at(i).y - (ypos - alterBeingPosY(ypos)), step * 4, step * 4);
+					break;
+				}
 			}
-			rend.applyTexture(wall, alterBeingPosX(xpos), alterBeingPosY(ypos), step * 4, step * 4);
+			lock1.unlock();
+
+			int tx, ty;
+
+			if (dir == 8){ tx = 0; ty = 0; }
+			if (dir == 4){ tx = 1; ty = 0; }
+			if (dir == 2){ tx = 0; ty = 1; }
+			if (dir == 1){ tx = 1; ty = 1; }
+			if (dir == 0){ tx = 1; ty = 1; }
+			rend.renderPart(2, 2, tx, ty);
+
+			rend.applyTexture(hero, alterBeingPosX(xpos), alterBeingPosY(ypos), step * 4, step * 4);
 			rend.renderScene();
 		}
 		catch (Error e){
@@ -86,6 +124,7 @@ class RINS : public Game, public Map{
 		try {
 			int tmpdir = dir;
 			getdir();
+			if (updateInternalMapState())dir = 0;
 			double lastxpos = xpos;
 			double  lastypos = ypos;
 			if (getTicks() - last_tick > 33 || tmpdir!= dir){
@@ -97,16 +136,31 @@ class RINS : public Game, public Map{
 			}
 			int pos_tile_x = getTileX(xpos);
 			int pos_tile_y = getTileY(ypos);
-			for (int i = 0; i < blocks.size(); ++i){
-				int block_tile_x = (blocks.at(i).x/step)/4;
-				int block_tile_y = (blocks.at(i).y/step)/4;
-				if (block_tile_x == pos_tile_x && block_tile_y == pos_tile_y){
-					xpos = lastxpos;
-					ypos = lastypos;
+			//cout << pos_tile_x << " " <<  pos_tile_y << endl;
+			bool mustlock = false;
+			if (!(pos_tile_x < 0 || pos_tile_x >= getMapIndex().size())){
+				if (!(pos_tile_y < 0 || pos_tile_y >= getMapIndex()[pos_tile_x].size())){
+					if (getMapIndex()[pos_tile_x][pos_tile_y]){
+						xpos = lastxpos;
+						ypos = lastypos;
+					}
 				}
+				else{ xpos = lastxpos; mustlock = true; }
+			}
+			else{ ypos = lastypos; mustlock = true; }
+			if (mustlock){
+				lock1.lock();
+				if (tryRoomChange(pos_tile_x, pos_tile_y)){
+					c = getMapEntry();
+					xpos = c.x;
+					ypos = c.y;
+				}
+				mustlock = false;
+				lock1.unlock();
+			}
 				//if (block_tile_y == pos_tile_y && xpos*4 == blocks.at(i).x)ypos = lastypos;
 
-			}
+			//}
 			//if(getTicks() - mticks > 80) {
 			//	Mob.b.stepTo(Player.b.getX(),Player.b.getY());
 			//	mticks = getTicks();
@@ -143,7 +197,7 @@ class RINS : public Game, public Map{
 	}
 public:
 	RINS() try : 
-		rend(640, 640, "RINS"), dir(0)
+		rend(640, 480, "RINS"), dir(0)
 		//,Player(Being(0, 0), rend.loadTexture("Textures/devil.png")),
 		//Mob(Being(0.7,0.7),rend.loadTexture("Textures/gangsta.png")) 
 		{
@@ -151,13 +205,25 @@ public:
 		//last_tick = getTicks();
 		//mticks = getTicks();
 		//main_font = rend.loadFont("Fonts/ARIALUNI.ttf", 70);
-		bg = rend.loadTexture("Textures/bg.jpg");
-		wall = rend.loadTexture("Textures/bricks.jpg");
+
+
+		bg[0] = rend.loadTexture("Textures/floor1.jpg");
+		wall[0] = rend.loadTexture("Textures/brick3.png");
+		hero = rend.loadTexture("Textures/prince.png");
+
+		bg[1] = rend.loadTexture("Textures/cement.jpg");
+		wall[1] = rend.loadTexture("Textures/brick4.png");
+
+		bg[2] = rend.loadTexture("Textures/dirt2.jpg");
+		wall[2] = rend.loadTexture("Textures/brick5.png");
+
 
 		//marine class weapons
-		xpos = 0, ypos = 0;
-		loadMap("This seed is not greaen");
-		blocks = generateRoom();
+		loadMap("g");
+		//for (auto c : blocks)cout << c.x << " " << c.y << endl;
+		c = getMapEntry();
+		xpos = c.x;
+		ypos = c.y;
 		loop();
 	}
 	catch (Error e){

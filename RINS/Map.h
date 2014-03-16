@@ -2,6 +2,8 @@
 #include <random>
 #include <vector>
 #include <algorithm>
+#include <chrono>
+using namespace std::chrono;
 using namespace std;
 #ifndef _GLIBCXX_MAP_H
 #define _GLIBCXX_MAP_H
@@ -14,6 +16,7 @@ class Map{
 	enum walls{ LEFT, DOWN, UP, RIGHT };
 	bool last_entry = true;
 	double offsetx = 0, offsety = 0;
+	int map_type;
 public:
 	struct Coord{
 		double x;
@@ -31,6 +34,7 @@ public:
 	Coord getMapEntry();
 	bool tryRoomChange(int x, int y);
 	bool updateInternalMapState();
+	int getMapType();
 private:
 	vector<Coord> blocks;
 	vector<vector<char>> room;
