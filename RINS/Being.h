@@ -123,4 +123,15 @@ public:
 	int getTextureID();
 };
 
+class Android: public Being, BeingResources {
+private:
+	int punch, punch_bonus;
+	int big_guns, big_guns_bonus;
+	int energy_weapons, energy_weapons_bonus;
+public:
+	Android(double sx, double sy);
+	void action(const vector<vector<char>>& map_index);
+	int getTextureID();
+};
+
 #endif

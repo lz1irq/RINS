@@ -150,6 +150,20 @@ void Psychokinetic::action(const vector<vector<char>>& map_index) {
 	return;
 }
 
+Android::Android(double sx, double yx): 
+	Being(sx,yx), punch_bonus(0), 
+	big_guns_bonus(0), energy_weapons_bonus(0)	{
+	punch = 2 + prim_stats.strength/2 + prim_stats.luck>>1;
+	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
+	energy_weapons = 2 + prim_stats.perception* + prim_stats.luck>>1;
+
+	weapons.push_back(std::unique_ptr<WeaponBase>(new Punch(punch)));
+}
+
+void Android::action(const vector<vector<char>>& map_index) {
+	if(der_stats.health == 0) cout << "DROID DEAD" << endl;
+}
+
 Zombie::Zombie(double sx, double yx): 
 	Being(sx,yx), target(nullptr) {
 	biting = 2 + prim_stats.strength<<1 + prim_stats.luck>>1;

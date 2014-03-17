@@ -87,6 +87,13 @@ Projectile& Molotov::shoot(int dir, double px, double py) {
 	return *new Projectile(type, dmg, 80, 100, dir, px, py);
 }
 
+Punch::Punch(int wskill): WeaponBase(BULLET,wskill,15,30) {
+}
+
+Projectile& Punch::shoot(int dir, double px, double py) {
+	return *new Projectile(type, dmg, 80, 100, dir, px, py);
+}
+
 Bite::Bite(int wskill): WeaponBase(BULLET,wskill,40,30) {
 }
 

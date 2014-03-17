@@ -78,4 +78,11 @@ public:
 	Bite(int wskill);
 	Projectile& shoot(int dir, double px, double py);
 };
+
+class Punch : public WeaponBase, public WeaponResources {
+public:
+	Punch(int wskill);
+	Projectile& shoot(int dir, double px, double py);
+};
+
 #endif

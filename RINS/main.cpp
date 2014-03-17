@@ -256,17 +256,19 @@ public:
 		c = getMapEntry();
 
 		int pclass;
-		cout << "Chose class: " << endl << "0. Marine " << endl << "1. Pyro " << endl << "2. Psychokinetic" << endl;
-		//cin >> pclass;
-		pclass = 0;
+		cout << "Chose class: " << endl << "0. Marine " << endl << "1. Pyro " << endl << "2. Psychokinetic" << endl << "3. Android" << endl;
+		
 		pclass = pclass%3;
 		if(pclass == 0) player = new Marine(c.x,c.y);
 		else if(pclass == 1) player = new Pyro(c.x, c.y);
 		else if(pclass == 2) player = new Psychokinetic(c.x, c.y);
+		else if(pclass == 3) player = new Android(c.x, c.y);
+		cin >> pclass;
 
 		BeingResources::addTextureID(rend.loadTexture("Textures/devil.png"), typeid(Marine).name());
 		BeingResources::addTextureID(rend.loadTexture("Textures/devil.png"), typeid(Pyro).name());
 		BeingResources::addTextureID(rend.loadTexture("Textures/devil.png"), typeid(Psychokinetic).name());
+		BeingResources::addTextureID(rend.loadTexture("Textures/devil.png"), typeid(Android).name());
 		BeingResources::addTextureID(rend.loadTexture("Textures/gangsta.png"), typeid(Zombie).name());
 
 		bg[0] = rend.loadTexture("Textures/floor1.jpg");
@@ -278,6 +280,7 @@ public:
 		wall[2]  = rend.loadTexture("Textures/brick5.png");
 
 		Projectile::addTexture(BULLET, rend.loadTexture("Textures/bullet.png"));
+		Projectile::addTexture(FIRE, rend.loadTexture("Textures/bullet.png"));
 
 		main_font = rend.loadFont("Fonts/ARIALUNI.TTF", 40);
 
