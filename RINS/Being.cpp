@@ -5,7 +5,7 @@ using namespace std;
 #include <iostream>
 
 vector<Being*> Being::targets;
-vector<Projectile*> Being::projectiles;
+list<Projectile> Being::projectiles;
 
 Primary::Primary():	
 	strength(5), strength_bonus(0),
@@ -35,7 +35,9 @@ Being::Being(double x, double y):
 map<const char*, int> BeingResources::textures;
 
 void Being::move(int dir, bool reverse) {
-	orientation = dir;
+	int newdir = dir << sizeof(int)*8-4;
+	newdir = newdir >> sizeof(int)*8-4;
+	if(newdir)orientation = dir;
 	double move = reverse ? -move_step : move_step;
 	if (dir & LEFT) x-= move;
 	if (dir & RIGHT) x += move;
@@ -85,17 +87,16 @@ void Being::prevWeapon() {
 	else curr_weapon = weapons.size();
 }
 
-void Being::takeProjectile(Projectile* bullet) {
-	cout << "taking fire " << der_stats.health << endl;
+void Being::takeProjectile(Projectile& bullet) {
 	int def_skill = 0;
-	unsigned int dmg_type = bullet->getType();
+	unsigned int dmg_type = bullet.getType();
 
 	if(dmg_type == BULLET || dmg_type == ENERGY) def_skill = der_stats.dmg_res+ der_stats.dmg_res_bonus;
 	else if(dmg_type == PSYCHO) def_skill = 0;
 	else if(dmg_type == FIRE) def_skill = der_stats.fire_res + der_stats.fire_res_bonus;
 
-	if((bullet->getDamage() - def_skill) > der_stats.health) der_stats.health = 0;
-	else der_stats.health -= (bullet->getDamage() - def_skill);
+	if((bullet.getDamage() - def_skill) > der_stats.health) der_stats.health = 0;
+	else der_stats.health -= (bullet.getDamage() - def_skill);
 }
 
 mt19937 Being::rnd;

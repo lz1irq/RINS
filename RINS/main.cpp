@@ -3,7 +3,6 @@
 #include "Map.h"
 #include <math.h>
 #include <mutex>
-
 class RINS : public Game, public Map{
 	Renderer rend;
 
@@ -15,66 +14,71 @@ class RINS : public Game, public Map{
 	Coord c;
 	Being* player;
 
-	double step = 1.0/64.0;
-
-	vector<unique_ptr<Being>> monsters;
+	list<unique_ptr<Being>> monsters;
 	mt19937 pattern;
 
 	int last_tick = 0, timer2 = 0, projectile_tick = 0;
 
-	mutex lock1;
+	mutex lock1, lock2;
+
+	int highscore = 0;
+	int main_font;
 
 	void graphicsLoop() final {
 		try{
+			lock1.lock();
 			int maptype = getMapType();
-			rend.renderPart(0,0,0,0);
+			rend.renderPart(0, 0, 0, 0);
 			double deltax = -alterBeingPosX(player->getX());
 			double deltay = -alterBeingPosY(player->getY());
 			rend.applyTexture(bg[maptype], -(player->getX() + deltax), -(player->getY() + deltay), (double)(getMapIndex().size() / 16.0), (double)(getMapIndex()[0].size() / 16.0));
-			lock1.lock();
 			for (int i = 0; i < getMapObjects().size(); ++i){
 				double x = getMapObjects().at(i).x - (player->getX() + deltax);
 				double y = getMapObjects().at(i).y - (player->getY() + deltay);
 				switch (getMapObjects().at(i).type){
 				case 1:
-					 rend.applyTexture(wall[maptype], x - 1.0/(2*xsize), y, 1.0/xsize, 1.0/ysize);
-					 rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
-				 break;        
-				case 2:         
-					 rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
-				 break;        
-				case 3:         
-					 rend.applyTexture(wall[maptype], x, y - 1.0 / (2 * ysize), 1.0 / xsize, 1.0 / ysize);
-					 rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
-				 break;        
-				case 4:         
-					 rend.applyTexture(wall[maptype], x, y - 1.0 / (2 * ysize), 1.0 / xsize, 1.0 / ysize);
-					 rend.applyTexture(wall[maptype], x - 1.0 / (2 * xsize), y, 1.0 / xsize, 1.0 / ysize);
-					 rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
-				 break;
+					rend.applyTexture(wall[maptype], x - 1.0 / (2 * xsize), y, 1.0 / xsize, 1.0 / ysize);
+					rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+					break;
+				case 2:
+					rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+					break;
+				case 3:
+					rend.applyTexture(wall[maptype], x, y - 1.0 / (2 * ysize), 1.0 / xsize, 1.0 / ysize);
+					rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+					break;
+				case 4:
+					rend.applyTexture(wall[maptype], x, y - 1.0 / (2 * ysize), 1.0 / xsize, 1.0 / ysize);
+					rend.applyTexture(wall[maptype], x - 1.0 / (2 * xsize), y, 1.0 / xsize, 1.0 / ysize);
+					rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+					break;
 				default:
-					 rend.applyTexture(wall[maptype], x, y, 1.0/xsize, 1.0/ysize);
-				 break;
+					rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+					break;
 				}
-		}
-   lock1.unlock();
-
-			rend.renderPart(2,2,(int)log2(lastdir)>>1,1-((int)log2(lastdir)%2));
-			rend.applyTexture(BeingResources::getTextureID(typeid(player).name()), alterBeingPosX(player->getX()), alterBeingPosY(player->getY()), 1.0/xsize, 1.0/ysize);
+			}
+			lock1.unlock();
+			lock2.lock();
+			rend.renderPart(2, 2, (int)log2(lastdir) >> 1, 1 - ((int)log2(lastdir) % 2));
+			rend.applyTexture(BeingResources::getTextureID(typeid(player).name()), alterBeingPosX(player->getX()), alterBeingPosY(player->getY()), 1.0 / xsize, 1.0 / ysize);
 
 
 			for (auto &i : monsters) {
-				if(i->getHealth()) {
+				if (i->getHealth()){
 					rend.renderPart(2, 2, (int)log2(i->getOrientation()) >> 1, 1 - ((int)log2(i->getOrientation()) % 2));
-					rend.applyTexture(BeingResources::getTextureID(typeid(Zombie).name()), i->getX() -(player->getX() + deltax), i->getY() -(player->getY() + deltay), 1.0 / xsize, 1.0 / ysize);
+					rend.applyTexture(BeingResources::getTextureID(typeid(Zombie).name()), i->getX() - (player->getX() + deltax), i->getY() - (player->getY() + deltay), 1.0 / xsize, 1.0 / ysize);
 				}
 			}
 
-			for(auto &p : Being::projectiles) {
-				rend.applyTexture(Projectile::getTexture(p->getType()),  p->getX() -(player->getX() + deltax), p->getY() -(player->getY() + deltay), 1.0 / xsize, 1.0 / ysize);
+			for (auto &p : Being::projectiles) {
+				rend.applyTexture(Projectile::getTexture(p.getType()), p.getX() - (player->getX() + deltax), p.getY() - (player->getY() + deltay), player->getStep(), player->getStep());
 			}
 
-			
+			lock2.unlock();
+
+			rend.renderPart(0, 0, 0, 0);
+			rend.displayText(main_font, itow(highscore), RGBA(0, 0, 255, 0), 0.01, 0.01, 0, 0);
+
 			rend.renderScene();
 		}
 		catch (Error e){
@@ -90,7 +94,7 @@ class RINS : public Game, public Map{
 
 
 
-			if(dir != 0) lastdir = dir;
+			if(dir != 0 && dir < 16) lastdir = dir;
 
 
 			lastxpos = player->getX();
@@ -98,29 +102,62 @@ class RINS : public Game, public Map{
 
 			if (getTicks() - last_tick > 33 || tmpdir2!= dir){
 				player->move(dir, false);
-				if(getKey(1) == SDLK_SPACE) player->shootWeapon();
+				if(dir & 16)player->shootWeapon();
 				last_tick = getTicks();
 
 			}
 
 			//monsters.push_back(unique_ptr<Being>(player));
-			if(getTicks() - projectile_tick > 33) {
-				for(auto &m : monsters) {
-					double mx = m->getX()*m->getStep();
-					double my = m->getY()*m->getStep();
-					for(auto &p : Being::projectiles) {
-						double px = p->getX()*step;
-						double py = p->getY()*step;
-						if((px - mx == step || mx - px == step || px - mx == 0) && (py - my == step || my - py == step || py - my == 0)) {
-							m->takeProjectile(p);
-						}
-						else {
-							p->move();
+			if(getTicks() - projectile_tick > 1) {
+				A:
+				lock2.lock();
+				for (auto p = begin(Being::projectiles); p != end(Being::projectiles); ++p){
+					int px = p->getX() / player->getStep();
+					int py = p->getY() / player->getStep();
+
+					int pblockx = ((p->getX() + player->getStep()) / player->getStep()) / ((1.0 / xsize) / player->getStep());
+					int pblocky = ((p->getY() + player->getStep()) / player->getStep()) / ((1.0 / ysize) / player->getStep());
+
+					if (p->modFlyTime()){
+						p->modFlyTime() -= 1;
+						if(!getMapIndex()[pblockx][pblocky])p->move(player->getStep());
+					}
+
+					if (p->modDetonationTime()){
+						p->modDetonationTime() -= 1;
+					}
+					else{
+						p = Being::projectiles.erase(p);
+						continue;
+					}
+					for (auto m = begin(monsters); m != end(monsters); ++m){
+
+						int mx = (*m)->getX() / (*m)->getStep() + 2;
+						int my = (*m)->getY() / (*m)->getStep() + 2;
+
+						if (abs(mx - px) < 2 && abs(my - py) < 2){
+							(*m)->takeProjectile(*p);
+							p = Being::projectiles.erase(p);
+							if (p == end(Being::projectiles))break;
+							if (!(*m)->getHealth()){
+								
+								highscore++;
+								lock1.lock();
+								m = monsters.erase(m);
+								
+								lock2.unlock();
+								lock1.unlock();
+								goto A;
+								break;
+								//m = monsters.erase(m);
+								//break;
+							}
+
 						}
 					}
 				}
-
-
+				projectile_tick = getTicks();
+				lock2.unlock();
 			}
 			//monsters.pop_back();
 
@@ -157,7 +194,7 @@ class RINS : public Game, public Map{
 				lock1.unlock();
 			}
 
-			 int a = pattern() % 420;
+			 int a = pattern() % 42;
 			 int b = pattern() % Being::monsters.size();
 
 			 int x, y;
@@ -197,6 +234,8 @@ class RINS : public Game, public Map{
 		if (getKey(0) == 'w')dir &= ~(1 << 2);
 		if (getKey(1) == 's')dir |= 1 << 3;
 		if (getKey(0) == 's')dir &= ~(1 << 3);
+		if (getKey(1) == ' ')dir |= 1 << 4;
+		if (getKey(0) == ' ')dir &= ~(1 << 4);
 	}
 	Uint16* itow(unsigned int h){
 		int a = log10(h) + 1;
@@ -239,6 +278,8 @@ public:
 		wall[2]  = rend.loadTexture("Textures/brick5.png");
 
 		Projectile::addTexture(BULLET, rend.loadTexture("Textures/bullet.png"));
+
+		main_font = rend.loadFont("Fonts/ARIALUNI.TTF", 40);
 
 		Being::monsters[ZOMBIE] = &createInstance<Zombie>;
 

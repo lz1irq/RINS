@@ -1,4 +1,6 @@
 #include <map>
+#include <iostream>
+using namespace std;
 using namespace std;
 #ifndef _GLIBCXX_WEAPON_H
 #define _GLIBCXX_WEAPON_H
@@ -15,15 +17,16 @@ class Projectile {
 	static map<unsigned int, int> textures;
 public:
 	Projectile(unsigned int ptype, int pdamage, int pfly_t, int pdet_t, unsigned int pdir, double px, double py);
-	void move();
+	void move(double step);
 	double getX();
 	double getY();
 	unsigned int getType() const;
 	int getDamage() const;
-	int getFlyTime() const;
-	int getDetonationTime() const;
+	int& modFlyTime();
+	int& modDetonationTime();
 	static void addTexture(unsigned int i, int tid );
 	static int getTexture(int i);
+	virtual ~Projectile(){}
 };
 
 class WeaponResources {
@@ -49,30 +52,30 @@ public:
 	int getAmmoPerMag() const;
 	bool isPickedUp() const;
 	void pickUp();
-	virtual Projectile* shoot(int dir, double px, double py)=0;
+	virtual Projectile& shoot(int dir, double px, double py)=0;
 };
 
 class AssaultRifle: public WeaponBase, public WeaponResources {
 public:
 	AssaultRifle(int wskill);
-	Projectile* shoot(int dir, double px, double py);
+	Projectile& shoot(int dir, double px, double py);
 };
 
 class Pyrokinesis : public WeaponBase, public WeaponResources {
 public:
 	Pyrokinesis(int wskill);
-	Projectile* shoot(int dir, double px, double py);
+	Projectile& shoot(int dir, double px, double py);
 };
 
 class Molotov : public WeaponBase, public WeaponResources {
 public:
 	Molotov(int wskill);
-	Projectile* shoot(int dir, double px, double py);
+	Projectile& shoot(int dir, double px, double py);
 };
 
 class Bite : public WeaponBase, public WeaponResources {
 public:
 	Bite(int wskill);
-	Projectile* shoot(int dir, double px, double py);
+	Projectile& shoot(int dir, double px, double py);
 };
 #endif

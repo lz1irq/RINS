@@ -6,6 +6,7 @@
 #include <ctime>
 #include <random>
 #include <array>
+#include <list>
 #include <typeinfo>
 using namespace std;
 struct Primary {
@@ -64,7 +65,7 @@ public:
 
 	int getOrientation() const;
 	double getStep() const;
-	void takeProjectile(Projectile* bullet);
+	void takeProjectile(Projectile& bullet);
 
 	void shootWeapon();
 	void nextWeapon();
@@ -72,7 +73,7 @@ public:
 
 	static array<Being*(*)(double, double), 1> monsters;
 	static vector<Being*> targets;
-	static vector<Projectile*> projectiles;
+	static list<Projectile> projectiles;
 
 	virtual ~Being();
 };

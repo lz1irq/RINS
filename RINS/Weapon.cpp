@@ -12,11 +12,11 @@ unsigned int Projectile::getType() const {
 	return type;
 }
 
-void Projectile::move() {
-	if(dir == LEFT)x-=1.0/64.0;
-	else if(dir == RIGHT)x+=1.0/64.0;
-	else if(dir == UP)y-=1.0/64.0;
-	else if(dir == DOWN)y+=1.0/64.0;
+void Projectile::move(double step) {
+	if(dir & LEFT)x-= step;
+	if (dir & RIGHT)x += step;
+	if(dir & UP)y-= step;
+	if(dir & DOWN)y+= step;
 }
 
 double Projectile::getX() {
@@ -31,11 +31,11 @@ int Projectile::getDamage() const {
 	return dmg;
 }
 
-int Projectile::getFlyTime() const {
+int& Projectile::modFlyTime(){
 	return fly_t;
 }
 
-int Projectile::getDetonationTime() const {
+int& Projectile::modDetonationTime(){
 	return det_t;
 }
 
@@ -69,30 +69,29 @@ void WeaponBase::pickUp() {
 AssaultRifle::AssaultRifle(int wskill): WeaponBase(BULLET,wskill,15,30) {
 }
 
-Projectile* AssaultRifle::shoot(int dir, double px, double py) {
-	cout << "STRELQM" << endl;
-	return new Projectile(type, dmg, 80, 100, dir, px, py);
+Projectile& AssaultRifle::shoot(int dir, double px, double py) {
+	return *new Projectile(type, dmg, 80, 100, dir, px, py);
 }
 
 Pyrokinesis::Pyrokinesis(int wskill): WeaponBase(FIRE,wskill,15,30) {
 }
 
-Projectile* Pyrokinesis::shoot(int dir, double px, double py) {
-	return new Projectile(type, dmg, 80, 100, dir, px, py);
+Projectile& Pyrokinesis::shoot(int dir, double px, double py) {
+	return *new Projectile(type, dmg, 80, 100, dir, px, py);
 }
 
 Molotov::Molotov(int wskill): WeaponBase(FIRE,wskill,15,30) {
 }
 
-Projectile* Molotov::shoot(int dir, double px, double py) {
-	return new Projectile(type, dmg, 80, 100, dir, px, py);
+Projectile& Molotov::shoot(int dir, double px, double py) {
+	return *new Projectile(type, dmg, 80, 100, dir, px, py);
 }
 
 Bite::Bite(int wskill): WeaponBase(BULLET,wskill,40,30) {
 }
 
-Projectile* Bite::shoot(int dir, double px, double py) {
-	return new Projectile(type, dmg, 1, 0, dir, px, py);
+Projectile& Bite::shoot(int dir, double px, double py) {
+	return *new Projectile(type, dmg, 1, 0, dir, px, py);
 }
 
 map<unsigned int, int> Projectile::textures;
