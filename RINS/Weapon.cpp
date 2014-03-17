@@ -49,31 +49,40 @@ void WeaponBase::pickUp() {
 	picked_up = true;
 }
 
-AssaultRifle::AssaultRifle(int wskill): WeaponBase(BULLET,wskill,15,30), WeaponResources<AssaultRifle>() {
+AssaultRifle::AssaultRifle(int wskill): WeaponBase(BULLET,wskill,15,30) {
 }
 
 Projectile AssaultRifle::shoot(int dir) {
 	return Projectile(type, dmg, 80, 100, dir);
 }
 
-Pyrokinesis::Pyrokinesis(int wskill): WeaponBase(FIRE,wskill,15,30), WeaponResources<Pyrokinesis>() {
+Pyrokinesis::Pyrokinesis(int wskill): WeaponBase(FIRE,wskill,15,30) {
 }
 
 Projectile Pyrokinesis::shoot(int dir) {
 	return Projectile(type, dmg, 80, 100, dir);
 }
 
-Molotov::Molotov(int wskill): WeaponBase(FIRE,wskill,15,30), WeaponResources<Molotov>() {
+Molotov::Molotov(int wskill): WeaponBase(FIRE,wskill,15,30) {
 }
 
 Projectile Molotov::shoot(int dir) {
 	return Projectile(type, dmg, 80, 100, dir);
 }
 
-Bite::Bite(int wskill): WeaponBase(BULLET,wskill,15,30), WeaponResources<Bite>() {
+Bite::Bite(int wskill): WeaponBase(BULLET,wskill,15,30) {
 }
 
 Projectile Bite::shoot(int dir) {
 	return Projectile(type, dmg, 1, 0, dir);
 }
 
+map<const char*, int> WeaponResources::textures;
+
+int WeaponResources::getTextureID(const char* ti) {
+	return textures[ti];
+}
+
+void WeaponResources::addTextureID(int newID, const char* ti) {
+	textures[ti] = newID;
+}

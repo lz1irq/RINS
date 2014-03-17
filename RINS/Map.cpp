@@ -1,10 +1,13 @@
 #include "Map.h"
 
+int xsize, ysize; //SHOULD BE FIXED
 Map::Map() : roomX(1), roomY(1){
 	room_exit_x = 0;
 	room_exit_y = roomX/2*ysize;
 	room_entry_x = 0;
 	room_entry_y = roomX / 2 * ysize;
+	::xsize = xsize;
+	::ysize = ysize;
 }
 
 double Map::alterBeingPosX(double absoluteX){

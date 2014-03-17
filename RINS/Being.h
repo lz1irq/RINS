@@ -5,7 +5,7 @@
 #include <memory>
 #include <ctime>
 #include <random>
-#include <map>
+#include <array>
 #include <typeinfo>
 using namespace std;
 struct Primary {
@@ -32,15 +32,11 @@ struct Derived {
 class BeingResources {
 	static map<const char*, int> textures;
 public:
-	static int getTextureID(const char* ti) {
-		return textures[ti];
-	}
-	static void addTextureID(int newID, const char* ti) {
-		textures[ti] = newID;
-	}
+	static int getTextureID(const char* ti);
+	static void addTextureID(int newID, const char* ti);
 };
 
-
+enum Monsters{ ZOMBIE = 0 };
 
 class Being{
 protected:
@@ -58,7 +54,7 @@ protected:
 public:
 	Being(double x, double y);
 	int getHealth();
-	virtual void action() = 0;
+	virtual void action(const vector<vector<char>>& map_index) = 0;
 	void addWeapon(WeaponBase* wpn);
 	void move(int dir, bool reverse);
 	double getX() const;
@@ -71,8 +67,12 @@ public:
 	void shootWeapon(unsigned int dir);
 	void nextWeapon();
 	void prevWeapon();
-	~Being();
+	static array<Being*(*)(double, double), 1> monsters;
+	virtual ~Being();
+	static vector<Being*> targets;
 };
+
+template<typename T> Being * createInstance(double x, double y) { return new T(x, y); }
 
 class Marine: public Being, BeingResources {
 private:
@@ -81,7 +81,7 @@ private:
 	int energy_weapons, energy_weapons_bonus;
 public:
 	Marine(double sx, double sy);
-	void action();
+	void action(const vector<vector<char>>& map_index);
 	int getTextureID();
 };
 
@@ -92,7 +92,7 @@ private:
 	int fire, fire_bonus;
 public:
 	Pyro(double sx, double sy);
-	void action();
+	void action(const vector<vector<char>>& map_index);
 	int getTextureID();
 };
 
@@ -103,7 +103,7 @@ private:
 	int fire, fire_bonus;
 public:
 	Psychokinetic(double sx, double sy);
-	void action();
+	void action(const vector<vector<char>>& map_index);
 	int getTextureID();
 };
 
@@ -113,7 +113,7 @@ private:
 	Being* target;
 public:
 	Zombie(double sx, double sy);
-	void action();
+	void action(const vector<vector<char>>& map_index);
 	int getTextureID();
 };
 

@@ -11,13 +11,14 @@ class RINS : public Game, public Map{
 	int wall[3];
 
 	int dir, lastdir = 1, tmpdir2;
-	int lastxpos, lastypos;
+	double lastxpos, lastypos;
 	Coord c;
 	Being* player;
 
+	vector<unique_ptr<Being>> monsters;
+	mt19937 pattern;
 
-
-	int last_tick = 0;
+	int last_tick = 0, timer2 = 0;
 
 	mutex lock1;
 
@@ -25,11 +26,13 @@ class RINS : public Game, public Map{
 		try{
 			int maptype = getMapType();
 			rend.renderPart(0,0,0,0);
-			rend.applyTexture(bg[maptype], -(player->getX() - alterBeingPosX(player->getX())), -(player->getY() - alterBeingPosY(player->getY())), (double)(getMapIndex().size() / 16.0), (double)(getMapIndex()[0].size() / 16.0));
+			double deltax = -alterBeingPosX(player->getX());
+			double deltay = -alterBeingPosY(player->getY());
+			rend.applyTexture(bg[maptype], -(player->getX() + deltax), -(player->getY() + deltay), (double)(getMapIndex().size() / 16.0), (double)(getMapIndex()[0].size() / 16.0));
 			lock1.lock();
 			for (int i = 0; i < getMapObjects().size(); ++i){
-				double x = getMapObjects().at(i).x - (player->getX() - alterBeingPosX(player->getX()));
-				double y = getMapObjects().at(i).y - (player->getY() - alterBeingPosY(player->getY()));
+				double x = getMapObjects().at(i).x - (player->getX() + deltax);
+				double y = getMapObjects().at(i).y - (player->getY() + deltay);
 				switch (getMapObjects().at(i).type){
 				case 1:
 					 rend.applyTexture(wall[maptype], x - 1.0/(2*xsize), y, 1.0/xsize, 1.0/ysize);
@@ -55,8 +58,14 @@ class RINS : public Game, public Map{
    lock1.unlock();
 
 			rend.renderPart(2,2,(int)log2(lastdir)>>1,1-((int)log2(lastdir)%2));
-			rend.applyTexture(BeingResources::getTextureID(typeid(player).name()), alterBeingPosX(player->getX()), alterBeingPosY(player->getY()), 1/xsize, 1/ysize);
-			
+			rend.applyTexture(BeingResources::getTextureID(typeid(player).name()), alterBeingPosX(player->getX()), alterBeingPosY(player->getY()), 1.0/xsize, 1.0/ysize);
+
+
+			for (auto &i : monsters) {
+				rend.renderPart(2, 2, (int)log2(i->getOrientation()) >> 1, 1 - ((int)log2(i->getOrientation()) % 2));
+				rend.applyTexture(BeingResources::getTextureID(typeid(Zombie).name()), i->getX() -(player->getX() + deltax), i->getY() -(player->getY() + deltay), 1.0 / xsize, 1.0 / ysize);
+			}
+
 			
 			rend.renderScene();
 		}
@@ -71,50 +80,75 @@ class RINS : public Game, public Map{
 			tmpdir2 = dir;
 			getdir();
 
-			if(updateInternalMapState()) dir = 0;
-			int pos_tile_x = ((player->getX()+player->getStep())/player->getStep())/((1.0/xsize)/player->getStep());
-			int pos_tile_y = ((player->getY()+player->getStep()*3)/player->getStep())/((1.0/ysize)/player->getStep());
 
-			cout << pos_tile_x << " " << pos_tile_y << endl;
 
 			if(dir != 0) lastdir = dir;
+
 
 			lastxpos = player->getX();
 			lastypos = player->getY();
 
-
 			if (getTicks() - last_tick > 33 || tmpdir2!= dir){
 				player->move(dir, false);
 				last_tick = getTicks();
+
 			}
 
-			   bool mustlock = false;
-				if (!(pos_tile_x < 0 || pos_tile_x >= getMapIndex().size())){
-					if (!(pos_tile_y < 0 || pos_tile_y >= getMapIndex()[pos_tile_x].size())){
-						if (getMapIndex()[pos_tile_x][pos_tile_y]){
-							player->move(dir, true);
-						}
-					}
-					else { 
-						player->setX(lastxpos);
-						mustlock = true; 
+			if (updateInternalMapState()) dir = 0;
+			int pos_tile_x = ((player->getX() + player->getStep()) / player->getStep()) / ((1.0 / xsize) / player->getStep());
+			int pos_tile_y = ((player->getY() + player->getStep() * 3) / player->getStep()) / ((1.0 / ysize) / player->getStep());
+
+			bool mustlock = false;
+			if (!(pos_tile_x < 0 || pos_tile_x >= getMapIndex().size())){
+				if (!(pos_tile_y < 0 || pos_tile_y >= getMapIndex()[pos_tile_x].size())){
+					if (getMapIndex()[pos_tile_x][pos_tile_y]){
+						player->move(dir, true);
 					}
 				}
-				else {
-					player->setY(lastypos);
-					mustlock = true;
+				else { 
+					player->setX(lastxpos);
+					mustlock = true; 
 				}
-				
-				 if (mustlock){
-					lock1.lock();
-					if (tryRoomChange(pos_tile_x, pos_tile_y)){
-						c = getMapEntry();
-						player->setX(c.x);
-						player->setY(c.y);
-					}
-					mustlock = false;
-					lock1.unlock();
+			}
+			else {
+				player->setY(lastypos);
+				mustlock = true;
+			}
+			
+			 if (mustlock){
+				lock1.lock();
+				if (tryRoomChange(pos_tile_x, pos_tile_y)){
+					c = getMapEntry();
+					player->setX(c.x);
+					player->setY(c.y);
+					monsters.clear();
 				}
+				mustlock = false;
+				lock1.unlock();
+			}
+
+			 int a = pattern() % 420;
+			 int b = pattern() % Being::monsters.size();
+
+			 int x, y;
+
+			int xsz = getMapIndex().size();
+			int ysz = getMapIndex()[0].size();
+			x = pattern() % xsz;
+			y = pattern() % ysz;
+
+			if (!a && !getMapIndex()[x][y]){
+				monsters.push_back(unique_ptr<Being>(Being::monsters[b]((double)x / xsize, (double)y / ysize)));
+				 //cout << monsters.size() << endl;
+			 }
+
+
+			if (getTicks() - timer2 > 66){
+				for (auto &i : monsters) {
+					i->action(getMapIndex());
+				}
+				timer2 = getTicks();
+			}
 
 			SDL_Delay(10);
 		}
@@ -153,7 +187,8 @@ public:
 
 		int pclass;
 		cout << "Chose class: " << endl << "0. Marine " << endl << "1. Pyro " << endl << "2. Psychokinetic" << endl;
-		cin >> pclass;
+		//cin >> pclass;
+		pclass = 0;
 		pclass = pclass%3;
 		if(pclass == 0) player = new Marine(c.x,c.y);
 		else if(pclass == 1) player = new Pyro(c.x, c.y);
@@ -162,6 +197,7 @@ public:
 		BeingResources::addTextureID(rend.loadTexture("Textures/devil.png"), typeid(Marine).name());
 		BeingResources::addTextureID(rend.loadTexture("Textures/devil.png"), typeid(Pyro).name());
 		BeingResources::addTextureID(rend.loadTexture("Textures/devil.png"), typeid(Psychokinetic).name());
+		BeingResources::addTextureID(rend.loadTexture("Textures/gangsta.png"), typeid(Zombie).name());
 
 		bg[0] = rend.loadTexture("Textures/floor1.jpg");
 		bg[1] = rend.loadTexture("Textures/cement.jpg");
@@ -170,6 +206,13 @@ public:
 		wall[0]  = rend.loadTexture("Textures/brick3.png");
 		wall[1]  = rend.loadTexture("Textures/brick4.png");
 		wall[2]  = rend.loadTexture("Textures/brick5.png");
+
+		Being::monsters[ZOMBIE] = &createInstance<Zombie>;
+
+		Being::targets.push_back(player);
+
+		//::xsize = xsize;
+		//::ysize = ysize;
 
 		loop();
 	}

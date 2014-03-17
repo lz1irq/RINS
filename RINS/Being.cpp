@@ -1,7 +1,7 @@
 #include "Being.h"
 //0.015625 = 1/64 (one being = one screen square;
 
-std::vector<Being*> targets;
+vector<Being*> Being::targets;
 
 Primary::Primary():	
 	strength(5), strength_bonus(0),
@@ -95,6 +95,8 @@ void Being::takeProjectile(Projectile bullet) {
 
 mt19937 Being::rnd;
 
+array<Being*(*)(double, double), 1> Being::monsters = { { NULL } };
+
 Being::~Being() {
 	for(std::vector<std::unique_ptr<WeaponBase>>::iterator it = weapons.begin(); it != weapons.end(); ++it) {
     it->reset();
@@ -111,7 +113,7 @@ Marine::Marine(double sx, double yx):
 	weapons.push_back(std::unique_ptr<WeaponBase>(new AssaultRifle(small_guns)));
 }
 
-void Marine::action() {
+void Marine::action(const vector<vector<char>>& map_index) {
 	return;
 }
 
@@ -125,7 +127,7 @@ Pyro::Pyro(double sx, double yx):
 	weapons.push_back(std::unique_ptr<Molotov>(new Molotov(explosives)));
 }
 
-void Pyro::action() {
+void Pyro::action(const vector<vector<char>>& map_index) {
 	return;
 }
 
@@ -139,7 +141,7 @@ Psychokinetic::Psychokinetic(double sx, double yx):
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Pyrokinesis(fire)));
 }
 
-void Psychokinetic::action() {
+void Psychokinetic::action(const vector<vector<char>>& map_index) {
 	return;
 }
 
@@ -149,28 +151,38 @@ Zombie::Zombie(double sx, double yx):
 
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Bite(biting)));
 }
-
-void Zombie::action() {
+#include <iostream>
+using namespace std;
+void Zombie::action(const vector<vector<char>>& map_index) {
 	if(target == nullptr) target = targets.at(rnd()%targets.size());
-	int tx = target->getX();
-	int ty = target->getY();
+	double tx = target->getX();
+	double ty = target->getY();
+	extern int ysize;
+	extern int xsize;
+
+	int myx = ((x + move_step) / move_step) / ((1.0 / xsize) / move_step);
+	int myy = ((y + move_step * 3) / move_step) / ((1.0 / ysize) / move_step);
 
 	bool there=true;
 
-	if(x < tx) {
-		move(LEFT, false);
+	if (x < tx) {
+		if (!map_index[myx + 1][myy])move(RIGHT, false);
+		if (map_index[myx + 1][myy])move(UP, true);
 		there = false;
 	}
 	if(y < ty) {
-		move(DOWN, false);
+		if (!map_index[myx][myy + 1])move(DOWN, false);
+		if (map_index[myx][myy + 1])move(RIGHT, true);
 		there = false;
 	}
 	if(x > tx) {
-		move(RIGHT, false);
+		if (!map_index[myx - 1][myy])move(LEFT, false);
+		if (map_index[myx - 1][myy])move(DOWN, true);
 		there = false;
 	}
 	if(y > ty) {
-		move(UP, false);
+		if (!map_index[myx][myy - 1])move(UP, false);
+		if (map_index[myx][myy - 1])move(LEFT, true);
 		there = false;
 	}
 
@@ -179,4 +191,12 @@ void Zombie::action() {
 		shootWeapon(LEFT);
 	}
 	
+}
+
+int BeingResources::getTextureID(const char* ti) {
+	return textures[ti];
+}
+
+void BeingResources::addTextureID(int newID, const char* ti) {
+	textures[ti] = newID;
 }

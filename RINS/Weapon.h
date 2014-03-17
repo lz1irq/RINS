@@ -1,3 +1,7 @@
+#include <map>
+using namespace std;
+#ifndef _GLIBCXX_WEAPON_H
+#define _GLIBCXX_WEAPON_H
 enum {BULLET, FIRE, PSYCHO, ENERGY};
 
 class Projectile {
@@ -14,13 +18,11 @@ public:
 	int getDetonationTime() const;
 };
 
-template<class T> class WeaponResources {
-	static int texture_id;
+class WeaponResources {
+	static map<const char*, int> textures;
 public:
-	static void setTextureID();
-	static void getTextureID();
-	static char* getName();
-	static void setName(char* wname);
+	static int getTextureID(const char* ti);
+	static void addTextureID(int newID, const char* ti);
 };
 
 class WeaponBase {
@@ -42,26 +44,27 @@ public:
 	virtual Projectile shoot(int dir)=0;
 };
 
-class AssaultRifle: public WeaponBase, WeaponResources<AssaultRifle> {
+class AssaultRifle: public WeaponBase, public WeaponResources {
 public:
 	AssaultRifle(int wskill);
 	Projectile shoot(int dir);
 };
 
-class Pyrokinesis: public WeaponBase, WeaponResources<Pyrokinesis> {
+class Pyrokinesis : public WeaponBase, public WeaponResources {
 public:
 	Pyrokinesis(int wskill);
 	Projectile shoot(int dir);
 };
 
-class Molotov: public WeaponBase, WeaponResources<Molotov> {
+class Molotov : public WeaponBase, public WeaponResources {
 public:
 	Molotov(int wskill);
 	Projectile shoot(int dir);
 };
 
-class Bite: public WeaponBase, WeaponResources<Bite> {
+class Bite : public WeaponBase, public WeaponResources {
 public:
 	Bite(int wskill);
 	Projectile shoot(int dir);
 };
+#endif
