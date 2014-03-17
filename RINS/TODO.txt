@@ -1,3 +1,7 @@
+!!!Има някакви наченки на колизия и чертане на куршуми, ама дотам. 
+
+
+
 $# Use alpha blending for some animations
 $# Keyboard control ---OK
 
