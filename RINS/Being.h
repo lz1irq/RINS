@@ -47,7 +47,6 @@ protected:
 	Primary prim_stats;
 	Derived der_stats;
 	int curr_weapon;
-	enum {LEFT=1,RIGHT=2,UP=4,DOWN=8};
 	std::vector<std::unique_ptr<WeaponBase>> weapons;
 	static mt19937 rnd;
 
@@ -57,19 +56,25 @@ public:
 	virtual void action(const vector<vector<char>>& map_index) = 0;
 	void addWeapon(WeaponBase* wpn);
 	void move(int dir, bool reverse);
+
 	double getX() const;
 	double getY() const;
 	void setX(double newX);
 	void setY(double newY);
+
 	int getOrientation() const;
 	double getStep() const;
-	void takeProjectile(Projectile bullet);
-	void shootWeapon(unsigned int dir);
+	void takeProjectile(Projectile* bullet);
+
+	void shootWeapon();
 	void nextWeapon();
 	void prevWeapon();
+
 	static array<Being*(*)(double, double), 1> monsters;
-	virtual ~Being();
 	static vector<Being*> targets;
+	static vector<Projectile*> projectiles;
+
+	virtual ~Being();
 };
 
 template<typename T> Being * createInstance(double x, double y) { return new T(x, y); }

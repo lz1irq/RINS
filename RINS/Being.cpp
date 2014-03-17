@@ -1,7 +1,11 @@
 #include "Being.h"
 //0.015625 = 1/64 (one being = one screen square;
 
+using namespace std;
+#include <iostream>
+
 vector<Being*> Being::targets;
+vector<Projectile*> Being::projectiles;
 
 Primary::Primary():	
 	strength(5), strength_bonus(0),
@@ -15,8 +19,8 @@ Derived::Derived(Primary prim, int level):
 	crit_bonus(0), dmg_res_bonus(0),
 	melee_dmg_bonus(0), fire_res(0), fire_res_bonus(0) {
 	crit_chance = prim.luck * 0.01;
-	health = 90 + prim.endurance<<10 + 10*level;
-	melee_dmg = prim.strength >> 2;
+	health = 90 + prim.endurance*2 + 10*level;
+	melee_dmg = prim.strength/2;
 	dmg_res = prim.agility*1.5;
 }
 
@@ -67,8 +71,8 @@ double Being::getStep() const{
 	return move_step;
 }
 
-void Being::shootWeapon(unsigned int dir) {
-	weapons.at(curr_weapon)->shoot(dir);
+void Being::shootWeapon() {
+	projectiles.push_back((weapons.at(curr_weapon)->shoot(orientation, x+move_step*2, y+move_step*2)));
 }
 
 void Being::nextWeapon() {
@@ -81,16 +85,17 @@ void Being::prevWeapon() {
 	else curr_weapon = weapons.size();
 }
 
-void Being::takeProjectile(Projectile bullet) {
+void Being::takeProjectile(Projectile* bullet) {
+	cout << "taking fire " << der_stats.health << endl;
 	int def_skill = 0;
-	unsigned int dmg_type = bullet.getType();
+	unsigned int dmg_type = bullet->getType();
 
 	if(dmg_type == BULLET || dmg_type == ENERGY) def_skill = der_stats.dmg_res+ der_stats.dmg_res_bonus;
 	else if(dmg_type == PSYCHO) def_skill = 0;
 	else if(dmg_type == FIRE) def_skill = der_stats.fire_res + der_stats.fire_res_bonus;
 
-	if((bullet.getDamage() - def_skill) > der_stats.health) der_stats.health = 0;
-	else der_stats.health -= bullet.getDamage() - def_skill;
+	if((bullet->getDamage() - def_skill) > der_stats.health) der_stats.health = 0;
+	else der_stats.health -= (bullet->getDamage() - def_skill);
 }
 
 mt19937 Being::rnd;
@@ -98,9 +103,8 @@ mt19937 Being::rnd;
 array<Being*(*)(double, double), 1> Being::monsters = { { NULL } };
 
 Being::~Being() {
-	for(std::vector<std::unique_ptr<WeaponBase>>::iterator it = weapons.begin(); it != weapons.end(); ++it) {
-    it->reset();
- }
+	weapons.clear();
+	projectiles.clear();
 }
 
 Marine::Marine(double sx, double yx): 
@@ -114,7 +118,7 @@ Marine::Marine(double sx, double yx):
 }
 
 void Marine::action(const vector<vector<char>>& map_index) {
-	return;
+	if(der_stats.health == 0) cout << "MARINE DEAD" << endl;
 }
 
 Pyro::Pyro(double sx, double yx): 
@@ -154,6 +158,11 @@ Zombie::Zombie(double sx, double yx):
 #include <iostream>
 using namespace std;
 void Zombie::action(const vector<vector<char>>& map_index) {
+
+	if(der_stats.health == 0) {
+		cout << "ZOMBIE DEAD" << endl;
+	}
+
 	if(target == nullptr) target = targets.at(rnd()%targets.size());
 	double tx = target->getX();
 	double ty = target->getY();
@@ -188,7 +197,8 @@ void Zombie::action(const vector<vector<char>>& map_index) {
 
 	if(there) {
 		move(RIGHT, false);
-		shootWeapon(LEFT);
+		orientation = LEFT;
+		shootWeapon();
 	}
 	
 }

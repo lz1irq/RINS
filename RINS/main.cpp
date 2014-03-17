@@ -15,10 +15,12 @@ class RINS : public Game, public Map{
 	Coord c;
 	Being* player;
 
+	double step = 1.0/64.0;
+
 	vector<unique_ptr<Being>> monsters;
 	mt19937 pattern;
 
-	int last_tick = 0, timer2 = 0;
+	int last_tick = 0, timer2 = 0, projectile_tick = 0;
 
 	mutex lock1;
 
@@ -62,8 +64,14 @@ class RINS : public Game, public Map{
 
 
 			for (auto &i : monsters) {
-				rend.renderPart(2, 2, (int)log2(i->getOrientation()) >> 1, 1 - ((int)log2(i->getOrientation()) % 2));
-				rend.applyTexture(BeingResources::getTextureID(typeid(Zombie).name()), i->getX() -(player->getX() + deltax), i->getY() -(player->getY() + deltay), 1.0 / xsize, 1.0 / ysize);
+				if(i->getHealth()) {
+					rend.renderPart(2, 2, (int)log2(i->getOrientation()) >> 1, 1 - ((int)log2(i->getOrientation()) % 2));
+					rend.applyTexture(BeingResources::getTextureID(typeid(Zombie).name()), i->getX() -(player->getX() + deltax), i->getY() -(player->getY() + deltay), 1.0 / xsize, 1.0 / ysize);
+				}
+			}
+
+			for(auto &p : Being::projectiles) {
+				rend.applyTexture(Projectile::getTexture(p->getType()),  p->getX() -(player->getX() + deltax), p->getY() -(player->getY() + deltay), 1.0 / xsize, 1.0 / ysize);
 			}
 
 			
@@ -90,9 +98,31 @@ class RINS : public Game, public Map{
 
 			if (getTicks() - last_tick > 33 || tmpdir2!= dir){
 				player->move(dir, false);
+				if(getKey(1) == SDLK_LCTRL) player->shootWeapon();
 				last_tick = getTicks();
 
 			}
+
+			//monsters.push_back(unique_ptr<Being>(player));
+			if(getTicks() - projectile_tick > 33) {
+				for(auto &m : monsters) {
+					double mx = m->getX()*m->getStep();
+					double my = m->getY()*m->getStep();
+					for(auto &p : Being::projectiles) {
+						double px = p->getX()*step;
+						double py = p->getY()*step;
+						if((px - mx == step || mx - px == step || px - mx == 0) && (py - my == step || my - py == step || py - my == 0)) {
+							m->takeProjectile(p);
+						}
+						else {
+							p->move();
+						}
+					}
+				}
+
+
+			}
+			//monsters.pop_back();
 
 			if (updateInternalMapState()) dir = 0;
 			int pos_tile_x = ((player->getX() + player->getStep()) / player->getStep()) / ((1.0 / xsize) / player->getStep());
@@ -145,7 +175,8 @@ class RINS : public Game, public Map{
 
 			if (getTicks() - timer2 > 66){
 				for (auto &i : monsters) {
-					i->action(getMapIndex());
+					if(!i->getHealth()) continue;
+					else i->action(getMapIndex());
 				}
 				timer2 = getTicks();
 			}
@@ -206,6 +237,8 @@ public:
 		wall[0]  = rend.loadTexture("Textures/brick3.png");
 		wall[1]  = rend.loadTexture("Textures/brick4.png");
 		wall[2]  = rend.loadTexture("Textures/brick5.png");
+
+		Projectile::addTexture(BULLET, rend.loadTexture("Textures/bullet.png"));
 
 		Being::monsters[ZOMBIE] = &createInstance<Zombie>;
 
