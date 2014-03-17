@@ -1,5 +1,6 @@
 #include "Weapon.h"
-
+using namespace std;
+#include <iostream>
 Projectile::Projectile(unsigned int ptype, int pdmg, int pfly_t, int pdet_t, unsigned int pdir, double px, double py): 
 type(ptype), dmg(pdmg),
 fly_t(pfly_t), det_t(pdet_t),
@@ -69,6 +70,7 @@ AssaultRifle::AssaultRifle(int wskill): WeaponBase(BULLET,wskill,15,30) {
 }
 
 Projectile* AssaultRifle::shoot(int dir, double px, double py) {
+	cout << "STRELQM" << endl;
 	return new Projectile(type, dmg, 80, 100, dir, px, py);
 }
 

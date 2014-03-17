@@ -98,7 +98,7 @@ class RINS : public Game, public Map{
 
 			if (getTicks() - last_tick > 33 || tmpdir2!= dir){
 				player->move(dir, false);
-				if(getKey(1) == SDLK_LCTRL) player->shootWeapon();
+				if(getKey(1) == SDLK_SPACE) player->shootWeapon();
 				last_tick = getTicks();
 
 			}
