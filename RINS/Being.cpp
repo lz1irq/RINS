@@ -1,5 +1,5 @@
 #include "Being.h"
-//0.015625 = 1/64 (one being = one screen square;
+//0.015625 = 1/64 (one being = one screen square; //what? one screen has 16 squares; one step is 1/4 square
 
 using namespace std;
 #include <iostream>
@@ -26,7 +26,7 @@ Derived::Derived(Primary prim, int level):
 
 Being::Being(double x, double y): 
 	x(x), y(y),
-	orientation(UP), move_step(1.0/64), 
+	orientation(UP), move_step(1.0/(4*numtiles)), 
 	level(1), prim_stats(Primary()), 
 	der_stats(prim_stats, level), curr_weapon(0) {
 		rnd.seed(time(0));
@@ -35,9 +35,8 @@ Being::Being(double x, double y):
 map<const char*, int> BeingResources::textures;
 
 void Being::move(int dir, bool reverse) {
-	int newdir = dir << sizeof(int)*8-4;
-	newdir = newdir >> sizeof(int)*8-4;
-	if(newdir)orientation = dir;
+	int newdir = dir & 15;
+	if(newdir)orientation = newdir;
 	double move = reverse ? -move_step : move_step;
 	if (dir & LEFT) x-= move;
 	if (dir & RIGHT) x += move;
@@ -99,9 +98,23 @@ void Being::takeProjectile(Projectile& bullet) {
 	else der_stats.health -= (bullet.getDamage() - def_skill);
 }
 
+int Being::getTileX(int xsize){
+	return ((x + move_step) / move_step) / ((1.0 / xsize) / move_step);
+}
+
+int Being::getTileY(int ysize){
+	return ((y + move_step * 3) / move_step) / ((1.0 / ysize) / move_step);
+}
+
+void Being::setNumTiles(int num){
+	numtiles = num;
+}
+
 mt19937 Being::rnd;
 
-array<Being*(*)(double, double), 1> Being::monsters = { { NULL } };
+int Being::numtiles;
+
+array<Being*(*)(double, double), MAXSIZE> Being::monsters;
 
 Being::~Being() {
 	weapons.clear();
@@ -184,8 +197,8 @@ void Zombie::action(const vector<vector<char>>& map_index) {
 	extern int ysize;
 	extern int xsize;
 
-	int myx = ((x + move_step) / move_step) / ((1.0 / xsize) / move_step);
-	int myy = ((y + move_step * 3) / move_step) / ((1.0 / ysize) / move_step);
+	int myx = getTileX(numtiles);
+	int myy = getTileY(numtiles);
 
 	bool there=true;
 

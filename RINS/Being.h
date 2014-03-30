@@ -37,7 +37,7 @@ public:
 	static void addTextureID(int newID, const char* ti);
 };
 
-enum Monsters{ ZOMBIE = 0 };
+enum Monsters{ ZOMBIE = 0, MAXSIZE};
 
 class Being{
 protected:
@@ -50,6 +50,7 @@ protected:
 	int curr_weapon;
 	std::vector<std::unique_ptr<WeaponBase>> weapons;
 	static mt19937 rnd;
+	static int numtiles;
 
 public:
 	Being(double x, double y);
@@ -62,6 +63,8 @@ public:
 	double getY() const;
 	void setX(double newX);
 	void setY(double newY);
+	int getTileX(int xsize);
+	int getTileY( int ysize);
 
 	int getOrientation() const;
 	double getStep() const;
@@ -71,7 +74,9 @@ public:
 	void nextWeapon();
 	void prevWeapon();
 
-	static array<Being*(*)(double, double), 1> monsters;
+	static void setNumTiles(int num);
+
+	static array<Being*(*)(double, double), MAXSIZE> monsters;
 	static vector<Being*> targets;
 	static list<Projectile> projectiles;
 
@@ -87,7 +92,7 @@ private:
 	int energy_weapons, energy_weapons_bonus;
 public:
 	Marine(double sx, double sy);
-	void action(const vector<vector<char>>& map_index);
+	void action(const vector<vector<char>>& map_index) final;
 	int getTextureID();
 };
 
@@ -98,7 +103,7 @@ private:
 	int fire, fire_bonus;
 public:
 	Pyro(double sx, double sy);
-	void action(const vector<vector<char>>& map_index);
+	void action(const vector<vector<char>>& map_index) final;
 	int getTextureID();
 };
 
@@ -109,7 +114,7 @@ private:
 	int fire, fire_bonus;
 public:
 	Psychokinetic(double sx, double sy);
-	void action(const vector<vector<char>>& map_index);
+	void action(const vector<vector<char>>& map_index) final;
 	int getTextureID();
 };
 
@@ -119,7 +124,7 @@ private:
 	Being* target;
 public:
 	Zombie(double sx, double sy);
-	void action(const vector<vector<char>>& map_index);
+	void action(const vector<vector<char>>& map_index) final;
 	int getTextureID();
 };
 
@@ -130,7 +135,7 @@ private:
 	int energy_weapons, energy_weapons_bonus;
 public:
 	Android(double sx, double sy);
-	void action(const vector<vector<char>>& map_index);
+	void action(const vector<vector<char>>& map_index) final;
 	int getTextureID();
 };
 
