@@ -18,7 +18,7 @@ double Map::alterBeingPosX(double absoluteX){
 }
 
 double Map::alterBeingPosY(double absoluteY){
-	absoluteY += offsety;
+	absoluteY += offsety+0.005;
 	if (absoluteY < 0.5)return absoluteY;
 	if (absoluteY > roomY - 0.5)return absoluteY - roomY + 1;
 	return 0.5;
@@ -29,7 +29,7 @@ void Map::loadMap(string seed){
 	uint32_t seeds[1];
 	Seed.generate(&seeds[0], &seeds[1]);
 	curr_seed = seeds[0];
-	curr_seed = system_clock::to_time_t(system_clock::now()); //SHOULD BE FIXED 
+	curr_seed = system_clock::to_time_t(system_clock::now()); //SHOULD BE FIXED
 	generateRoom(curr_seed, true);
 }
 
@@ -50,6 +50,10 @@ bool Map::updateInternalMapState(){
 	if (offsety > 0.01){ offsety -= 0.01; needs_time = true; }
 	if (offsetx < -0.01){ offsetx += 0.01; needs_time = true; }
 	if (offsety < -0.01){ offsety += 0.01; needs_time = true; }
+	if (!needs_time){
+		offsetx = 0;
+		offsety = 0;
+	}
 	return needs_time;
 }
 
@@ -67,10 +71,12 @@ bool Map::tryRoomChange(int x, int y){
 	if (exit){
 		if (isexit){
 			generateRoom(++curr_seed, 1);
+			cout << curr_seed << endl;
 			last_entry = false;
 		}
 		if (!isexit){
 			generateRoom(--curr_seed, 0);
+			cout << curr_seed << endl;
 			last_entry = true;
 		}
 	}
@@ -298,42 +304,41 @@ void Map::generateRoom(uint32_t seed_, bool exited){
 
 			if (room[x][y]){
 
-
 				bool hasleft = x == 0 ? false : room[x - 1][y];
 				bool hasright = x == room.size() - 1 ? false : room[x + 1][y];
 				bool hasup = y == 0 ? false : room[x][y - 1];
-				bool hasdown = y == room[x].size() ? false : room[x][y + 1];
+				bool hasdown = y == room[x].size()-1 ? false : room[x][y + 1];
 				char edges = (hasleft << 0) | (hasright << 1) | (hasup << 2) | (hasdown << 3);
 				switch (edges){
-				case 3:
+				case 1:
 					room[x][y] = 1;
-					break;
-				case 12:
-					room[x][y] = 3;
 					break;
 				case 2:
 					room[x][y] = 2;
 					break;
-				case 8:
-					room[x][y] = 2;
-					break;
-				case 1:
+				case 3:
 					room[x][y] = 1;
 					break;
 				case 4:
 					room[x][y] = 3;
 					break;
-				case 10:
+				case 5:
+					room[x][y] = 4;
+					break;
+				case 6:
+					room[x][y] = 3;
+					break;
+				case 8:
 					room[x][y] = 2;
 					break;
 				case 9:
 					room[x][y] = 1;
 					break;
-				case 6:
-					room[x][y] = 3;
+				case 10:
+					room[x][y] = 2;
 					break;
-				case 5:
-					room[x][y] = 4;
+				case 12:
+					room[x][y] = 3;
 					break;
 
 				}

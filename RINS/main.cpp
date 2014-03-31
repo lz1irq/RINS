@@ -27,42 +27,13 @@ class RINS : public Game, public Map{
 	void graphicsLoop() final {
 		try{
 
-			int maptype = getMapType();
 			rend.renderPart(0, 0, 0, 0);
-			double deltax = player->getX() - alterBeingPosX(player->getX());
-			double deltay = player->getY() - alterBeingPosY(player->getY());
-			rend.applyTexture(bg[maptype], - deltax, - deltay, (double)(getMapIndex().size() / 16.0), (double)(getMapIndex()[0].size() / 16.0));
-			for (int i = 0; i < getMapObjects().size(); ++i){
-				double x = getMapObjects().at(i).x - deltax;
-				double y = getMapObjects().at(i).y - deltay;
-				switch (getMapObjects().at(i).type){
-				case 1:
-					rend.applyTexture(wall[maptype], x - 1.0 / (2 * xsize), y, 1.0 / xsize, 1.0 / ysize);
-					rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
-					break;
-				case 2:
-					rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
-					break;
-				case 3:
-					rend.applyTexture(wall[maptype], x, y - 1.0 / (2 * ysize), 1.0 / xsize, 1.0 / ysize);
-					rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
-					break;
-				case 4:
-					rend.applyTexture(wall[maptype], x, y - 1.0 / (2 * ysize), 1.0 / xsize, 1.0 / ysize);
-					rend.applyTexture(wall[maptype], x - 1.0 / (2 * xsize), y, 1.0 / xsize, 1.0 / ysize);
-					rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
-					break;
-				default:
-					rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
-					break;
-				}
-			}
-
-
-
+			lock1.lock();
+			rendMap();
+			lock1.unlock();
 
 			rend.renderPart(2, 2, (int)log2(player->getOrientation()) >> 1, 1 - ((int)log2(player->getOrientation()) % 2));
-			rend.applyTexture(BeingResources::getTextureID(typeid(player).name()), alterBeingPosX(player->getX()), alterBeingPosY(player->getY()), 1.0 / xsize, 1.0 / ysize);
+			rend.applyTexture(BeingResources::getTextureID(typeid(*player).name()), alterBeingPosX(player->getX()), alterBeingPosY(player->getY()), 1.0 / xsize, 1.0 / ysize);
 			rend.renderScene();
 		}
 		catch (Error e){
@@ -101,7 +72,6 @@ class RINS : public Game, public Map{
 						if (getMapIndex()[pos_tile_x][last_tile_y]){
 							player->setX(lastxpos);
 						}
-						//player->move(dir, true);
 					}
 				}
 				else {
@@ -116,12 +86,12 @@ class RINS : public Game, public Map{
 
 			if (mustlock){
 				lock1.lock();
-				//if (tryRoomChange(pos_tile_x, pos_tile_y)){
-				//	c = getMapEntry();
-				//	player->setX(c.x);
-				//	player->setY(c.y);
-				//	monsters.clear();
-				//}
+				if (tryRoomChange(pos_tile_x, pos_tile_y)){
+					c = getMapEntry();
+					player->setX(c.x);
+					player->setY(c.y);
+					monsters.clear();
+				}
 				mustlock = false;
 				lock1.unlock();
 			}
@@ -157,6 +127,37 @@ class RINS : public Game, public Map{
 		if(text[0] == 0) text[0] = '0';
 		text[a] = 0;
 		return text;
+	}
+	void rendMap(){
+		int maptype = getMapType();
+		double deltax = player->getX() - alterBeingPosX(player->getX());
+		double deltay = player->getY() - alterBeingPosY(player->getY());
+		rend.applyTexture(bg[maptype], player->getStep() - deltax, -deltay, (double)(getMapIndex().size() / 16.0) - player->getStep(), (double)(getMapIndex()[0].size() / 16.0));
+		for (int i = 0; i < getMapObjects().size(); ++i){
+			double x = getMapObjects().at(i).x - deltax;
+			double y = getMapObjects().at(i).y - deltay;
+			switch (getMapObjects().at(i).type){
+			case 1:
+				rend.applyTexture(wall[maptype], x - 1.0 / (2 * xsize), y, 1.0 / xsize, 1.0 / ysize);
+				rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+				break;
+			case 2:
+				rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+				break;
+			case 3:
+				rend.applyTexture(wall[maptype], x, y - 1.0 / (2 * ysize), 1.0 / xsize, 1.0 / ysize);
+				rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+				break;
+			case 4:
+				rend.applyTexture(wall[maptype], x, y - 1.0 / (2 * ysize), 1.0 / xsize, 1.0 / ysize);
+				rend.applyTexture(wall[maptype], x - 1.0 / (2 * xsize), y, 1.0 / xsize, 1.0 / ysize);
+				rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+				break;
+			default:
+				rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+				break;
+			}
+		}
 	}
 public:
 	RINS() try : 

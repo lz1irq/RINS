@@ -69,12 +69,11 @@ public:
 	int getOrientation() const;
 	double getStep() const;
 	void takeProjectile(Projectile& bullet);
+	static void setNumTiles(int num);
 
 	void shootWeapon();
 	void nextWeapon();
 	void prevWeapon();
-
-	static void setNumTiles(int num);
 
 	static array<Being*(*)(double, double), MAXSIZE> monsters;
 	static vector<Being*> targets;
