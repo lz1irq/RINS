@@ -43,14 +43,16 @@ class Being{
 protected:
 	int level;
 	double x,y;
-	const double move_step;
+	const double move_step_x;
+	const double move_step_y;
 	int orientation;
 	Primary prim_stats;
 	Derived der_stats;
 	int curr_weapon;
 	std::vector<std::unique_ptr<WeaponBase>> weapons;
 	static mt19937 rnd;
-	static int numtiles;
+	static int tiles_x;
+	static int tiles_y;
 
 public:
 	Being(double x, double y);
@@ -67,9 +69,10 @@ public:
 	int getTileY( int ysize);
 
 	int getOrientation() const;
-	double getStep() const;
+	double getStepX() const;
+	double getStepY() const;
 	void takeProjectile(Projectile& bullet);
-	static void setNumTiles(int num);
+	static void setNumTiles(int x, int y);
 
 	void shootWeapon();
 	void nextWeapon();

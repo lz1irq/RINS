@@ -8,6 +8,7 @@ class RINS : public Game, public Map{
 
 	int bg[3];
 	int wall[3];
+	int side[3][2];
 
 	int dir, tmpdir2;
 	double lastxpos, lastypos;
@@ -27,9 +28,8 @@ class RINS : public Game, public Map{
 	void graphicsLoop() final {
 		try{
 
-			rend.renderPart(0, 0, 0, 0);
 			lock1.lock();
-			rendMap();
+			renderMap();
 			lock1.unlock();
 
 			rend.renderPart(2, 2, (int)log2(player->getOrientation()) >> 1, 1 - ((int)log2(player->getOrientation()) % 2));
@@ -128,11 +128,13 @@ class RINS : public Game, public Map{
 		text[a] = 0;
 		return text;
 	}
-	void rendMap(){
+	void renderMap(){
 		int maptype = getMapType();
 		double deltax = player->getX() - alterBeingPosX(player->getX());
 		double deltay = player->getY() - alterBeingPosY(player->getY());
-		rend.applyTexture(bg[maptype], player->getStep() - deltax, -deltay, (double)(getMapIndex().size() / 16.0) - player->getStep(), (double)(getMapIndex()[0].size() / 16.0));
+		rend.renderPart(0, 0, 0, 0);
+		rend.applyTexture(bg[maptype], player->getStepX() - deltax, -deltay, (double)(getMapIndex().size() / (double)xsize) - player->getStepY(), (double)(getMapIndex()[0].size() / (double)ysize));
+
 		for (int i = 0; i < getMapObjects().size(); ++i){
 			double x = getMapObjects().at(i).x - deltax;
 			double y = getMapObjects().at(i).y - deltay;
@@ -158,14 +160,16 @@ class RINS : public Game, public Map{
 				break;
 			}
 		}
+		rend.applyTexture(side[maptype][0], player->getStepX() - 1, 0, 1, 1);
+		rend.applyTexture(side[maptype][1], 1 , 0, 1, 1);
 	}
 public:
 	RINS() try : 
-		rend(640, 640, "RINS"), dir(0), c(0, 0, 0) {
+		rend(640, 480, "RINS"), dir(0), c(0, 0, 0) {
 		loadMap("do u even seed, bro?");
 		c = getMapEntry();
 
-		Being::setNumTiles(xsize);
+		Being::setNumTiles(xsize, ysize);
 
 		int pclass;
 		cout << "Chose class: " << endl << "0. Marine " << endl << "1. Pyro " << endl << "2. Psychokinetic" << endl << "3. Android" << endl;
@@ -190,6 +194,13 @@ public:
 		wall[0]  = rend.loadTexture("Textures/brick3.png");
 		wall[1]  = rend.loadTexture("Textures/brick4.png");
 		wall[2]  = rend.loadTexture("Textures/brick5.png");
+
+		side[0][0] = rend.loadTexture("Textures/school_1.png");
+		side[0][1] = rend.loadTexture("Textures/school_2.png");
+		side[1][0] = rend.loadTexture("Textures/hospital_1.png");
+		side[1][1] = rend.loadTexture("Textures/hospital_2.png");
+		side[2][0] = rend.loadTexture("Textures/forest_1.png");
+		side[2][1] = rend.loadTexture("Textures/forest_2.png");
 
 		Projectile::addTexture(BULLET, rend.loadTexture("Textures/bullet.png"));
 		Projectile::addTexture(FIRE, rend.loadTexture("Textures/bullet2.png"));

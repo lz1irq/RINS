@@ -26,7 +26,8 @@ Derived::Derived(Primary prim, int level):
 
 Being::Being(double x, double y): 
 	x(x), y(y),
-	orientation(UP), move_step(1.0/(4*numtiles)), 
+	orientation(UP), move_step_x(1.0/(4*tiles_x)), 
+	move_step_y(1.0 / (4 * tiles_y)),
 	level(1), prim_stats(Primary()), 
 	der_stats(prim_stats, level), curr_weapon(0) {
 		rnd.seed(time(0));
@@ -37,11 +38,12 @@ map<const char*, int> BeingResources::textures;
 void Being::move(int dir, bool reverse) {
 	int newdir = dir & 15;
 	if(newdir)orientation = newdir;
-	double move = reverse ? -move_step : move_step;
-	if (dir & LEFT) x-= move;
-	if (dir & RIGHT) x += move;
-	if (dir & UP) y -= move;
-	if (dir & DOWN) y += move;
+	double move_x = reverse ? -move_step_x : move_step_x;
+	double move_y = reverse ? -move_step_y : move_step_y;
+	if (dir & LEFT) x-= move_x;
+	if (dir & RIGHT) x += move_x;
+	if (dir & UP) y -= move_y;
+	if (dir & DOWN) y += move_y;
 }
 
 int Being::getHealth() {
@@ -68,12 +70,16 @@ int Being::getOrientation() const {
 	return orientation;
 }
 
-double Being::getStep() const{
-	return move_step;
+double Being::getStepX() const{
+	return move_step_x;
+}
+
+double Being::getStepY() const{
+	return move_step_y;
 }
 
 void Being::shootWeapon() {
-	projectiles.push_back((weapons.at(curr_weapon)->shoot(orientation, x+move_step*2, y+move_step*2)));
+	projectiles.push_back((weapons.at(curr_weapon)->shoot(orientation, x+move_step_x*2, y+move_step_y*2)));
 }
 
 void Being::nextWeapon() {
@@ -99,20 +105,22 @@ void Being::takeProjectile(Projectile& bullet) {
 }
 
 int Being::getTileX(int xsize){
-	return ((x + move_step) / move_step) / ((1.0 / xsize) / move_step);
+	return ((x + move_step_x) / move_step_x) / ((1.0 / xsize) / move_step_x);
 }
 
 int Being::getTileY(int ysize){
-	return ((y + move_step * 3) / move_step) / ((1.0 / ysize) / move_step);
+	return ((y + move_step_y * 3) / move_step_y) / ((1.0 / ysize) / move_step_y);
 }
 
-void Being::setNumTiles(int num){
-	numtiles = num;
+void Being::setNumTiles(int x, int y){
+	tiles_x = x;
+	tiles_y = y;
 }
 
 mt19937 Being::rnd;
 
-int Being::numtiles;
+int Being::tiles_x;
+int Being::tiles_y;
 
 array<Being*(*)(double, double), MAXSIZE> Being::monsters;
 
@@ -197,8 +205,8 @@ void Zombie::action(const vector<vector<char>>& map_index) {
 	extern int ysize;
 	extern int xsize;
 
-	int myx = getTileX(numtiles);
-	int myy = getTileY(numtiles);
+	int myx = getTileX(tiles_x);
+	int myy = getTileY(tiles_y);
 
 	bool there=true;
 

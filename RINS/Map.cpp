@@ -12,6 +12,7 @@ Map::Map() : roomX(1), roomY(1){
 
 double Map::alterBeingPosX(double absoluteX){
 	absoluteX += offsetx;
+	//cout << absoluteX - roomX + 1 << endl;
 	if (absoluteX < 0.5)return absoluteX;
 	if (absoluteX > roomX - 0.5)return absoluteX - roomX + 1;
 	return 0.5;
@@ -71,12 +72,10 @@ bool Map::tryRoomChange(int x, int y){
 	if (exit){
 		if (isexit){
 			generateRoom(++curr_seed, 1);
-			cout << curr_seed << endl;
 			last_entry = false;
 		}
 		if (!isexit){
 			generateRoom(--curr_seed, 0);
-			cout << curr_seed << endl;
 			last_entry = true;
 		}
 	}
@@ -123,6 +122,9 @@ void Map::generateRoom(uint32_t seed_, bool exited){
 
 	xmax = xsize*roomX - 1;
 	ymax = ysize*roomY - 1;
+
+	roomX = (xmax + 1) / (double)xsize;
+	roomY = (ymax + 1) / (double)ysize;
 
 	int temp = min(ymax, xmax) - 4;
 	int newplace = 2;
