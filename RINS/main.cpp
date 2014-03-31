@@ -78,13 +78,53 @@ class RINS : public Game, public Map{
 
 			lastxpos = player->getX();
 			lastypos = player->getY();
+			int last_tile_x = player->getTileX(xsize);
+			int last_tile_y = player->getTileY(ysize);
 
 			//if (getTicks() - last_tick > 33 || tmpdir2 != dir){ there is a [SPACE] bug }
 			if (getTicks() - last_tick > 33){
 				player->move(dir, false);
 				last_tick = getTicks();
 			}
+			if (updateInternalMapState()) dir = 0;
 
+			int pos_tile_x = player->getTileX(xsize);
+			int pos_tile_y = player->getTileY(ysize);
+
+			bool mustlock = false;
+			if (!(pos_tile_x < 0 || pos_tile_x >= getMapIndex().size())){
+				if (!(pos_tile_y < 0 || pos_tile_y >= getMapIndex()[pos_tile_x].size())){
+					if (getMapIndex()[pos_tile_x][pos_tile_y]){
+						if (getMapIndex()[last_tile_x][pos_tile_y]){
+							player->setY(lastypos);
+						}
+						if (getMapIndex()[pos_tile_x][last_tile_y]){
+							player->setX(lastxpos);
+						}
+						//player->move(dir, true);
+					}
+				}
+				else {
+					player->setX(lastxpos);
+					mustlock = true;
+				}
+			}
+			else {
+				player->setY(lastypos);
+				mustlock = true;
+			}
+
+			if (mustlock){
+				lock1.lock();
+				//if (tryRoomChange(pos_tile_x, pos_tile_y)){
+				//	c = getMapEntry();
+				//	player->setX(c.x);
+				//	player->setY(c.y);
+				//	monsters.clear();
+				//}
+				mustlock = false;
+				lock1.unlock();
+			}
 
 
 			SDL_Delay(10);
@@ -122,7 +162,7 @@ public:
 	RINS() try : 
 		rend(640, 640, "RINS"), dir(0), c(0, 0, 0) {
 		loadMap("do u even seed, bro?");
-		//c = getMapEntry();
+		c = getMapEntry();
 
 		Being::setNumTiles(xsize);
 
