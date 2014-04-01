@@ -44,6 +44,7 @@ void Being::move(int dir, bool reverse) {
 	if (dir & RIGHT) x += move_x;
 	if (dir & UP) y -= move_y;
 	if (dir & DOWN) y += move_y;
+	if (newdir)walk = !walk;
 }
 
 int Being::getHealth() {
@@ -117,9 +118,55 @@ void Being::setNumTiles(int x, int y){
 	tiles_y = y;
 }
 
+int Being::checkCollisions(double comp_to_x, double comp_to_y, const vector<vector<char>>& index, int& on_x_tile, int& on_y_tile){
+	double curr_x = x;
+	double curr_y = y;
+	x = comp_to_x;
+	y = comp_to_y;
+	int last_tile_x = getTileX(tiles_x);
+	int last_tile_y = getTileY(tiles_y);
+	x = curr_x;
+	y = curr_y;
+	int curr_tile_x = getTileX(tiles_x);
+	int curr_tile_y = getTileY(tiles_y);
+	on_x_tile = curr_tile_x;
+	on_y_tile = curr_tile_y;
+	if (!(curr_tile_x < 0 || curr_tile_x >= index.size())){
+		if (!(curr_tile_y < 0 || curr_tile_y >= index[curr_tile_x].size())){
+			if (index[curr_tile_x][curr_tile_y]){
+				if (index[curr_tile_x][curr_tile_y] < 16){  //16 = #wall combinations; the magic tiles' ID's are > than 16
+					if (index[last_tile_x][curr_tile_y]){
+						setY(comp_to_y);
+						return Y_COLIDE;
+					}
+					if (index[curr_tile_x][last_tile_y]){
+						setX(comp_to_x);
+						return X_COLIDE;
+					}
+				}
+				return TRIGGER;
+			}
+			return STATUS_OK;
+		}
+		else {
+			setX(comp_to_x);
+			return OUT_OF_BOUNDS;
+		}
+	}
+	else {
+		setY(comp_to_y);
+		return OUT_OF_BOUNDS;
+	}
+}
+
+bool Being::getWalk(){
+	return walk;
+}
+
 mt19937 Being::rnd;
 
 int Being::tiles_x;
+
 int Being::tiles_y;
 
 array<Being*(*)(double, double), MAXSIZE> Being::monsters;
@@ -239,7 +286,7 @@ void Zombie::action(const vector<vector<char>>& map_index) {
 	
 }
 
-int BeingResources::getTextureID(const char* ti) {
+const int BeingResources::getTextureID(const char* ti) {
 	return textures[ti];
 }
 

@@ -6,7 +6,7 @@ const char* Error::getError(){ return err; }
 
 Renderer::Renderer(int width, int height, const char* title) : textures(), fonts(){
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)throw Error(SDL_GetError());
-	if ((win = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_ALLOW_HIGHDPI)) == nullptr)throw Error(SDL_GetError());
+	if ((win = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI)) == nullptr)throw Error(SDL_GetError());
 	if ((ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC)) == nullptr)throw Error(SDL_GetError());
 	SDL_GetWindowSize(win, &W, &H);
 	part.x = H;
@@ -32,8 +32,8 @@ void Renderer::applyTexture(SDL_Texture* t, double x, double y, double width, do
 	if (part.x != 0 && part.y != 0){
 		src.x = 1.0 / part.x*dst.w*part.w;
 		src.y = 1.0 / part.y*dst.h*part.h;
-		src.w = 1.0 / part.x*dst.w*(part.w + 1);
-		src.h = 1.0 / part.y*dst.h*(part.h + 1);
+		src.w = 1.0 / part.x*dst.w;
+		src.h = 1.0 / part.y*dst.h;
 	}
 	else{
 		src.x = 0;

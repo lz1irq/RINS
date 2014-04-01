@@ -33,11 +33,12 @@ struct Derived {
 class BeingResources {
 	static map<const char*, int> textures;
 public:
-	static int getTextureID(const char* ti);
+	static const int getTextureID(const char* ti);
 	static void addTextureID(int newID, const char* ti);
 };
 
-enum Monsters{ ZOMBIE = 0, MAXSIZE};
+enum Monsters{ ZOMBIE = 0, MAXSIZE };
+enum Collisions{ STATUS_OK, OUT_OF_BOUNDS, TRIGGER, X_COLIDE, Y_COLIDE };
 
 class Being{
 protected:
@@ -53,6 +54,7 @@ protected:
 	static mt19937 rnd;
 	static int tiles_x;
 	static int tiles_y;
+	bool walk;
 
 public:
 	Being(double x, double y);
@@ -67,12 +69,14 @@ public:
 	void setY(double newY);
 	int getTileX(int xsize);
 	int getTileY( int ysize);
+	bool getWalk();
 
 	int getOrientation() const;
 	double getStepX() const;
 	double getStepY() const;
 	void takeProjectile(Projectile& bullet);
 	static void setNumTiles(int x, int y);
+	int checkCollisions(double comp_to_x, double comp_to_y, const vector<vector<char>>& index, int& on_x_tile, int& on_y_tile);
 
 	void shootWeapon();
 	void nextWeapon();
