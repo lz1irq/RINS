@@ -251,47 +251,47 @@ Zombie::Zombie(double sx, double yx):
 using namespace std;
 void Zombie::action(const vector<vector<char>>& map_index) {
 
-	if(der_stats.health == 0) {
-		cout << "ZOMBIE DEAD" << endl;
-	}
+	//if(der_stats.health == 0) {
+	//	cout << "ZOMBIE DEAD" << endl;
+	//}
 
-	if(target == nullptr) target = targets.at(rnd()%targets.size());
-	double tx = target->getX();
-	double ty = target->getY();
-	extern int ysize;
-	extern int xsize;
+	//if(target == nullptr) target = targets.at(rnd()%targets.size());
+	//double tx = target->getX();
+	//double ty = target->getY();
+	//extern int ysize;
+	//extern int xsize;
 
-	int myx = getTileX(tiles_x);
-	int myy = getTileY(tiles_y);
+	//int myx = getTileX(tiles_x);
+	//int myy = getTileY(tiles_y);
 
-	bool there=true;
+	//bool there=true;
 
-	if (x < tx) {
-		if (!map_index[myx + 1][myy])move(RIGHT, false);
-		if (map_index[myx + 1][myy])move(UP, true);
-		there = false;
-	}
-	if(y < ty) {
-		if (!map_index[myx][myy + 1])move(DOWN, false);
-		if (map_index[myx][myy + 1])move(RIGHT, true);
-		there = false;
-	}
-	if(x > tx) {
-		if (!map_index[myx - 1][myy])move(LEFT, false);
-		if (map_index[myx - 1][myy])move(DOWN, true);
-		there = false;
-	}
-	if(y > ty) {
-		if (!map_index[myx][myy - 1])move(UP, false);
-		if (map_index[myx][myy - 1])move(LEFT, true);
-		there = false;
-	}
+	//if (x < tx) {
+	//	if (!map_index[myx + 1][myy])move(RIGHT, false);
+	//	if (map_index[myx + 1][myy])move(UP, true);
+	//	there = false;
+	//}
+	//if(y < ty) {
+	//	if (!map_index[myx][myy + 1])move(DOWN, false);
+	//	if (map_index[myx][myy + 1])move(RIGHT, true);
+	//	there = false;
+	//}
+	//if(x > tx) {
+	//	if (!map_index[myx - 1][myy])move(LEFT, false);
+	//	if (map_index[myx - 1][myy])move(DOWN, true);
+	//	there = false;
+	//}
+	//if(y > ty) {
+	//	if (!map_index[myx][myy - 1])move(UP, false);
+	//	if (map_index[myx][myy - 1])move(LEFT, true);
+	//	there = false;
+	//}
 
-	if(there) {
-		move(RIGHT, false);
-		orientation = LEFT;
-		shootWeapon();
-	}
+	//if(there) {
+	//	move(RIGHT, false);
+	//	orientation = LEFT;
+	//	shootWeapon();
+	//}
 	
 }
 
