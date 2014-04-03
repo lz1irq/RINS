@@ -135,6 +135,11 @@ int Being::checkCollisions(double comp_to_x, double comp_to_y, const vector<vect
 		if (!(curr_tile_y < 0 || curr_tile_y >= index[curr_tile_x].size())){
 			if (index[curr_tile_x][curr_tile_y]){
 				if (index[curr_tile_x][curr_tile_y] < 16){  //16 = #wall combinations; the magic tiles' ID's are > than 16
+					if(index[last_tile_x][curr_tile_y] && index[curr_tile_x][last_tile_y]){
+						setY(comp_to_y);
+						setX(comp_to_x);
+						return XY_COLIDE;
+					}
 					if (index[last_tile_x][curr_tile_y]){
 						setY(comp_to_y);
 						return Y_COLIDE;
@@ -161,6 +166,10 @@ int Being::checkCollisions(double comp_to_x, double comp_to_y, const vector<vect
 
 bool Being::getWalk(){
 	return walk;
+}
+
+void Being::resetWalk(){
+	walk = false;
 }
 
 mt19937 Being::rnd;

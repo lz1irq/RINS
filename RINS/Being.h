@@ -38,7 +38,7 @@ public:
 };
 
 enum Monsters{ ZOMBIE = 0, MAXSIZE };
-enum Collisions{ STATUS_OK, OUT_OF_BOUNDS, TRIGGER, X_COLIDE, Y_COLIDE };
+enum Collisions{ STATUS_OK, OUT_OF_BOUNDS, TRIGGER, X_COLIDE, Y_COLIDE, XY_COLIDE };
 
 class Being{
 protected:
@@ -54,7 +54,7 @@ protected:
 	static mt19937 rnd;
 	static int tiles_x;
 	static int tiles_y;
-	bool walk;
+	bool walk = false;
 
 public:
 	Being(double x, double y);
@@ -70,6 +70,7 @@ public:
 	int getTileX(int xsize);
 	int getTileY( int ysize);
 	bool getWalk();
+	void resetWalk();
 
 	int getOrientation() const;
 	double getStepX() const;

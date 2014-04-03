@@ -57,6 +57,7 @@ class RINS : public Game, public Map{
 			if (getTicks() - last_tick > 33){
 				player->move(dir, false);
 				last_tick = getTicks();
+				if(lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
 			}
 
 			if (updateInternalMapState()) dir = 0;
@@ -73,6 +74,11 @@ class RINS : public Game, public Map{
 					monsters.clear();
 				}
 				lock1.unlock();
+				break;
+			case X_COLIDE:
+			case Y_COLIDE:
+			case XY_COLIDE:
+				if(lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
 				break;
 			}
 			SDL_Delay(10);
