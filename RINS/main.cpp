@@ -11,7 +11,7 @@ class RINS : public Game, public Map{
 	int side[3][2];
 
 	int dir, tmpdir2;
-	double lastxpos, lastypos;
+	double lastxpos, lastypos, deltax, deltay;
 	Coord c;
 	Being* player;
 
@@ -20,7 +20,7 @@ class RINS : public Game, public Map{
 
 	int last_tick = 0, timer2 = 0, projectile_tick = 0;
 
-	mutex lock1, lock2;
+	mutex lock1, monster;
 
 	int highscore = 0;
 	int main_font;
@@ -36,8 +36,16 @@ class RINS : public Game, public Map{
 			if (player->getWalk())offset = 2;
 			rend.renderPart(4, 2, offset+((int)log2(player->getOrientation()) >> 1), 1 - ((int)log2(player->getOrientation()) % 2));
 
-			if (player->getWalk())rend.applyTexture(BeingResources::getTextureID(typeid(*player).name()), alterBeingPosX(player->getX()), alterBeingPosY(player->getY()), 1.0 / xsize, 1.0 / ysize);
-			else                  rend.applyTexture(BeingResources::getTextureID(typeid(*player).name()), alterBeingPosX(player->getX()), alterBeingPosY(player->getY()), 1.0 / xsize, 1.0 / ysize);
+			rend.applyTexture(BeingResources::getTextureID(typeid(*player).name()), alterBeingPosX(player->getX()), alterBeingPosY(player->getY()), 1.0 / xsize, 1.0 / ysize);
+
+			monster.lock();//lock the monster!
+			for (auto &i : monsters) {
+				if (i->getWalk())rend.renderPart(4, 2, 2+((int)log2(i->getOrientation()) >> 1), 1 - ((int)log2(i->getOrientation()) % 2));
+				else rend.renderPart(4, 2, ((int)log2(i->getOrientation()) >> 1), 1 - ((int)log2(i->getOrientation()) % 2));
+				rend.applyTexture(BeingResources::getTextureID(typeid(*i).name()), i->getX()-deltax, i->getY()-deltay, 1.0 / xsize, 1.0 / ysize);
+			}
+			monster.unlock();
+
 			rend.renderScene();
 		}
 		catch (Error e){
@@ -54,13 +62,13 @@ class RINS : public Game, public Map{
 			lastxpos = player->getX();
 			lastypos = player->getY();
 
+			if (updateInternalMapState()) dir = 0;
+
 			if (getTicks() - last_tick > 33){
 				player->move(dir, false);
 				last_tick = getTicks();
 				if(lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
 			}
-
-			if (updateInternalMapState()) dir = 0;
 
 			int x_colide, y_colide;
 			int event = player->checkCollisions(lastxpos, lastypos, getMapIndex(), x_colide, y_colide);
@@ -71,7 +79,7 @@ class RINS : public Game, public Map{
 					c = getMapEntry();
 					player->setX(c.x);
 					player->setY(c.y);
-					monsters.clear();
+					setMapHardness(player->getLevel());
 				}
 				lock1.unlock();
 				break;
@@ -81,6 +89,19 @@ class RINS : public Game, public Map{
 				if(lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
 				break;
 			}
+
+			bool mustspawn = pattern()%getSpawnRate()==false;
+			int spawntype = pattern()%Being::monsters.size();
+			int x = pattern()%getMapIndex().size();
+			int y = pattern()%getMapIndex()[x].size();
+
+			if(mustspawn && !getMapIndex()[x][y] && monsters.size() < getMaxMonsters()){
+				monster.lock();
+				monsters.push_back(unique_ptr<Being>(Being::monsters[spawntype]((double)x / xsize, (double)y / ysize)));
+				monster.unlock();
+			}
+
+
 			SDL_Delay(10);
 		}
 		catch (Error e) {
@@ -100,6 +121,7 @@ class RINS : public Game, public Map{
 		if (getKey(1) == ' ')dir |= 1 << 4;
 		if (getKey(0) == ' ')dir &= ~(1 << 4);
 	}
+
 	Uint16* itow(unsigned int h){
 		int a = log10(h) + 1;
 		if(a < 0) a = 1;
@@ -114,8 +136,8 @@ class RINS : public Game, public Map{
 	}
 	void renderMap(){
 		int maptype = getMapType();
-		double deltax = player->getX() - alterBeingPosX(player->getX());
-		double deltay = player->getY() - alterBeingPosY(player->getY());
+		deltax = player->getX() - alterBeingPosX(player->getX());
+		deltay = player->getY() - alterBeingPosY(player->getY());
 		rend.renderPart(0, 0, 0, 0);
 		rend.applyTexture(bg[maptype], - deltax, -deltay, (double)(getMapIndex().size() / (double)xsize), (double)(getMapIndex()[0].size() / (double)ysize));
 
@@ -169,7 +191,7 @@ public:
 		BeingResources::addTextureID(rend.loadTexture("Textures/devil2.png"), typeid(Pyro).name());
 		BeingResources::addTextureID(rend.loadTexture("Textures/devil2.png"), typeid(Psychokinetic).name());
 		BeingResources::addTextureID(rend.loadTexture("Textures/devil2.png"), typeid(Android).name());
-		BeingResources::addTextureID(rend.loadTexture("Textures/gangsta.png"), typeid(Zombie).name());
+		BeingResources::addTextureID(rend.loadTexture("Textures/gangsta2.png"), typeid(Zombie).name());
 
 		bg[0] = rend.loadTexture("Textures/floor1.jpg");
 		bg[1] = rend.loadTexture("Textures/cement.jpg");
@@ -195,7 +217,7 @@ public:
 
 		Being::targets.push_back(player);
 
-
+		setMapHardness(player->getLevel());
 		//::xsize = xsize;
 		//::ysize = ysize;
 

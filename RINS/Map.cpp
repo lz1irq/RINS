@@ -83,6 +83,18 @@ bool Map::tryRoomChange(int x, int y){
 
 }
 
+void Map::setMapHardness(int level){
+	hardness = level;
+}
+
+int Map::getMaxMonsters(){
+	return hardness*10;
+}
+
+int Map::getSpawnRate(){
+	return 420/hardness;
+}
+
 int Map::getMapType(){
 	return map_type;
 }

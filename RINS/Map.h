@@ -15,7 +15,7 @@ class Map{
 	enum walls{ LEFT, DOWN, UP, RIGHT };
 	bool last_entry = true;
 	double offsetx = 0, offsety = 0;
-	int map_type;
+	int map_type, hardness;
 public:
 	const int xsize = 16, ysize = 16;
 	struct Coord{
@@ -35,6 +35,9 @@ public:
 	bool tryRoomChange(int x, int y);
 	bool updateInternalMapState();
 	int getMapType();
+	void setMapHardness(int level);
+	int getMaxMonsters();
+	int getSpawnRate();
 private:
 	vector<Coord> blocks;
 	vector<vector<char>> room;

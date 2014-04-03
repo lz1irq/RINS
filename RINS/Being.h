@@ -62,6 +62,7 @@ public:
 	virtual void action(const vector<vector<char>>& map_index) = 0;
 	void addWeapon(WeaponBase* wpn);
 	void move(int dir, bool reverse);
+	int getLevel();
 
 	double getX() const;
 	double getY() const;

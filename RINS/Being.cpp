@@ -164,6 +164,10 @@ int Being::checkCollisions(double comp_to_x, double comp_to_y, const vector<vect
 	}
 }
 
+int Being::getLevel(){
+	return level;
+}
+
 bool Being::getWalk(){
 	return walk;
 }
