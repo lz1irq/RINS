@@ -9,6 +9,7 @@ class RINS : public Game, public Map{
 	int bg[3];
 	int wall[3];
 	int side[3][2];
+	int entrytex, exittex;
 
 	int dir, tmpdir2;
 	double lastxpos, lastypos, deltax, deltay;
@@ -140,10 +141,20 @@ class RINS : public Game, public Map{
 		deltay = player->getY() - alterBeingPosY(player->getY());
 		rend.renderPart(0, 0, 0, 0);
 		rend.applyTexture(bg[maptype], - deltax, -deltay, (double)(getMapIndex().size() / (double)xsize), (double)(getMapIndex()[0].size() / (double)ysize));
-
+		double room_x, room_y;
+		char wpos, hpos;
+		getRoomSize(room_x, room_y);
 		for (int i = 0; i < getMapObjects().size(); ++i){
-			double x = getMapObjects().at(i).x - deltax;
-			double y = getMapObjects().at(i).y - deltay;
+			double block_x = getMapObjects().at(i).x;
+			double block_y = getMapObjects().at(i).y;
+			if (block_x == 0)wpos = 0;
+			else if (block_x == room_x-1.0/xsize)wpos = 1;
+			else wpos = 2;
+			if (block_y == 0)hpos = 0;
+			else if (block_y == room_y-1.0/ysize)hpos = 1;
+			else hpos = 2;
+			double x = block_x - deltax;
+			double y = block_y - deltay;
 			switch (getMapObjects().at(i).type){
 			case 1:
 				rend.applyTexture(wall[maptype], x - 1.0 / (2 * xsize), y, 1.0 / xsize, 1.0 / ysize);
@@ -161,8 +172,24 @@ class RINS : public Game, public Map{
 				rend.applyTexture(wall[maptype], x - 1.0 / (2 * xsize), y, 1.0 / xsize, 1.0 / ysize);
 				rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
 				break;
+			case ENTRY:
+				if (wpos == 0)rend.setRotationAngle(0);
+				if (hpos == 0)rend.setRotationAngle(90);
+				if (wpos == 1)rend.setRotationAngle(180);
+				if (hpos == 1)rend.setRotationAngle(270);
+				rend.applyTexture(entrytex, x, y, 1.0 / xsize, 1.0 / ysize);
+				rend.setRotationAngle(0);
+				break;
+			case EXIT:
+				if (wpos == 1)rend.setRotationAngle(0);
+				if (hpos == 1)rend.setRotationAngle(90);
+				if (wpos == 0)rend.setRotationAngle(180);
+				if (hpos == 0)rend.setRotationAngle(270);
+				rend.applyTexture(exittex, x, y, 1.0 / xsize, 1.0 / ysize);
+				rend.setRotationAngle(0);
+				break;
 			default:
-				rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+				//rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
 				break;
 			}
 		}
@@ -210,6 +237,9 @@ public:
 
 		Projectile::addTexture(BULLET, rend.loadTexture("Textures/bullet.png"));
 		Projectile::addTexture(FIRE, rend.loadTexture("Textures/bullet2.png"));
+
+		entrytex = rend.loadTexture("Textures/entry.png");
+		exittex = rend.loadTexture("Textures/exit.png");
 
 		main_font = rend.loadFont("Fonts/ARIALUNI.TTF", 40);
 

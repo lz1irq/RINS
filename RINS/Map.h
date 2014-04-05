@@ -8,6 +8,7 @@ using namespace std;
 #ifndef _GLIBCXX_MAP_H
 #define _GLIBCXX_MAP_H
 
+enum blocks{ EXIT = 17, ENTRY };
 class Map{
 	double roomX, roomY;
 	mt19937 pattern;
@@ -38,6 +39,7 @@ public:
 	void setMapHardness(int level);
 	int getMaxMonsters();
 	int getSpawnRate();
+	void getRoomSize(double& x, double& y);
 private:
 	vector<Coord> blocks;
 	vector<vector<char>> room;

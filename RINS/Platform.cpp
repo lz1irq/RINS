@@ -13,6 +13,7 @@ Renderer::Renderer(int width, int height, const char* title) : textures(), fonts
 	part.y = H;
 	cout << W << " " << H << endl;
 	if (TTF_Init() != 0)throw Error(TTF_GetError());
+	rotate = 0;
 }
 
 int Renderer::loadTexture(const char* path) {
@@ -51,7 +52,7 @@ void Renderer::applyTexture(SDL_Texture* t, double x, double y, double width, do
 		dst.h = h;
 	}
 	dst.x += (W - H) / 2;
-	if (SDL_RenderCopy(ren, t, &src, &dst) != 0)throw Error(SDL_GetError());
+	if (SDL_RenderCopyEx(ren, t, &src, &dst, rotate, NULL, SDL_FLIP_NONE) != 0)throw Error(SDL_GetError());
 }
 
 void Renderer::applyTexture(int texture_ID, double x, double y, double width, double height) {
@@ -86,6 +87,10 @@ void Renderer::displayText(int font, const Uint16* text, RGBA color, double x, d
 	SDL_FreeSurface(surf);
 	applyTexture(texture, x, y, w, h);
 	SDL_DestroyTexture(texture);
+}
+
+void Renderer::setRotationAngle(double deg){
+	rotate = deg;
 }
 
 Renderer::~Renderer() {

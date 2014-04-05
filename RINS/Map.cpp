@@ -95,6 +95,11 @@ int Map::getSpawnRate(){
 	return 420/hardness;
 }
 
+void Map::getRoomSize(double& x, double& y){
+	x = roomX;
+	y = roomY;
+}
+
 int Map::getMapType(){
 	return map_type;
 }
@@ -225,8 +230,8 @@ void Map::generateRoom(uint32_t seed_, bool exited){
 		room[0][i] = 2;
 		room[xplaces - 1][i] = 2;
 	}
-	room[room_entry_x][room_entry_y] = 0;
-	room[room_exit_x][room_exit_y] = 0;
+	room[room_entry_x][room_entry_y] = ENTRY;
+	room[room_exit_x][room_exit_y] = EXIT;
 
 	//generate some basic structures
 	int numstructs = pattern() % 20;
@@ -317,47 +322,46 @@ void Map::generateRoom(uint32_t seed_, bool exited){
 		for (int y = 0; y < room[x].size(); ++y){
 
 			if (room[x][y]){
+				if (room[x][y] < 16){
+					bool hasleft = x == 0 || room[x - 1][y] > 15 ? false : room[x - 1][y];
+					bool hasright = x == room.size() - 1 || room[x + 1][y]  > 15 ? false : room[x + 1][y];
+					bool hasup = y == 0 || room[x][y - 1] > 15 ? false : room[x][y - 1];
+					bool hasdown = y == room[x].size() - 1 || room[x][y + 1] > 15 ? false : room[x][y + 1];
+					char edges = (hasleft << 0) | (hasright << 1) | (hasup << 2) | (hasdown << 3);
+					switch (edges){
+					case 1:
+						room[x][y] = 1;
+						break;
+					case 2:
+						room[x][y] = 2;
+						break;
+					case 3:
+						room[x][y] = 1;
+						break;
+					case 4:
+						room[x][y] = 3;
+						break;
+					case 5:
+						room[x][y] = 4;
+						break;
+					case 6:
+						room[x][y] = 3;
+						break;
+					case 8:
+						room[x][y] = 2;
+						break;
+					case 9:
+						room[x][y] = 1;
+						break;
+					case 10:
+						room[x][y] = 2;
+						break;
+					case 12:
+						room[x][y] = 3;
+						break;
 
-				bool hasleft = x == 0 ? false : room[x - 1][y];
-				bool hasright = x == room.size() - 1 ? false : room[x + 1][y];
-				bool hasup = y == 0 ? false : room[x][y - 1];
-				bool hasdown = y == room[x].size()-1 ? false : room[x][y + 1];
-				char edges = (hasleft << 0) | (hasright << 1) | (hasup << 2) | (hasdown << 3);
-				switch (edges){
-				case 1:
-					room[x][y] = 1;
-					break;
-				case 2:
-					room[x][y] = 2;
-					break;
-				case 3:
-					room[x][y] = 1;
-					break;
-				case 4:
-					room[x][y] = 3;
-					break;
-				case 5:
-					room[x][y] = 4;
-					break;
-				case 6:
-					room[x][y] = 3;
-					break;
-				case 8:
-					room[x][y] = 2;
-					break;
-				case 9:
-					room[x][y] = 1;
-					break;
-				case 10:
-					room[x][y] = 2;
-					break;
-				case 12:
-					room[x][y] = 3;
-					break;
-
+					}
 				}
-
-
 				blocks.push_back(Coord((double)x / xsize, (double)y / ysize, room[x][y]));
 			}
 		}
