@@ -71,10 +71,13 @@ bool Map::tryRoomChange(int x, int y){
 	}
 	if (exit){
 		if (isexit){
+			if (curr_room == last_room)++last_room;
+			++curr_room;
 			generateRoom(++curr_seed, 1);
 			last_entry = false;
 		}
 		if (!isexit){
+			--curr_room;
 			generateRoom(--curr_seed, 0);
 			last_entry = true;
 		}
@@ -83,16 +86,21 @@ bool Map::tryRoomChange(int x, int y){
 
 }
 
-void Map::setMapHardness(int level){
-	hardness = level;
-}
-
 int Map::getMaxMonsters(){
-	return hardness*10;
+	return last_room*10;
 }
 
 int Map::getSpawnRate(){
-	return 420/hardness;
+	return 420/last_room;
+}
+
+long long int Map::getLastExploredRoom(){
+	return last_room;
+}
+
+long long int Map::getCurrentRoomNumber(){
+	return curr_room;
+
 }
 
 void Map::getRoomSize(double& x, double& y){

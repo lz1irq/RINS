@@ -14,9 +14,10 @@ class Map{
 	mt19937 pattern;
 	uint32_t curr_seed;
 	enum walls{ LEFT, DOWN, UP, RIGHT };
-	bool last_entry = true;
+	bool last_entry = false;
 	double offsetx = 0, offsety = 0;
-	int map_type, hardness;
+	int map_type;
+	long long int last_room = 1, curr_room = 1;
 public:
 	const int xsize = 16, ysize = 16;
 	struct Coord{
@@ -36,10 +37,11 @@ public:
 	bool tryRoomChange(int x, int y);
 	bool updateInternalMapState();
 	int getMapType();
-	void setMapHardness(int level);
 	int getMaxMonsters();
 	int getSpawnRate();
 	void getRoomSize(double& x, double& y);
+	long long int getLastExploredRoom();
+	long long int getCurrentRoomNumber();
 private:
 	vector<Coord> blocks;
 	vector<vector<char>> room;

@@ -53,6 +53,12 @@ void Renderer::applyTexture(SDL_Texture* t, double x, double y, double width, do
 	}
 	dst.x += (W - H) / 2;
 	if (SDL_RenderCopyEx(ren, t, &src, &dst, rotate, NULL, SDL_FLIP_NONE) != 0)throw Error(SDL_GetError());
+	//SDL_SetTextureColorMod(t, 40, 40, 40);
+}
+
+void Renderer::setModulateBlending(int texture_ID){
+	if (textures[texture_ID] == nullptr)throw Error("Bad texture ID!");
+	if (SDL_SetTextureBlendMode(textures[texture_ID], SDL_BLENDMODE_MOD) != 0)throw Error(SDL_GetError());
 }
 
 void Renderer::applyTexture(int texture_ID, double x, double y, double width, double height) {

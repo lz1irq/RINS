@@ -1,7 +1,6 @@
 #ifndef _GLIBCXX_BEING_H
 #define _GLIBCXX_BEING_H
 #include "Weapon.h"
-#include <vector>
 #include <memory>
 #include <ctime>
 #include <random>
@@ -112,7 +111,6 @@ private:
 public:
 	Pyro(double sx, double sy);
 	void action(const vector<vector<char>>& map_index) final;
-	int getTextureID();
 };
 
 class Psychokinetic: public Being, BeingResources {
@@ -123,7 +121,6 @@ private:
 public:
 	Psychokinetic(double sx, double sy);
 	void action(const vector<vector<char>>& map_index) final;
-	int getTextureID();
 };
 
 class Zombie: public Being, BeingResources {
@@ -133,7 +130,6 @@ private:
 public:
 	Zombie(double sx, double sy);
 	void action(const vector<vector<char>>& map_index) final;
-	int getTextureID();
 };
 
 class Android: public Being, BeingResources {
@@ -144,7 +140,6 @@ private:
 public:
 	Android(double sx, double sy);
 	void action(const vector<vector<char>>& map_index) final;
-	int getTextureID();
 };
 
 #endif

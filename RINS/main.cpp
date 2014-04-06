@@ -9,7 +9,7 @@ class RINS : public Game, public Map{
 	int bg[3];
 	int wall[3];
 	int side[3][2];
-	int entrytex, exittex;
+	int entrytex, exittex, red;
 
 	int dir, tmpdir2;
 	double lastxpos, lastypos, deltax, deltay;
@@ -23,8 +23,9 @@ class RINS : public Game, public Map{
 
 	mutex lock1, monster;
 
-	int highscore = 0;
+	int highscore = 0, spawned = 0;
 	int main_font;
+	bool completed = false;
 
 	void graphicsLoop() final {
 		try{
@@ -75,12 +76,16 @@ class RINS : public Game, public Map{
 			int event = player->checkCollisions(lastxpos, lastypos, getMapIndex(), x_colide, y_colide);
 			switch (event){
 			case OUT_OF_BOUNDS:
+				if (!completed)break;
 				lock1.lock();
 				if (tryRoomChange(x_colide, y_colide)){
 					c = getMapEntry();
 					player->setX(c.x);
 					player->setY(c.y);
-					setMapHardness(player->getLevel());
+					if (getLastExploredRoom() == getCurrentRoomNumber()){
+						completed = false;
+						spawned = 0;
+					}
 				}
 				lock1.unlock();
 				break;
@@ -96,12 +101,16 @@ class RINS : public Game, public Map{
 			int x = pattern()%getMapIndex().size();
 			int y = pattern()%getMapIndex()[x].size();
 
-			if(mustspawn && !getMapIndex()[x][y] && monsters.size() < getMaxMonsters()){
-				monster.lock();
-				monsters.push_back(unique_ptr<Being>(Being::monsters[spawntype]((double)x / xsize, (double)y / ysize)));
-				monster.unlock();
+			if(mustspawn && !getMapIndex()[x][y]){
+				if (spawned == getMaxMonsters()){
+					if (monsters.size() == 0)completed = true;
+				}
+				else{
+					monster.lock();
+					monsters.push_back(unique_ptr<Being>(Being::monsters[spawntype]((double)x / xsize, (double)y / ysize)));
+					monster.unlock();
+				}
 			}
-
 
 			SDL_Delay(10);
 		}
@@ -141,6 +150,8 @@ class RINS : public Game, public Map{
 		deltay = player->getY() - alterBeingPosY(player->getY());
 		rend.renderPart(0, 0, 0, 0);
 		rend.applyTexture(bg[maptype], - deltax, -deltay, (double)(getMapIndex().size() / (double)xsize), (double)(getMapIndex()[0].size() / (double)ysize));
+		rend.renderPart(0, 0, 0, 0);
+		if(completed)rend.applyTexture(red, -deltax, -deltay, (double)(getMapIndex().size() / (double)xsize), (double)(getMapIndex()[0].size() / (double)ysize));
 		double room_x, room_y;
 		char wpos, hpos;
 		getRoomSize(room_x, room_y);
@@ -235,11 +246,13 @@ public:
 		side[2][0] = rend.loadTexture("Textures/forest_1.png");
 		side[2][1] = rend.loadTexture("Textures/forest_2.png");
 
-		Projectile::addTexture(BULLET, rend.loadTexture("Textures/bullet.png"));
-		Projectile::addTexture(FIRE, rend.loadTexture("Textures/bullet2.png"));
+		WeaponResources::addTexture(rend.loadTexture("Textures/bullet.png"), BULLET);
+		WeaponResources::addTexture(rend.loadTexture("Textures/bullet2.png"), FIRE);
 
 		entrytex = rend.loadTexture("Textures/entry.png");
 		exittex = rend.loadTexture("Textures/exit.png");
+		red = rend.loadTexture("Textures/red.png");
+		rend.setModulateBlending(red);
 
 		main_font = rend.loadFont("Fonts/ARIALUNI.TTF", 40);
 
@@ -247,7 +260,6 @@ public:
 
 		Being::targets.push_back(player);
 
-		setMapHardness(player->getLevel());
 		//::xsize = xsize;
 		//::ysize = ysize;
 

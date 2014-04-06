@@ -44,6 +44,7 @@ public:
 	int loadFont(const char* font, int size);
 	void displayText(int font, const Uint16* text, RGBA color, double x, double y, double w, double h);
 	void setRotationAngle(double deg);
+	void setModulateBlending(int texture_ID);
 	~Renderer();
 };
 

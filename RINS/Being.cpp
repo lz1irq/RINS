@@ -80,7 +80,7 @@ double Being::getStepY() const{
 }
 
 void Being::shootWeapon() {
-	projectiles.push_back((weapons.at(curr_weapon)->shoot(orientation, x+move_step_x*2, y+move_step_y*2)));
+	projectiles.push_back((weapons.at(curr_weapon)->shoot(orientation, x, y)));
 }
 
 void Being::nextWeapon() {
@@ -196,7 +196,7 @@ Marine::Marine(double sx, double yx):
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
 	energy_weapons = 2 + prim_stats.perception* + prim_stats.luck>>1;
 
-	weapons.push_back(std::unique_ptr<WeaponBase>(new AssaultRifle(small_guns)));
+	weapons.push_back(std::unique_ptr<WeaponBase>(new AssaultRifle(small_guns, typeid(*this).name())));
 }
 
 void Marine::action(const vector<vector<char>>& map_index) {
@@ -210,7 +210,7 @@ Pyro::Pyro(double sx, double yx):
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
 	fire = 2 + prim_stats.agility* + prim_stats.luck>>1;
 
-	weapons.push_back(std::unique_ptr<Molotov>(new Molotov(explosives)));
+	weapons.push_back(std::unique_ptr<Molotov>(new Molotov(explosives, typeid(*this).name())));
 }
 
 void Pyro::action(const vector<vector<char>>& map_index) {
@@ -224,7 +224,7 @@ Psychokinetic::Psychokinetic(double sx, double yx):
 	mental_power = 2 + prim_stats.endurance + prim_stats.intelligence + prim_stats.luck>>1;
 	fire = 2 + prim_stats.agility* + prim_stats.luck>>1;
 
-	weapons.push_back(std::unique_ptr<WeaponBase>(new Pyrokinesis(fire)));
+	weapons.push_back(std::unique_ptr<WeaponBase>(new Pyrokinesis(fire, typeid(*this).name())));
 }
 
 void Psychokinetic::action(const vector<vector<char>>& map_index) {
@@ -238,7 +238,7 @@ Android::Android(double sx, double yx):
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
 	energy_weapons = 2 + prim_stats.perception* + prim_stats.luck>>1;
 
-	weapons.push_back(std::unique_ptr<WeaponBase>(new Punch(punch)));
+	weapons.push_back(std::unique_ptr<WeaponBase>(new Punch(punch, typeid(*this).name())));
 }
 
 void Android::action(const vector<vector<char>>& map_index) {
@@ -249,10 +249,9 @@ Zombie::Zombie(double sx, double yx):
 	Being(sx,yx), target(nullptr) {
 	biting = 2 + prim_stats.strength<<1 + prim_stats.luck>>1;
 
-	weapons.push_back(std::unique_ptr<WeaponBase>(new Bite(biting)));
+	weapons.push_back(std::unique_ptr<WeaponBase>(new Bite(biting, typeid(*this).name())));
 }
-#include <iostream>
-using namespace std;
+
 void Zombie::action(const vector<vector<char>>& map_index) {
 
 	//if(der_stats.health == 0) {
