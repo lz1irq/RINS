@@ -8,7 +8,7 @@
 using namespace std;
 enum {BULLET, FIRE, PSYCHO, ENERGY};
 enum {LEFT=1,RIGHT=2,UP=4,DOWN=8};
-class Zombie;
+class Hitbox;
 class Being;
 class Projectile {
 	unsigned int type;
@@ -18,7 +18,6 @@ class Projectile {
 	unsigned int dir;
 	double x,y;
 	const char* shooter;
-	Zombie* dummy;
 public:
 	Projectile(unsigned int ptype, int pdamage, int pfly_t, int pdet_t, unsigned int pdir, double px, double py, const char* shooter);
 	bool update(const vector<vector<char>>& map_index, list<unique_ptr<Being>>& targets);
@@ -27,6 +26,7 @@ public:
 	unsigned int getType() const;
 	int getDamage() const;
 	virtual ~Projectile(){}
+	static Hitbox* box;
 };
 
 class WeaponResources {

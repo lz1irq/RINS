@@ -1,10 +1,12 @@
 #include "Weapon.h"
 #include "Being.h"
+
+Hitbox* Projectile::box;
+
 Projectile::Projectile(unsigned int ptype, int pdmg, int pfly_t, int pdet_t, unsigned int pdir, double px, double py, const char* shooter) :
 type(ptype), dmg(pdmg),
 fly_t(pfly_t), det_t(pdet_t),
-dir(pdir), x(px), dummy(new Zombie(px, py)),
-y(py), shooter(shooter)
+dir(pdir), x(px), y(py), shooter(shooter)
 {}
 
 unsigned int Projectile::getType() const {
@@ -23,19 +25,18 @@ using namespace std;
 bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<Being>>& targets){
 	double newx = x;
 	double newy = y;
-	int x_colide, y_colide;
-	if (dir & LEFT)newx -= dummy->getStepX();
-	if (dir & RIGHT)newx += dummy->getStepX();
-	if (dir & UP)newy -= dummy->getStepY();
-	if (dir & DOWN)newy += dummy->getStepY();
-	dummy->setX(newx);
-	dummy->setY(newy);
+	if (dir & LEFT)newx -= box->getStepX();
+	if (dir & RIGHT)newx += box->getStepX();
+	if (dir & UP)newy -= box->getStepY();
+	if (dir & DOWN)newy += box->getStepY();
+	box->setX(newx);
+	box->setY(newy);
 
 	if (fly_t){
 		--fly_t;
-		dummy->checkCollisions(x, y, map_index, x_colide, y_colide);
-		x = dummy->getX();
-		y = dummy->getY();
+		box->checkCollisions(x, y, map_index);
+		x = box->getX();
+		y = box->getY();
 	}
 	if (det_t)--det_t;
 	else return false; //explode!
@@ -44,8 +45,8 @@ bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<B
 
 		int mx = (*m)->getX() / (*m)->getStepX() + 1;
 		int my = (*m)->getY() / (*m)->getStepY() + 1;
-		int px = dummy->getX() / dummy->getStepX() + 1;
-		int py = dummy->getY() / dummy->getStepY() + 1;
+		int px = box->getX() / box->getStepX() + 1;
+		int py = box->getY() / box->getStepY() + 1;
 
 		if ((px - mx) <= 1 && (px - mx) >= 0 && (py - my) <= 1 && (py - my) >= 0){
 			if (strcmp(typeid(*m).name(), shooter)){

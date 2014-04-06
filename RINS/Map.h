@@ -19,7 +19,7 @@ class Map{
 	int map_type;
 	long long int last_room = 1, curr_room = 1;
 public:
-	const int xsize = 16, ysize = 16;
+	static const int xsize = 16, ysize = 16;
 	struct Coord{
 		double x;
 		double y;

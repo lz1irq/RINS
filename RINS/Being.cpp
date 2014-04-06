@@ -6,6 +6,7 @@ using namespace std;
 
 vector<Being*> Being::targets;
 list<Projectile> Being::projectiles;
+Hitbox* Being::box;
 
 Primary::Primary():	
 	strength(5), strength_bonus(0),
@@ -24,12 +25,11 @@ Derived::Derived(Primary prim, int level):
 	dmg_res = prim.agility*1.5;
 }
 
-Being::Being(double x, double y): 
-	x(x), y(y),
-	orientation(UP), move_step_x(1.0/(4*tiles_x)), 
-	move_step_y(1.0 / (4 * tiles_y)),
-	level(1), prim_stats(Primary()), 
+Being::Being(double x, double y) : Hitbox(*box),
+	orientation(UP), level(1), prim_stats(Primary()), 
 	der_stats(prim_stats, level), curr_weapon(0) {
+		this->x = x;
+		this->y = y;
 		rnd.seed(time(0));
 	}
 
@@ -51,32 +51,8 @@ int Being::getHealth() {
 	return der_stats.health;
 }
 
-double Being::getX() const {
-	return x;
-}
-
-double Being::getY() const {
-	return y;
-}
-
-void Being::setX(double newX) {
-	x = newX;
-}
-
-void Being::setY(double newY) {
-	y = newY;
-}
-
 int Being::getOrientation() const {
 	return orientation;
-}
-
-double Being::getStepX() const{
-	return move_step_x;
-}
-
-double Being::getStepY() const{
-	return move_step_y;
 }
 
 void Being::shootWeapon() {
@@ -105,65 +81,6 @@ void Being::takeProjectile(Projectile& bullet) {
 	else der_stats.health -= (bullet.getDamage() - def_skill);
 }
 
-int Being::getTileX(int xsize){
-	return ((x + move_step_x) / move_step_x) / ((1.0 / xsize) / move_step_x);
-}
-
-int Being::getTileY(int ysize){
-	return ((y + move_step_y * 3) / move_step_y) / ((1.0 / ysize) / move_step_y);
-}
-
-void Being::setNumTiles(int x, int y){
-	tiles_x = x;
-	tiles_y = y;
-}
-
-int Being::checkCollisions(double comp_to_x, double comp_to_y, const vector<vector<char>>& index, int& on_x_tile, int& on_y_tile){
-	double curr_x = x;
-	double curr_y = y;
-	x = comp_to_x;
-	y = comp_to_y;
-	int last_tile_x = getTileX(tiles_x);
-	int last_tile_y = getTileY(tiles_y);
-	x = curr_x;
-	y = curr_y;
-	int curr_tile_x = getTileX(tiles_x);
-	int curr_tile_y = getTileY(tiles_y);
-	on_x_tile = curr_tile_x;
-	on_y_tile = curr_tile_y;
-	if (!(curr_tile_x < 0 || curr_tile_x >= index.size())){
-		if (!(curr_tile_y < 0 || curr_tile_y >= index[curr_tile_x].size())){
-			if (index[curr_tile_x][curr_tile_y]){
-				if (index[curr_tile_x][curr_tile_y] < 16){  //16 = #wall combinations; the magic tiles' ID's are > than 16
-					if(index[last_tile_x][curr_tile_y] && index[curr_tile_x][last_tile_y]){
-						setY(comp_to_y);
-						setX(comp_to_x);
-						return XY_COLIDE;
-					}
-					if (index[last_tile_x][curr_tile_y]){
-						setY(comp_to_y);
-						return Y_COLIDE;
-					}
-					if (index[curr_tile_x][last_tile_y]){
-						setX(comp_to_x);
-						return X_COLIDE;
-					}
-				}
-				return TRIGGER;
-			}
-			return STATUS_OK;
-		}
-		else {
-			setX(comp_to_x);
-			return OUT_OF_BOUNDS;
-		}
-	}
-	else {
-		setY(comp_to_y);
-		return OUT_OF_BOUNDS;
-	}
-}
-
 int Being::getLevel(){
 	return level;
 }
@@ -177,10 +94,6 @@ void Being::resetWalk(){
 }
 
 mt19937 Being::rnd;
-
-int Being::tiles_x;
-
-int Being::tiles_y;
 
 array<Being*(*)(double, double), MAXSIZE> Being::monsters;
 

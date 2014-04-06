@@ -27,6 +27,8 @@ class RINS : public Game, public Map{
 	int main_font;
 	bool completed = false;
 
+	Hitbox box;
+
 	void graphicsLoop() final {
 		try{
 
@@ -78,7 +80,7 @@ class RINS : public Game, public Map{
 				if(lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
 			}
 
-			if (getTicks() - projectile_tick > 20){
+			if (getTicks() - projectile_tick > 150){
 				if (dir & 16){
 					projectile.lock();
 					player->shootWeapon();
@@ -97,12 +99,12 @@ class RINS : public Game, public Map{
 			}
 
 			int x_colide, y_colide;
-			int event = player->checkCollisions(lastxpos, lastypos, getMapIndex(), x_colide, y_colide);
+			int event = player->checkCollisions(lastxpos, lastypos, getMapIndex());
 			switch (event){
 			case OUT_OF_BOUNDS:
 				if (!completed)break;
 				lock1.lock();
-				if (tryRoomChange(x_colide, y_colide)){
+				if (tryRoomChange(player->getTileX(), player->getTileY())){
 					c = getMapEntry();
 					player->setX(c.x);
 					player->setY(c.y);
@@ -244,21 +246,21 @@ class RINS : public Game, public Map{
 		rend.applyTexture(side[maptype][1], 1 , 0, 1, 1);
 	}
 public:
-	RINS() try : 
+	RINS() try : box(xsize, ysize, 4),
 		rend(640, 640, "RINS"), dir(0), c(0, 0, 0) {
+		Projectile::box = &box;
+		Being::box = &box;
 		loadMap("do u even seed, bro?");
 		c = getMapEntry();
-
-		Being::setNumTiles(xsize, ysize);
 
 		int pclass;
 		cout << "Chose class: " << endl << "0. Marine " << endl << "1. Pyro " << endl << "2. Psychokinetic" << endl << "3. Android" << endl;
 		//cin >> pclass;
 		pclass = pclass%3;
 		if(pclass == 0) player = new Marine(c.x,c.y);
-		else if(pclass == 1) player = new Pyro(c.x, c.y);
-		else if(pclass == 2) player = new Psychokinetic(c.x, c.y);
-		else if(pclass == 3) player = new Android(c.x, c.y);
+		else if (pclass == 1) player = new Pyro(c.x, c.y);
+		else if (pclass == 2) player = new Psychokinetic(c.x, c.y);
+		else if (pclass == 3) player = new Android(c.x, c.y);
 
 
 		BeingResources::addTextureID(rend.loadTexture("Textures/devil2.png"), typeid(Marine).name());
