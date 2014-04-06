@@ -213,7 +213,11 @@ bool Zombie::action(const vector<vector<char>>& map_index) {
 	//}
 
 	//if(there) {
-	//	move(RIGHT, false);
+	double curr_x = getX();
+	double curr_y = getY();
+	int colpos = rnd() % 16;
+	move(colpos, false);
+	int state = checkCollisions(curr_x, curr_y, map_index);
 	//	orientation = LEFT;
 	//	shootWeapon();
 	//}

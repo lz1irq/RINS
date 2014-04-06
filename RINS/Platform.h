@@ -53,11 +53,18 @@ class Game{
 	static int secondaryLoop(void* param);
 	bool quit;
 	bool has_event;
+	int mousex, mousey;
+	Uint32 buttons;
 public:
 	virtual void mainLoop() = 0;
 	virtual void graphicsLoop() = 0;
 	unsigned int getTicks();
 	char getKey(bool pressed);
+	bool isPressed(const char* key);
+	double getMouseX();
+	double getMouseY();
+	bool getLeftClick();
+	bool getRightClick();
 	Game();
 	void loop();
 	~Game();

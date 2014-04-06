@@ -80,7 +80,7 @@ class RINS : public Game, public Map{
 				if(lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
 			}
 
-			if (getTicks() - projectile_tick > 150){
+			if (getTicks() - projectile_tick > 15){
 				if (dir & 16){
 					projectile.lock();
 					player->shootWeapon();
@@ -140,15 +140,15 @@ class RINS : public Game, public Map{
 					monster.unlock();
 				}
 			}
-			
+			monster.lock();
 			for (auto m = begin(monsters); m != end(monsters); ++m){
 				bool res = (*m)->action(getMapIndex());
-				if (!res){
-					monster.lock();
-					m = monsters.erase(m);
-					monster.unlock();
-				}
+				if (!res)m = monsters.erase(m);
 			}
+			monster.unlock();
+			//box.setX(getMouseX() + deltax);
+			//box.setY(getMouseY() + deltay);
+			//cout << box.getTileX() << " " << box.getTileY() << endl;
 
 			SDL_Delay(10);
 		}
@@ -158,16 +158,26 @@ class RINS : public Game, public Map{
 	}
 
 	void getdir(){
-		if (getKey(1) == 'a')dir |= 1 << 0;
-		if (getKey(0) == 'a')dir &= ~(1 << 0);
-		if (getKey(1) == 'd')dir |= 1 << 1;
-		if (getKey(0) == 'd')dir &= ~(1 << 1);
-		if (getKey(1) == 'w')dir |= 1 << 2;
-		if (getKey(0) == 'w')dir &= ~(1 << 2);
-		if (getKey(1) == 's')dir |= 1 << 3;
-		if (getKey(0) == 's')dir &= ~(1 << 3);
-		if (getKey(1) == ' ')dir |= 1 << 4;
-		if (getKey(0) == ' ')dir &= ~(1 << 4);
+		//if (getKey(1) == 'a')dir |= 1 << 0;
+		//if (getKey(0) == 'a')dir &= ~(1 << 0);
+		//if (getKey(1) == 'd')dir |= 1 << 1;
+		//if (getKey(0) == 'd')dir &= ~(1 << 1);
+		//if (getKey(1) == 'w')dir |= 1 << 2;
+		//if (getKey(0) == 'w')dir &= ~(1 << 2);
+		//if (getKey(1) == 's')dir |= 1 << 3;
+		//if (getKey(0) == 's')dir &= ~(1 << 3);
+		//if (getKey(1) == ' ')dir |= 1 << 4;
+		//if (getKey(0) == ' ')dir &= ~(1 << 4);
+		if (isPressed("A"))dir |= 1 << 0;
+		else dir &= ~(1 << 0);
+		if (isPressed("D"))dir |= 1 << 1;
+		else dir &= ~(1 << 1);
+		if (isPressed("W"))dir |= 1 << 2;
+		else dir &= ~(1 << 2);
+		if (isPressed("S"))dir |= 1 << 3;
+		else dir &= ~(1 << 3);
+		if (isPressed("SPACE"))dir |= 1 << 4;
+		else dir &= ~(1 << 4);
 	}
 
 	Uint16* itow(unsigned int h){
@@ -247,7 +257,7 @@ class RINS : public Game, public Map{
 	}
 public:
 	RINS() try : box(xsize, ysize, 4),
-		rend(640, 640, "RINS"), dir(0), c(0, 0, 0) {
+		rend(640, 480, "RINS"), dir(0), c(0, 0, 0) {
 		Projectile::box = &box;
 		Being::box = &box;
 		loadMap("do u even seed, bro?");

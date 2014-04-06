@@ -1,5 +1,9 @@
 #include "Platform.h"
 
+namespace shared_sdl{
+	int W, H;
+}
+
 Error::Error(const char* err) : err(err){}
 
 const char* Error::getError(){ return err; }
@@ -9,6 +13,8 @@ Renderer::Renderer(int width, int height, const char* title) : textures(), fonts
 	if ((win = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI)) == nullptr)throw Error(SDL_GetError());
 	if ((ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC)) == nullptr)throw Error(SDL_GetError());
 	SDL_GetWindowSize(win, &W, &H);
+	shared_sdl::W = W;
+	shared_sdl::H = H;
 	part.x = H;
 	part.y = H;
 	cout << W << " " << H << endl;
@@ -119,8 +125,9 @@ void Game::loop(){
 	SDL_Thread* thread;
 	if( (thread = SDL_CreateThread(secondaryLoop, "secondaryThread", (void *)this)) == NULL) throw Error( SDL_GetError() );
 	while (!quit) {
-		has_event = SDL_PollEvent(&event);
-		if (has_event && event.type == SDL_QUIT) quit = true;
+		//has_event = SDL_PollEvent(&event);
+		buttons = SDL_GetMouseState(&mousex, &mousey);
+		if (SDL_QuitRequested()) quit = true;
 		mainLoop();
 	}
 	 SDL_WaitThread(thread, NULL);
@@ -142,18 +149,38 @@ unsigned int Game::getTicks() {
 	return SDL_GetTicks();
 }
 
-char Game::getKey(bool pressed){
-	if (!has_event)return 0;
-	switch (event.type) {
-		case SDL_KEYDOWN:
-			if (pressed) return event.key.keysym.sym;
-		break;
-		case SDL_KEYUP:
-			if (!pressed) return event.key.keysym.sym;
-		break;
-		default:
-			return 0;
-	}
+//char Game::getKey(bool pressed){
+//	if (!has_event)return 0;
+//	switch (event.type) {
+//		case SDL_KEYDOWN:
+//			if (pressed) return event.key.keysym.sym;
+//		break;
+//		case SDL_KEYUP:
+//			if (!pressed) return event.key.keysym.sym;
+//		break;
+//		default:
+//			return 0;
+//	}
+//}
+bool Game::isPressed(const char* key){
+	const Uint8 *state = SDL_GetKeyboardState(NULL);
+	return state[SDL_GetScancodeFromName(key)];
+}
+
+double Game::getMouseX(){
+	return (mousex - ((shared_sdl::W - shared_sdl::H) / 2)) / (double)shared_sdl::W;
+}
+
+double Game::getMouseY(){
+	return mousey / (double)shared_sdl::H;
+}
+
+bool Game::getLeftClick(){
+	return buttons&SDL_BUTTON_LMASK;
+}
+
+bool Game::getRightClick(){
+	return buttons&SDL_BUTTON_RMASK;
 }
 
 Game::~Game(){
