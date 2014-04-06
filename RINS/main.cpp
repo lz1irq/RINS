@@ -21,9 +21,9 @@ class RINS : public Game, public Map{
 
 	int last_tick = 0, timer2 = 0, projectile_tick = 0;
 
-	mutex lock1, monster;
+	mutex lock1, monster, projectile;
 
-	int highscore = 0, spawned = 0;
+	int highscore = 0, spawned = 0, lastroom = 0;
 	int main_font;
 	bool completed = false;
 
@@ -47,6 +47,12 @@ class RINS : public Game, public Map{
 				rend.applyTexture(BeingResources::getTextureID(typeid(*i).name()), i->getX()-deltax, i->getY()-deltay, 1.0 / xsize, 1.0 / ysize);
 			}
 			monster.unlock();
+
+			projectile.lock();
+			for (auto &i : Being::projectiles){
+				rend.applyTexture(WeaponResources::getTexture(i.getType()), i.getX() - deltax + 1.5*player->getStepX(), i.getY() - deltay + 1.5*player->getStepY(), player->getStepX(), player->getStepY());
+			}
+			projectile.unlock();
 
 			rend.renderScene();
 		}
@@ -72,6 +78,24 @@ class RINS : public Game, public Map{
 				if(lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
 			}
 
+			if (getTicks() - projectile_tick > 20){
+				if (dir & 16){
+					projectile.lock();
+					player->shootWeapon();
+					projectile.unlock();
+				}
+				projectile_tick = getTicks();
+			}
+
+			for (auto p = begin(Being::projectiles); p != end(Being::projectiles); ++p){
+				bool res = p->update(getMapIndex(), monsters);
+				if (!res){
+					projectile.lock();
+					p = Being::projectiles.erase(p);
+					projectile.unlock();
+				}
+			}
+
 			int x_colide, y_colide;
 			int event = player->checkCollisions(lastxpos, lastypos, getMapIndex(), x_colide, y_colide);
 			switch (event){
@@ -82,7 +106,7 @@ class RINS : public Game, public Map{
 					c = getMapEntry();
 					player->setX(c.x);
 					player->setY(c.y);
-					if (getLastExploredRoom() == getCurrentRoomNumber()){
+					if (getLastExploredRoom() > lastroom){
 						completed = false;
 						spawned = 0;
 					}
@@ -100,14 +124,26 @@ class RINS : public Game, public Map{
 			int spawntype = pattern()%Being::monsters.size();
 			int x = pattern()%getMapIndex().size();
 			int y = pattern()%getMapIndex()[x].size();
-
 			if(mustspawn && !getMapIndex()[x][y]){
 				if (spawned == getMaxMonsters()){
-					if (monsters.size() == 0)completed = true;
+					if (monsters.size() == 0){
+						completed = true;
+						lastroom = getLastExploredRoom();
+					}
 				}
 				else{
 					monster.lock();
 					monsters.push_back(unique_ptr<Being>(Being::monsters[spawntype]((double)x / xsize, (double)y / ysize)));
+					++spawned;
+					monster.unlock();
+				}
+			}
+			
+			for (auto m = begin(monsters); m != end(monsters); ++m){
+				bool res = (*m)->action(getMapIndex());
+				if (!res){
+					monster.lock();
+					m = monsters.erase(m);
 					monster.unlock();
 				}
 			}

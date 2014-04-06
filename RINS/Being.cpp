@@ -199,8 +199,12 @@ Marine::Marine(double sx, double yx):
 	weapons.push_back(std::unique_ptr<WeaponBase>(new AssaultRifle(small_guns, typeid(*this).name())));
 }
 
-void Marine::action(const vector<vector<char>>& map_index) {
-	if(der_stats.health == 0) cout << "MARINE DEAD" << endl;
+bool Marine::action(const vector<vector<char>>& map_index) {
+	if (der_stats.health == 0){
+		cout << "MARINE DEAD" << endl;
+		return false;
+	}
+	return true;
 }
 
 Pyro::Pyro(double sx, double yx): 
@@ -213,8 +217,8 @@ Pyro::Pyro(double sx, double yx):
 	weapons.push_back(std::unique_ptr<Molotov>(new Molotov(explosives, typeid(*this).name())));
 }
 
-void Pyro::action(const vector<vector<char>>& map_index) {
-	return;
+bool Pyro::action(const vector<vector<char>>& map_index) {
+	return true;
 }
 
 Psychokinetic::Psychokinetic(double sx, double yx): 
@@ -227,8 +231,8 @@ Psychokinetic::Psychokinetic(double sx, double yx):
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Pyrokinesis(fire, typeid(*this).name())));
 }
 
-void Psychokinetic::action(const vector<vector<char>>& map_index) {
-	return;
+bool Psychokinetic::action(const vector<vector<char>>& map_index) {
+	return true;
 }
 
 Android::Android(double sx, double yx): 
@@ -241,8 +245,12 @@ Android::Android(double sx, double yx):
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Punch(punch, typeid(*this).name())));
 }
 
-void Android::action(const vector<vector<char>>& map_index) {
-	if(der_stats.health == 0) cout << "DROID DEAD" << endl;
+bool Android::action(const vector<vector<char>>& map_index) {
+	if (der_stats.health == 0){
+		cout << "DROID DEAD" << endl;
+		return false;
+	}
+	return true;
 }
 
 Zombie::Zombie(double sx, double yx): 
@@ -252,11 +260,12 @@ Zombie::Zombie(double sx, double yx):
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Bite(biting, typeid(*this).name())));
 }
 
-void Zombie::action(const vector<vector<char>>& map_index) {
+bool Zombie::action(const vector<vector<char>>& map_index) {
 
-	//if(der_stats.health == 0) {
-	//	cout << "ZOMBIE DEAD" << endl;
-	//}
+	if(der_stats.health == 0) {
+		cout << "ZOMBIE DEAD" << endl;
+		return false;
+	}
 
 	//if(target == nullptr) target = targets.at(rnd()%targets.size());
 	//double tx = target->getX();
@@ -295,6 +304,7 @@ void Zombie::action(const vector<vector<char>>& map_index) {
 	//	orientation = LEFT;
 	//	shootWeapon();
 	//}
+	return true;
 	
 }
 

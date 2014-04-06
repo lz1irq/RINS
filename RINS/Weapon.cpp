@@ -17,19 +17,23 @@ unsigned int Projectile::getType() const {
 //	if(dir & UP)y-= step;
 //	if(dir & DOWN)y+= step;
 //}
+#include <iostream>
+using namespace std;
 
-bool Projectile::update(const vector<vector<char>>& map_index, vector<Being*> targets){
-	double newx = dummy->getX();
-	double newy = dummy->getY();
+bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<Being>>& targets){
+	double newx = x;
+	double newy = y;
 	int x_colide, y_colide;
 	if (dir & LEFT)newx -= dummy->getStepX();
 	if (dir & RIGHT)newx += dummy->getStepX();
 	if (dir & UP)newy -= dummy->getStepY();
 	if (dir & DOWN)newy += dummy->getStepY();
+	dummy->setX(newx);
+	dummy->setY(newy);
 
 	if (fly_t){
 		--fly_t;
-		dummy->checkCollisions(newx, newy, map_index, x_colide, y_colide);
+		dummy->checkCollisions(x, y, map_index, x_colide, y_colide);
 		x = dummy->getX();
 		y = dummy->getY();
 	}

@@ -1,11 +1,9 @@
 #ifndef _GLIBCXX_BEING_H
 #define _GLIBCXX_BEING_H
 #include "Weapon.h"
-#include <memory>
 #include <ctime>
 #include <random>
 #include <array>
-#include <list>
 #include <typeinfo>
 using namespace std;
 struct Primary {
@@ -58,7 +56,7 @@ protected:
 public:
 	Being(double x, double y);
 	int getHealth();
-	virtual void action(const vector<vector<char>>& map_index) = 0;
+	virtual bool action(const vector<vector<char>>& map_index) = 0;
 	void addWeapon(WeaponBase* wpn);
 	void move(int dir, bool reverse);
 	int getLevel();
@@ -99,7 +97,7 @@ private:
 	int energy_weapons, energy_weapons_bonus;
 public:
 	Marine(double sx, double sy);
-	void action(const vector<vector<char>>& map_index) final;
+	bool action(const vector<vector<char>>& map_index) final;
 	int getTextureID();
 };
 
@@ -110,7 +108,7 @@ private:
 	int fire, fire_bonus;
 public:
 	Pyro(double sx, double sy);
-	void action(const vector<vector<char>>& map_index) final;
+	bool action(const vector<vector<char>>& map_index) final;
 };
 
 class Psychokinetic: public Being, BeingResources {
@@ -120,7 +118,7 @@ private:
 	int fire, fire_bonus;
 public:
 	Psychokinetic(double sx, double sy);
-	void action(const vector<vector<char>>& map_index) final;
+	bool action(const vector<vector<char>>& map_index) final;
 };
 
 class Zombie: public Being, BeingResources {
@@ -129,7 +127,7 @@ private:
 	Being* target;
 public:
 	Zombie(double sx, double sy);
-	void action(const vector<vector<char>>& map_index) final;
+	bool action(const vector<vector<char>>& map_index) final;
 };
 
 class Android: public Being, BeingResources {
@@ -139,7 +137,7 @@ private:
 	int energy_weapons, energy_weapons_bonus;
 public:
 	Android(double sx, double sy);
-	void action(const vector<vector<char>>& map_index) final;
+	bool action(const vector<vector<char>>& map_index) final;
 };
 
 #endif
