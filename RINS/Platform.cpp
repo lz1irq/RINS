@@ -168,7 +168,7 @@ bool Game::isPressed(const char* key){
 }
 
 double Game::getMouseX(){
-	return (mousex - ((shared_sdl::W - shared_sdl::H) / 2)) / (double)shared_sdl::W;
+	return (mousex - ((shared_sdl::W - shared_sdl::H) / 2)) / (double)shared_sdl::H;
 }
 
 double Game::getMouseY(){

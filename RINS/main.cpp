@@ -27,7 +27,11 @@ class RINS : public Game, public Map{
 	int main_font;
 	bool completed = false;
 
+	bool cangetpress = true, pressed = false;
+
 	Hitbox box;
+
+	Being* curr_target = nullptr;
 
 	void graphicsLoop() final {
 		try{
@@ -65,7 +69,6 @@ class RINS : public Game, public Map{
 
 	void mainLoop() final {
 		try {
-
 			tmpdir2 = dir;
 			getdir();
 
@@ -140,16 +143,26 @@ class RINS : public Game, public Map{
 					monster.unlock();
 				}
 			}
+			int tar = 0;
 			monster.lock();
-			for (auto m = begin(monsters); m != end(monsters); ++m){
+			for (auto m = begin(monsters); m != end(monsters); ++m, ++tar){
 				bool res = (*m)->action(getMapIndex());
-				if (!res)m = monsters.erase(m);
+				if (!res){
+					m = monsters.erase(m);
+					curr_target = nullptr;
+				}
+				else{
+					if (mouseOverTarget((*m)->getX(), (*m)->getY()) && pressed){
+						curr_target = &**m;
+					}
+				}
 			}
 			monster.unlock();
+			if(curr_target)cout << curr_target->getX() << endl;
 			//box.setX(getMouseX() + deltax);
 			//box.setY(getMouseY() + deltay);
 			//cout << box.getTileX() << " " << box.getTileY() << endl;
-
+			updatePress();
 			SDL_Delay(10);
 		}
 		catch (Error e) {
@@ -191,6 +204,24 @@ class RINS : public Game, public Map{
 		if(text[0] == 0) text[0] = '0';
 		text[a] = 0;
 		return text;
+	}
+	bool mouseOverTarget(double tx, double ty){
+		double mx = getMouseX() + deltax;
+		double my = getMouseY() + deltay;
+		if (mx > tx && mx < tx + 1.0 / xsize && my > ty && my < ty + 1.0 / ysize)return true;
+		return false;
+	}
+	void updatePress(){
+		//bool cangetpress = true, pressed = false;
+		pressed = false;
+		if (getLeftClick() && cangetpress){
+			cangetpress = false;
+			pressed = true;
+		}
+		if (!getLeftClick()){
+			cangetpress = true;
+			pressed = false;
+		}
 	}
 	void renderMap(){
 		int maptype = getMapType();
