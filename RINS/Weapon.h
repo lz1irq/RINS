@@ -5,9 +5,11 @@
 #include <list>
 #include <string.h>
 #include <memory>
+#include <cmath>
 using namespace std;
 enum {BULLET, FIRE, PSYCHO, ENERGY};
 enum {LEFT=1,RIGHT=2,UP=4,DOWN=8};
+#define M_PI    3.14159265358979323846264338327950288   /* pi */
 class Hitbox;
 class Being;
 class Projectile {
@@ -15,18 +17,18 @@ class Projectile {
 	int dmg;
 	int fly_t;
 	int det_t;
-	unsigned int dir;
+	double dir;
 	double x,y;
 	const char* shooter;
 public:
-	Projectile(unsigned int ptype, int pdamage, int pfly_t, int pdet_t, unsigned int pdir, double px, double py, const char* shooter);
+	Projectile(unsigned int ptype, int pdamage, int pfly_t, int pdet_t, double angle, double px, double py, const char* shooter, Hitbox& h);
 	bool update(const vector<vector<char>>& map_index, list<unique_ptr<Being>>& targets);
 	double getX();
 	double getY();
 	unsigned int getType() const;
 	int getDamage() const;
 	virtual ~Projectile(){}
-	static Hitbox* box;
+	Hitbox& box;
 };
 
 class WeaponResources {
@@ -53,37 +55,37 @@ public:
 	int getAmmoPerMag() const;
 	bool isPickedUp() const;
 	void pickUp();
-	virtual Projectile& shoot(int dir, double px, double py)=0;
+	virtual Projectile& shoot(double angle, double px, double py, Hitbox& h) = 0;
 };
 
 class AssaultRifle: public WeaponBase{
 public:
 	AssaultRifle(int wskill, const char* assoc_class);
-	Projectile& shoot(int dir, double px, double py);
+	Projectile& shoot(double angle, double px, double py, Hitbox& h);
 };
 
 class Pyrokinesis : public WeaponBase{
 public:
 	Pyrokinesis(int wskill, const char* assoc_class);
-	Projectile& shoot(int dir, double px, double py);
+	Projectile& shoot(double angle, double px, double py, Hitbox& h);
 };
 
 class Molotov : public WeaponBase{
 public:
 	Molotov(int wskill, const char* assoc_class);
-	Projectile& shoot(int dir, double px, double py);
+	Projectile& shoot(double angle, double px, double py, Hitbox& h);
 };
 
 class Bite : public WeaponBase{
 public:
 	Bite(int wskill, const char* assoc_class);
-	Projectile& shoot(int dir, double px, double py);
+	Projectile& shoot(double angle, double px, double py, Hitbox& h);
 };
 
 class Punch : public WeaponBase{
 public:
 	Punch(int wskill, const char* assoc_class);
-	Projectile& shoot(int dir, double px, double py);
+	Projectile& shoot(double angle, double px, double py, Hitbox& h);
 };
 
 #endif

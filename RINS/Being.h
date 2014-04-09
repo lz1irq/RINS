@@ -35,7 +35,7 @@ public:
 };
 
 enum Monsters{ ZOMBIE = 0, MAXSIZE };
-enum Collisions{ STATUS_OK, OUT_OF_BOUNDS, TRIGGER, X_COLIDE, Y_COLIDE, XY_COLIDE };
+enum Collisions{ STATUS_OK, OUT_OF_BOUNDS, TRIGGER, X_COLLIDE, Y_COLLIDE, XY_COLLIDE };
 
 class Hitbox{
 protected:
@@ -89,15 +89,15 @@ public:
 						if (index[last_tile_x][curr_tile_y] && index[curr_tile_x][last_tile_y]){
 							setY(comp_to_y);
 							setX(comp_to_x);
-							return XY_COLIDE;
+							return XY_COLLIDE;
 						}
 						if (index[last_tile_x][curr_tile_y]){
 							setY(comp_to_y);
-							return Y_COLIDE;
+							return Y_COLLIDE;
 						}
 						if (index[curr_tile_x][last_tile_y]){
 							setX(comp_to_x);
-							return X_COLIDE;
+							return X_COLLIDE;
 						}
 					}
 					return TRIGGER;
@@ -138,7 +138,7 @@ public:
 	void resetWalk();
 	int getOrientation() const;
 	void takeProjectile(Projectile& bullet);
-	void shootWeapon();
+	void shootWeapon(double deg, Hitbox& h);
 	void nextWeapon();
 	void prevWeapon();
 

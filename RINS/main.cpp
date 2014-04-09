@@ -85,9 +85,16 @@ class RINS : public Game, public Map{
 
 			if (getTicks() - projectile_tick > 15){
 				if (dir & 16){
-					projectile.lock();
-					player->shootWeapon();
-					projectile.unlock();
+					if (curr_target){
+						double dx = alterBeingPosX(player->getX()) - curr_target->getY();
+						double dy = alterBeingPosY(player->getY()) - curr_target->getY();
+
+						cout << dx << " " << dy << endl;
+						projectile.lock();
+						//cout << (atan2(dx, dy) * 180 / M_PI) << endl;
+						player->shootWeapon(2.0*M_PI-atan2(dx, dy), *new Hitbox(xsize, ysize, 4));
+						projectile.unlock();
+					}
 				}
 				projectile_tick = getTicks();
 			}
@@ -118,9 +125,9 @@ class RINS : public Game, public Map{
 				}
 				lock1.unlock();
 				break;
-			case X_COLIDE:
-			case Y_COLIDE:
-			case XY_COLIDE:
+			case X_COLLIDE:
+			case Y_COLLIDE:
+			case XY_COLLIDE:
 				if(lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
 				break;
 			}
@@ -158,7 +165,7 @@ class RINS : public Game, public Map{
 				}
 			}
 			monster.unlock();
-			if(curr_target)cout << curr_target->getX() << endl;
+			//if(curr_target)cout << curr_target->getX() << endl;
 			//box.setX(getMouseX() + deltax);
 			//box.setY(getMouseY() + deltay);
 			//cout << box.getTileX() << " " << box.getTileY() << endl;
@@ -289,7 +296,7 @@ class RINS : public Game, public Map{
 public:
 	RINS() try : box(xsize, ysize, 4),
 		rend(640, 480, "RINS"), dir(0), c(0, 0, 0) {
-		Projectile::box = &box;
+		//Projectile::box = &box;
 		Being::box = &box;
 		loadMap("do u even seed, bro?");
 		c = getMapEntry();

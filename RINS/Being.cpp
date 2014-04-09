@@ -55,8 +55,8 @@ int Being::getOrientation() const {
 	return orientation;
 }
 
-void Being::shootWeapon() {
-	projectiles.push_back((weapons.at(curr_weapon)->shoot(orientation, x, y)));
+void Being::shootWeapon(double deg, Hitbox& h) {
+	projectiles.push_back((weapons.at(curr_weapon)->shoot(deg, x, y, h)));
 }
 
 void Being::nextWeapon() {
