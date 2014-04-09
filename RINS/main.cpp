@@ -86,13 +86,10 @@ class RINS : public Game, public Map{
 			if (getTicks() - projectile_tick > 15){
 				if (dir & 16){
 					if (curr_target){
-						double dx = alterBeingPosX(player->getX()) - curr_target->getY();
-						double dy = alterBeingPosY(player->getY()) - curr_target->getY();
-
-						cout << dx << " " << dy << endl;
+						double dx = (curr_target->getX()+curr_target->getStepX()*1.5-deltax) - alterBeingPosX(player->getX());
+						double dy = alterBeingPosY(player->getY()) - (curr_target->getY()+curr_target->getStepY()*1.5-deltay);
 						projectile.lock();
-						//cout << (atan2(dx, dy) * 180 / M_PI) << endl;
-						player->shootWeapon(2.0*M_PI-atan2(dx, dy), *new Hitbox(xsize, ysize, 4));
+						player->shootWeapon(atan2(dx, dy)-0.5*M_PI, *new Hitbox(xsize, ysize, 4));
 						projectile.unlock();
 					}
 				}
