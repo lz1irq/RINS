@@ -94,15 +94,15 @@ class RINS : public Game, public Map{
 						//enum {LEFT=1,RIGHT=2,UP=4,DOWN=8};
 						int di2 = player->getOrientation();
 						int dez = 0;
-						if(di2 & 1 && di2 & 8)dez = 225;//
-						else if(di2 & 1)dez = 180;//
-						else if(di2 & 8 && di2 & 2)dez = 325;//
-						else if(di2 & 8)dez = 270;//
-						else if(di2 & 2 && di2 & 4)dez = 45;//
-						else if(di2 & 2)dez = 0;//
-						else if(di2 & 4 && di2 & 1)dez = 135;//
-						else if(di2 & 4)dez = 90;//
-						dez *= -1;
+						if(di2 == 86567576);
+						else if(di2 & 1)dez = -180;//
+						else if(di2 & 2)dez = -0;//
+						else if(di2 & 4)dez = -90;//
+						else if(di2 & 5)dez = -135;//
+						else if(di2 & 6)dez = -45;//
+						else if(di2 & 8)dez = -270;//
+						else if(di2 & 9)dez = -225;//
+						else if(di2 & 10)dez = -325;//
 						if(dez<=-270)dez += 360;
 						if(!(abs(dez-(deg*180.0/M_PI)) > 90)){
 							projectile.lock();
@@ -114,7 +114,7 @@ class RINS : public Game, public Map{
 				}
 				projectile_tick = getTicks();
 			}
-
+			cout << player->getX() << "" << player->getY() << endl;
 			for (auto p = begin(projectiles); p != end(projectiles); ++p){
 				bool res = p->update(getMapIndex(), monsters);
 				if (!res){
