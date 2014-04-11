@@ -90,25 +90,26 @@ class RINS : public Game, public Map{
 					if (curr_target){
 						double dx = (curr_target->getX() - deltax) - alterBeingPosX(player->getX());
 						double dy = alterBeingPosY(player->getY()) - (curr_target->getY() - deltay);
-						projectile.lock();
 						double deg = (atan2(dx, dy) - 0.5*M_PI);
+						//enum {LEFT=1,RIGHT=2,UP=4,DOWN=8};
+						int di2 = player->getOrientation();
+						int dez = 0;
+						if(di2 & 1 && di2 & 8)dez = 225;//
+						else if(di2 & 1)dez = 180;//
+						else if(di2 & 8 && di2 & 2)dez = 325;//
+						else if(di2 & 8)dez = 270;//
+						else if(di2 & 2 && di2 & 4)dez = 45;//
+						else if(di2 & 2)dez = 0;//
+						else if(di2 & 4 && di2 & 1)dez = 135;//
+						else if(di2 & 4)dez = 90;//
+						dez *= -1;
+						if(dez<=-270)dez += 360;
+						if(!(abs(dez-(deg*180.0/M_PI)) > 90)){
+							projectile.lock();
+							projectiles.push_back(player->shootWeapon(deg, *new Hitbox(xsize, ysize, 4)));
+							projectile.unlock();
 
-						double xval, yval;
-						int dir = player->getOrientation();
-						if (dir & 1) xval = 3.14159265;
-						if (dir & 2) xval = 0;
-						if (dir & 4) yval = 3.14159265;
-						if (dir & 8) yval = 0;
-						double xv = cos(xval);
-						double yv = sin(yval);
-						cout << (yv / xv)*57.2957795 << endl;
-
-						//cout << 360*(log2(player->getOrientation())/4.0) << endl;
-						//cout << log2(player->getOrientation()) << endl;
-						//cout << 360-deg*57.2957795 << endl;
-
-						projectiles.push_back(player->shootWeapon(deg, *new Hitbox(xsize, ysize, 4)));
-						projectile.unlock();
+						}
 					}
 				}
 				projectile_tick = getTicks();
