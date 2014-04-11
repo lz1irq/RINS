@@ -130,7 +130,7 @@ protected:
 public:
 	Being(double x, double y);
 	int getHealth();
-	virtual bool action(const vector<vector<char>>& map_index) = 0;
+	virtual bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) = 0;
 	void addWeapon(WeaponBase* wpn);
 	void move(int dir, bool reverse);
 	int getLevel();
@@ -138,13 +138,11 @@ public:
 	void resetWalk();
 	int getOrientation() const;
 	void takeProjectile(Projectile& bullet);
-	void shootWeapon(double deg, Hitbox& h);
+	Projectile& shootWeapon(double deg, Hitbox& h);
 	void nextWeapon();
 	void prevWeapon();
 
-	static array<Being*(*)(double, double), MAXSIZE> monsters;
 	static vector<Being*> targets;
-	static list<Projectile> projectiles;
 	static Hitbox* box;
 
 	virtual ~Being();
@@ -159,7 +157,7 @@ private:
 	int energy_weapons, energy_weapons_bonus;
 public:
 	Marine(double sx, double sy);
-	bool action(const vector<vector<char>>& map_index) final;
+	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) final;
 	int getTextureID();
 };
 
@@ -170,7 +168,7 @@ private:
 	int fire, fire_bonus;
 public:
 	Pyro(double sx, double sy);
-	bool action(const vector<vector<char>>& map_index) final;
+	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) final;
 };
 
 class Psychokinetic: public Being, BeingResources {
@@ -180,7 +178,7 @@ private:
 	int fire, fire_bonus;
 public:
 	Psychokinetic(double sx, double sy);
-	bool action(const vector<vector<char>>& map_index) final;
+	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) final;
 };
 
 class Zombie: public Being, BeingResources {
@@ -189,7 +187,7 @@ private:
 	Being* target;
 public:
 	Zombie(double sx, double sy);
-	bool action(const vector<vector<char>>& map_index) final;
+	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) final;
 };
 
 class Android: public Being, BeingResources {
@@ -199,7 +197,7 @@ private:
 	int energy_weapons, energy_weapons_bonus;
 public:
 	Android(double sx, double sy);
-	bool action(const vector<vector<char>>& map_index) final;
+	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) final;
 };
 
 #endif

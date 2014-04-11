@@ -91,7 +91,7 @@ int Map::getMaxMonsters(){
 }
 
 int Map::getSpawnRate(){
-	return 420/last_room;
+	return 42/(1+0.1*last_room);
 }
 
 long long int Map::getLastExploredRoom(){

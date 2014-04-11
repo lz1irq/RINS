@@ -32,6 +32,8 @@ class RINS : public Game, public Map{
 	Hitbox box;
 
 	Being* curr_target = nullptr;
+	array<Being*(*)(double, double), MAXSIZE> monster_types;
+	list<Projectile> projectiles;
 
 	void graphicsLoop() final {
 		try{
@@ -55,7 +57,7 @@ class RINS : public Game, public Map{
 			monster.unlock();
 
 			projectile.lock();
-			for (auto &i : Being::projectiles){
+			for (auto &i : projectiles){
 				rend.applyTexture(WeaponResources::getTexture(i.getType()), i.getX() - deltax + 1.5*player->getStepX(), i.getY() - deltay + 1.5*player->getStepY(), player->getStepX(), player->getStepY());
 			}
 			projectile.unlock();
@@ -86,21 +88,37 @@ class RINS : public Game, public Map{
 			if (getTicks() - projectile_tick > 15){
 				if (dir & 16){
 					if (curr_target){
-						double dx = (curr_target->getX()+curr_target->getStepX()*1.5-deltax) - alterBeingPosX(player->getX());
-						double dy = alterBeingPosY(player->getY()) - (curr_target->getY()+curr_target->getStepY()*1.5-deltay);
+						double dx = (curr_target->getX() - deltax) - alterBeingPosX(player->getX());
+						double dy = alterBeingPosY(player->getY()) - (curr_target->getY() - deltay);
 						projectile.lock();
-						player->shootWeapon(atan2(dx, dy)-0.5*M_PI, *new Hitbox(xsize, ysize, 4));
+						double deg = (atan2(dx, dy) - 0.5*M_PI);
+
+						double xval, yval;
+						int dir = player->getOrientation();
+						if (dir & 1) xval = 3.14159265;
+						if (dir & 2) xval = 0;
+						if (dir & 4) yval = 3.14159265;
+						if (dir & 8) yval = 0;
+						double xv = cos(xval);
+						double yv = sin(yval);
+						cout << (yv / xv)*57.2957795 << endl;
+
+						//cout << 360*(log2(player->getOrientation())/4.0) << endl;
+						//cout << log2(player->getOrientation()) << endl;
+						//cout << 360-deg*57.2957795 << endl;
+
+						projectiles.push_back(player->shootWeapon(deg, *new Hitbox(xsize, ysize, 4)));
 						projectile.unlock();
 					}
 				}
 				projectile_tick = getTicks();
 			}
 
-			for (auto p = begin(Being::projectiles); p != end(Being::projectiles); ++p){
+			for (auto p = begin(projectiles); p != end(projectiles); ++p){
 				bool res = p->update(getMapIndex(), monsters);
 				if (!res){
 					projectile.lock();
-					p = Being::projectiles.erase(p);
+					p = projectiles.erase(p);
 					projectile.unlock();
 				}
 			}
@@ -130,7 +148,7 @@ class RINS : public Game, public Map{
 			}
 
 			bool mustspawn = pattern()%getSpawnRate()==false;
-			int spawntype = pattern()%Being::monsters.size();
+			int spawntype = pattern()%monster_types.size();
 			int x = pattern()%getMapIndex().size();
 			int y = pattern()%getMapIndex()[x].size();
 			if(mustspawn && !getMapIndex()[x][y]){
@@ -142,7 +160,7 @@ class RINS : public Game, public Map{
 				}
 				else{
 					monster.lock();
-					monsters.push_back(unique_ptr<Being>(Being::monsters[spawntype]((double)x / xsize, (double)y / ysize)));
+					monsters.push_back(unique_ptr<Being>(monster_types[spawntype]((double)x / xsize, (double)y / ysize)));
 					++spawned;
 					monster.unlock();
 				}
@@ -150,7 +168,7 @@ class RINS : public Game, public Map{
 			int tar = 0;
 			monster.lock();
 			for (auto m = begin(monsters); m != end(monsters); ++m, ++tar){
-				bool res = (*m)->action(getMapIndex());
+				bool res = (*m)->action(getMapIndex(), projectiles);
 				if (!res){
 					m = monsters.erase(m);
 					curr_target = nullptr;
@@ -339,7 +357,7 @@ public:
 
 		main_font = rend.loadFont("Fonts/ARIALUNI.TTF", 40);
 
-		Being::monsters[ZOMBIE] = &createInstance<Zombie>;
+		monster_types[ZOMBIE] = &createInstance<Zombie>;
 
 		Being::targets.push_back(player);
 
@@ -354,6 +372,7 @@ public:
 
 	~RINS() {
 		delete player;
+		projectiles.clear();
 	}
 };
 

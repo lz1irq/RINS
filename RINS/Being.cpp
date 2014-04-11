@@ -5,7 +5,6 @@ using namespace std;
 #include <iostream>
 
 vector<Being*> Being::targets;
-list<Projectile> Being::projectiles;
 Hitbox* Being::box;
 
 Primary::Primary():	
@@ -55,8 +54,8 @@ int Being::getOrientation() const {
 	return orientation;
 }
 
-void Being::shootWeapon(double deg, Hitbox& h) {
-	projectiles.push_back((weapons.at(curr_weapon)->shoot(deg, x, y, h)));
+Projectile& Being::shootWeapon(double deg, Hitbox& h) {
+	return (weapons.at(curr_weapon)->shoot(deg, x, y, h));
 }
 
 void Being::nextWeapon() {
@@ -95,11 +94,9 @@ void Being::resetWalk(){
 
 mt19937 Being::rnd;
 
-array<Being*(*)(double, double), MAXSIZE> Being::monsters;
 
 Being::~Being() {
 	weapons.clear();
-	projectiles.clear();
 }
 
 Marine::Marine(double sx, double yx): 
@@ -112,7 +109,7 @@ Marine::Marine(double sx, double yx):
 	weapons.push_back(std::unique_ptr<WeaponBase>(new AssaultRifle(small_guns, typeid(*this).name())));
 }
 
-bool Marine::action(const vector<vector<char>>& map_index) {
+bool Marine::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) {
 	if (der_stats.health == 0){
 		cout << "MARINE DEAD" << endl;
 		return false;
@@ -130,7 +127,7 @@ Pyro::Pyro(double sx, double yx):
 	weapons.push_back(std::unique_ptr<Molotov>(new Molotov(explosives, typeid(*this).name())));
 }
 
-bool Pyro::action(const vector<vector<char>>& map_index) {
+bool Pyro::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) {
 	return true;
 }
 
@@ -144,7 +141,7 @@ Psychokinetic::Psychokinetic(double sx, double yx):
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Pyrokinesis(fire, typeid(*this).name())));
 }
 
-bool Psychokinetic::action(const vector<vector<char>>& map_index) {
+bool Psychokinetic::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) {
 	return true;
 }
 
@@ -158,7 +155,7 @@ Android::Android(double sx, double yx):
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Punch(punch, typeid(*this).name())));
 }
 
-bool Android::action(const vector<vector<char>>& map_index) {
+bool Android::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) {
 	if (der_stats.health == 0){
 		cout << "DROID DEAD" << endl;
 		return false;
@@ -173,7 +170,7 @@ Zombie::Zombie(double sx, double yx):
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Bite(biting, typeid(*this).name())));
 }
 
-bool Zombie::action(const vector<vector<char>>& map_index) {
+bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) {
 
 	if(der_stats.health == 0) {
 		cout << "ZOMBIE DEAD" << endl;

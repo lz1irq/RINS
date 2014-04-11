@@ -52,10 +52,10 @@ bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<B
 
 	for (auto m = begin(targets); m != end(targets); ++m){
 
-		int mx = (*m)->getX() / (*m)->getStepX() + 1;
-		int my = (*m)->getY() / (*m)->getStepY() + 1;
-		int px = box.getX() / box.getStepX() + 1;
-		int py = box.getY() / box.getStepY() + 1;
+		int mx = ((*m)->getX()+(*m)->getStepX()*1.5) / (*m)->getStepX();
+		int my = ((*m)->getY() + (*m)->getStepY()*1.5) / (*m)->getStepY();
+		int px = (box.getX() + (*m)->getStepX()*1.5) / box.getStepX();
+		int py = (box.getY() + (*m)->getStepY()*1.5) / box.getStepY();
 
 		if ((px - mx) <= 1 && (px - mx) >= 0 && (py - my) <= 1 && (py - my) >= 0){
 			if (strcmp(typeid(*m).name(), shooter)){
