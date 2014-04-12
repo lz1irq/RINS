@@ -200,6 +200,10 @@ Marine::Marine(double sx, double yx):
 	weapons.push_back(std::unique_ptr<WeaponBase>(new AssaultRifle(small_guns, typeid(*this).name())));
 }
 
+void Marine::setRange(){
+	range = 100;
+}
+
 bool Marine::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
 	if (der_stats.health == 0){
 		cout << "MARINE DEAD" << endl;
@@ -218,6 +222,10 @@ Pyro::Pyro(double sx, double yx):
 	weapons.push_back(std::unique_ptr<Molotov>(new Molotov(explosives, typeid(*this).name())));
 }
 
+void Pyro::setRange(){
+	range = 100;
+}
+
 bool Pyro::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
 	return true;
 }
@@ -230,6 +238,10 @@ Psychokinetic::Psychokinetic(double sx, double yx):
 	fire = 2 + prim_stats.agility* + prim_stats.luck>>1;
 
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Pyrokinesis(fire, typeid(*this).name())));
+}
+
+void Psychokinetic ::setRange(){
+	range = 100;
 }
 
 bool Psychokinetic::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
@@ -246,6 +258,10 @@ Android::Android(double sx, double yx):
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Punch(punch, typeid(*this).name())));
 }
 
+void Android::setRange(){
+	range = 100;
+}
+
 bool Android::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
 	if (der_stats.health == 0){
 		cout << "DROID DEAD" << endl;
@@ -259,6 +275,10 @@ Zombie::Zombie(double sx, double yx):
 	biting = 2 + prim_stats.strength<<1 + prim_stats.luck>>1;
 
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Bite(biting, typeid(*this).name())));
+}
+
+void Zombie::setRange(){
+	range = 100;
 }
 
 bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
@@ -306,6 +326,10 @@ bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& pro
 	int colpos = rnd() % 16;
 	move(colpos, false);
 	int state = checkCollisions(curr_x, curr_y, map_index);
+	if (state == OUT_OF_BOUNDS){
+		x = curr_x;
+		y = curr_y;
+	}
 	//	orientation = LEFT;
 	double deg = rnd() % 360;
 

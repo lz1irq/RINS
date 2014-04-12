@@ -63,12 +63,14 @@ class Being: public Hitbox{
 protected:
 	int level;
 	int orientation;
+	int range;
 	Primary prim_stats;
 	Derived der_stats;
 	int curr_weapon;
 	std::vector<std::unique_ptr<WeaponBase>> weapons;
 	static mt19937 rnd;
 	bool walk = false;
+	virtual void setRange() = 0;
 	Projectile& shootWeapon(double deg, Hitbox& h);
 
 public:
@@ -99,7 +101,7 @@ private:
 public:
 	Marine(double sx, double sy);
 	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
-	int getTextureID();
+	void setRange() final;
 };
 
 class Pyro:public Being, BeingResources {
@@ -110,6 +112,7 @@ private:
 public:
 	Pyro(double sx, double sy);
 	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
+	void setRange() final;
 };
 
 class Psychokinetic: public Being, BeingResources {
@@ -120,6 +123,7 @@ private:
 public:
 	Psychokinetic(double sx, double sy);
 	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
+	void setRange() final;
 };
 
 class Zombie: public Being, BeingResources {
@@ -129,6 +133,7 @@ private:
 public:
 	Zombie(double sx, double sy);
 	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
+	void setRange() final;
 };
 
 class Android: public Being, BeingResources {
@@ -139,6 +144,7 @@ private:
 public:
 	Android(double sx, double sy);
 	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
+	void setRange() final;
 };
 
 #endif
