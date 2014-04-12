@@ -17,6 +17,7 @@ class RINS : public Game, public Map{
 	Being* player;
 
 	list<unique_ptr<Being>> monsters;
+	list<unique_ptr<Being>> targets;
 	mt19937 pattern;
 
 	int last_tick = 0, timer2 = 0, projectile_tick = 0;
@@ -55,10 +56,12 @@ class RINS : public Game, public Map{
 				rend.applyTexture(BeingResources::getTextureID(typeid(*i).name()), i->getX()-deltax, i->getY()-deltay, 1.0 / xsize, 1.0 / ysize);
 			}
 			monster.unlock();
-
+			rend.renderPart(0, 0, 0, 0);
 			projectile.lock();
 			for (auto &i : projectiles){
+				rend.setRotationAngle(i.getAngleInDeg());
 				rend.applyTexture(WeaponResources::getTexture(i.getType()), i.getX() - deltax + 1.5*player->getStepX(), i.getY() - deltay + 1.5*player->getStepY(), player->getStepX(), player->getStepY());
+				rend.setRotationAngle(0);
 			}
 			projectile.unlock();
 
@@ -114,16 +117,16 @@ class RINS : public Game, public Map{
 					int event = player->tryToShoot(curr_target, &p);
 					switch (event){
 					case BANG:
-						projectile.lock();
+						//projectile.lock();
 						projectiles.push_back(*p);
-						projectile.unlock();
+						//projectile.unlock();
 					}
 					projectile_tick = getTicks();
 				}
 			}
 			else projectile_tick = getTicks();
 			for (auto p = begin(projectiles); p != end(projectiles); ++p){
-				bool res = p->update(getMapIndex(), monsters);
+				bool res = p->update(getMapIndex(), monsters, targets);
 				if (!res){
 					projectile.lock();
 					p = projectiles.erase(p);
@@ -152,7 +155,7 @@ class RINS : public Game, public Map{
 			int tar = 0;
 			monster.lock();
 			for (auto m = begin(monsters); m != end(monsters); ++m, ++tar){
-				bool res = (*m)->action(getMapIndex(), projectiles);
+				bool res = (*m)->action(getMapIndex(), projectiles, targets, getTicks());
 				if (!res){
 					m = monsters.erase(m);
 					curr_target = nullptr;
@@ -289,10 +292,11 @@ public:
 		cout << "Chose class: " << endl << "0. Marine " << endl << "1. Pyro " << endl << "2. Psychokinetic" << endl << "3. Android" << endl;
 		//cin >> pclass;
 		pclass = pclass%3;
-		if(pclass == 0) player = new Marine(c.x,c.y);
-		else if (pclass == 1) player = new Pyro(c.x, c.y);
-		else if (pclass == 2) player = new Psychokinetic(c.x, c.y);
-		else if (pclass == 3) player = new Android(c.x, c.y);
+		if (pclass == 0)targets.push_back(unique_ptr<Being>(new Marine(c.x, c.y)));
+		else if (pclass == 1)targets.push_back(unique_ptr<Being>(new Pyro(c.x, c.y)));
+		else if (pclass == 2)targets.push_back(unique_ptr<Being>(new Psychokinetic(c.x, c.y)));
+		else if (pclass == 3)targets.push_back(unique_ptr<Being>(new Android(c.x, c.y)));
+		player = &**targets.begin();
 
 
 		BeingResources::addTextureID(rend.loadTexture("Textures/devil2.png"), typeid(Marine).name());
@@ -328,8 +332,6 @@ public:
 
 		monster_types[ZOMBIE] = &createInstance<Zombie>;
 
-		Being::targets.push_back(player);
-
 		//::xsize = xsize;
 		//::ysize = ysize;
 
@@ -340,8 +342,9 @@ public:
 	}
 
 	~RINS() {
-		delete player;
+		targets.clear();
 		projectiles.clear();
+		monsters.clear();
 	}
 };
 

@@ -74,7 +74,7 @@ protected:
 public:
 	Being(double x, double y);
 	int getHealth();
-	virtual bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) = 0;
+	virtual bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) = 0;
 	void addWeapon(WeaponBase* wpn);
 	void move(int dir, bool reverse);
 	int getLevel();
@@ -84,8 +84,6 @@ public:
 	void takeProjectile(Projectile& bullet);
 	int tryToShoot(Being* target, Projectile** p);
 
-
-	static vector<Being*> targets;
 	static Hitbox* box;
 
 	virtual ~Being();
@@ -100,7 +98,7 @@ private:
 	int energy_weapons, energy_weapons_bonus;
 public:
 	Marine(double sx, double sy);
-	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) final;
+	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
 	int getTextureID();
 };
 
@@ -111,7 +109,7 @@ private:
 	int fire, fire_bonus;
 public:
 	Pyro(double sx, double sy);
-	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) final;
+	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
 };
 
 class Psychokinetic: public Being, BeingResources {
@@ -121,7 +119,7 @@ private:
 	int fire, fire_bonus;
 public:
 	Psychokinetic(double sx, double sy);
-	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) final;
+	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
 };
 
 class Zombie: public Being, BeingResources {
@@ -130,7 +128,7 @@ private:
 	Being* target;
 public:
 	Zombie(double sx, double sy);
-	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) final;
+	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
 };
 
 class Android: public Being, BeingResources {
@@ -140,7 +138,7 @@ private:
 	int energy_weapons, energy_weapons_bonus;
 public:
 	Android(double sx, double sy);
-	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles) final;
+	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
 };
 
 #endif

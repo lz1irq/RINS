@@ -13,6 +13,7 @@ enum {LEFT=1,RIGHT=2,UP=4,DOWN=8};
 class Hitbox;
 class Being;
 double deg_to_rad(double deg);
+double rad_to_deg(double rad);
 class Projectile {
 	unsigned int type;
 	int dmg;
@@ -23,11 +24,12 @@ class Projectile {
 	const char* shooter;
 public:
 	Projectile(unsigned int ptype, int pdamage, int pfly_t, int pdet_t, double angle, double px, double py, const char* shooter, Hitbox& h);
-	bool update(const vector<vector<char>>& map_index, list<unique_ptr<Being>>& targets);
+	bool update(const vector<vector<char>>& map_index, list<unique_ptr<Being>>& targets, list<unique_ptr<Being>>& players);
 	double getX();
 	double getY();
 	unsigned int getType() const;
 	int getDamage() const;
+	double getAngleInDeg();
 	virtual ~Projectile(){}
 	Hitbox& box;
 };

@@ -5,8 +5,13 @@ double deg_to_rad(double deg){
 	return deg * M_PI / 180.0;
 }
 
-//Hitbox* Projectile::box;
+double rad_to_deg(double rad){
+	return rad * 180.0 / M_PI;
+}
 
+//Hitbox* Projectile::box;
+#include <iostream>
+using namespace std;
 Projectile::Projectile(unsigned int ptype, int pdmg, int pfly_t, int pdet_t, double angle, double px, double py, const char* shooter, Hitbox& h) :
 type(ptype), dmg(pdmg), box(h),
 fly_t(pfly_t), det_t(pdet_t),
@@ -17,25 +22,11 @@ unsigned int Projectile::getType() const {
 	return type;
 }
 
-//void Projectile::move(double step) {
-//	if(dir & LEFT)x-= step;
-//	if (dir & RIGHT)x += step;
-//	if(dir & UP)y-= step;
-//	if(dir & DOWN)y+= step;
-//}
-#include <iostream>
-using namespace std;
+double Projectile::getAngleInDeg(){
+	return rad_to_deg(dir);
+}
 
-bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<Being>>& targets){
-	//double newx = x;
-	//double newy = y;
-	//cout << x << " " << y << endl;
-	//if (dir & LEFT)newx -= box->getStepX();
-	//if (dir & RIGHT)newx += box->getStepX();
-	//if (dir & UP)newy -= box->getStepY();
-	//if (dir & DOWN)newy += box->getStepY();
-	//newx += cos(deg_to_rad(dir)) * box.getStepX();
-	//newy += sin(deg_to_rad(dir)) * box.getStepY();
+bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<Being>>& targets, list<unique_ptr<Being>>& players){
 	box.setX(x + cos(dir) * box.getStepX());
 	box.setY(y + sin(dir) * box.getStepY());
 	if (fly_t){
@@ -45,20 +36,28 @@ bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<B
 			x = box.getX();
 			y = box.getY();
 		}
-		//else cout << "cc" << endl;
 	}
 	if (det_t)--det_t;
 	else return false; //explode!
-
 	for (auto m = begin(targets); m != end(targets); ++m){
-
 		int mx = ((*m)->getX()+(*m)->getStepX()*1.5) / (*m)->getStepX();
 		int my = ((*m)->getY() + (*m)->getStepY()*1.5) / (*m)->getStepY();
 		int px = (box.getX() + (*m)->getStepX()*1.5) / box.getStepX();
 		int py = (box.getY() + (*m)->getStepY()*1.5) / box.getStepY();
-
 		if ((px - mx) <= 1 && (px - mx) >= 0 && (py - my) <= 1 && (py - my) >= 0){
-			if (strcmp(typeid(*m).name(), shooter)){
+			if (strcmp(typeid(**m).name(), shooter)){
+				(*m)->takeProjectile(*this);
+				return false;//explode!
+			}
+		}
+	}
+	for (auto m = begin(players); m != end(players); ++m){
+		int mx = ((*m)->getX() + (*m)->getStepX()*1.5) / (*m)->getStepX();
+		int my = ((*m)->getY() + (*m)->getStepY()*1.5) / (*m)->getStepY();
+		int px = (box.getX() + (*m)->getStepX()*1.5) / box.getStepX();
+		int py = (box.getY() + (*m)->getStepY()*1.5) / box.getStepY();
+		if ((px - mx) <= 1 && (px - mx) >= 0 && (py - my) <= 1 && (py - my) >= 0){
+			if (strcmp(typeid(**m).name(), shooter)){
 				(*m)->takeProjectile(*this);
 				return false;//explode!
 			}
@@ -143,7 +142,7 @@ Bite::Bite(int wskill, const char* assoc_class) : WeaponBase(BULLET, wskill, 40,
 }
 
 Projectile& Bite::shoot(double angle, double px, double py, Hitbox& h) {
-	return *new Projectile(type, dmg, 1, 0, angle, px, py, assoc_class, h);
+	return *new Projectile(type, dmg, 100, 100, angle, px, py, assoc_class, h);
 }
 
 
