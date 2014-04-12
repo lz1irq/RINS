@@ -36,6 +36,7 @@ public:
 
 enum Monsters{ ZOMBIE = 0, MAXSIZE };
 enum Collisions{ STATUS_OK, OUT_OF_BOUNDS, TRIGGER, X_COLLIDE, Y_COLLIDE, XY_COLLIDE };
+enum Shoot{BANG, NOT_IN_FOV};
 
 class Hitbox{
 protected:
@@ -44,76 +45,18 @@ protected:
 	const double move_step_y;
 	const int tiles_x;
 	const int tiles_y;
+	const int tile_granularity;
 public:
-	Hitbox(int tiles_x, int tiles_y, int tile_granularity) : tiles_x(tiles_x), tiles_y(tiles_y), 
-		move_step_x(1.0 / (tile_granularity * tiles_x)), move_step_y(1.0 / (tile_granularity * tiles_y)){}
-	void setX(double x){
-		this->x = x;
-	}
-	void setY(double y){
-		this->y = y;
-	}
-	double getX(){
-		return x;
-	}
-	double getY(){
-		return y;
-	}
-	int getTileX(){
-		return ((x + move_step_x) / move_step_x) / ((1.0 / tiles_x) / move_step_x);
-	}
-	int getTileY(){
-		return ((y + move_step_y * 3) / move_step_y) / ((1.0 / tiles_y) / move_step_y);
-	}
-	double getStepX() const{
-		return move_step_x;
-	}
-	double getStepY() const{
-		return move_step_y;
-	}
-	int checkCollisions(double comp_to_x, double comp_to_y, const vector<vector<char>>& index){
-		double curr_x = x;
-		double curr_y = y;
-		x = comp_to_x;
-		y = comp_to_y;
-		int last_tile_x = getTileX();
-		int last_tile_y = getTileY();
-		x = curr_x;
-		y = curr_y;
-		int curr_tile_x = getTileX();
-		int curr_tile_y = getTileY();
-		if (!(curr_tile_x < 0 || curr_tile_x >= index.size())){
-			if (!(curr_tile_y < 0 || curr_tile_y >= index[curr_tile_x].size())){
-				if (index[curr_tile_x][curr_tile_y]){
-					if (index[curr_tile_x][curr_tile_y] < 16){  //16 = #wall combinations; the magic tiles' ID's are > than 16
-						if (index[last_tile_x][curr_tile_y] && index[curr_tile_x][last_tile_y]){
-							setY(comp_to_y);
-							setX(comp_to_x);
-							return XY_COLLIDE;
-						}
-						if (index[last_tile_x][curr_tile_y]){
-							setY(comp_to_y);
-							return Y_COLLIDE;
-						}
-						if (index[curr_tile_x][last_tile_y]){
-							setX(comp_to_x);
-							return X_COLLIDE;
-						}
-					}
-					return TRIGGER;
-				}
-				return STATUS_OK;
-			}
-			else {
-				setX(comp_to_x);
-				return OUT_OF_BOUNDS;
-			}
-		}
-		else {
-			setY(comp_to_y);
-			return OUT_OF_BOUNDS;
-		}
-	}
+	Hitbox(int tiles_x, int tiles_y, int tile_granularity);
+	void setX(double x);
+	void setY(double y);
+	double getX();
+	double getY();
+	int getTileX();
+	int getTileY();
+	double getStepX() const;
+	double getStepY() const;
+	int checkCollisions(double comp_to_x, double comp_to_y, const vector<vector<char>>& index);
 };
 
 class Being: public Hitbox{
@@ -126,6 +69,7 @@ protected:
 	std::vector<std::unique_ptr<WeaponBase>> weapons;
 	static mt19937 rnd;
 	bool walk = false;
+	Projectile& shootWeapon(double deg, Hitbox& h);
 
 public:
 	Being(double x, double y);
@@ -138,9 +82,8 @@ public:
 	void resetWalk();
 	int getOrientation() const;
 	void takeProjectile(Projectile& bullet);
-	Projectile& shootWeapon(double deg, Hitbox& h);
-	void nextWeapon();
-	void prevWeapon();
+	int tryToShoot(Being* target, Projectile** p);
+
 
 	static vector<Being*> targets;
 	static Hitbox* box;

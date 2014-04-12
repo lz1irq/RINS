@@ -12,6 +12,7 @@ enum {LEFT=1,RIGHT=2,UP=4,DOWN=8};
 #define M_PI    3.14159265358979323846264338327950288   /* pi */
 class Hitbox;
 class Being;
+double deg_to_rad(double deg);
 class Projectile {
 	unsigned int type;
 	int dmg;

@@ -83,38 +83,45 @@ class RINS : public Game, public Map{
 				player->move(dir, false);
 				last_tick = getTicks();
 				if(lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
-			}
-
-			if (getTicks() - projectile_tick > 15){
-				if (dir & 16){
-					if (curr_target){
-						double dx = (curr_target->getX() - deltax) - alterBeingPosX(player->getX());
-						double dy = alterBeingPosY(player->getY()) - (curr_target->getY() - deltay);
-						double deg = (atan2(dx, dy) - 0.5*M_PI);
-						//enum {LEFT=1,RIGHT=2,UP=4,DOWN=8};
-						int di2 = player->getOrientation();
-						int dez = 0;
-						if(di2 == 86567576);
-						else if(di2 & 1)dez = -180;//
-						else if(di2 & 2)dez = -0;//
-						else if(di2 & 4)dez = -90;//
-						else if(di2 & 5)dez = -135;//
-						else if(di2 & 6)dez = -45;//
-						else if(di2 & 8)dez = -270;//
-						else if(di2 & 9)dez = -225;//
-						else if(di2 & 10)dez = -325;//
-						if(dez<=-270)dez += 360;
-						if(!(abs(dez-(deg*180.0/M_PI)) > 90)){
-							projectile.lock();
-							projectiles.push_back(player->shootWeapon(deg, *new Hitbox(xsize, ysize, 4)));
-							projectile.unlock();
-
+				else{
+					int event = player->checkCollisions(lastxpos, lastypos, getMapIndex());
+					switch (event){
+					case OUT_OF_BOUNDS:
+						if (!completed)break;
+						lock1.lock();
+						if (tryRoomChange(player->getTileX(), player->getTileY())){
+							c = getMapEntry();
+							player->setX(c.x);
+							player->setY(c.y);
+							if (getLastExploredRoom() > lastroom){
+								completed = false;
+								spawned = 0;
+							}
 						}
+						lock1.unlock();
+						break;
+					case X_COLLIDE:
+					case Y_COLLIDE:
+					case XY_COLLIDE:
+						if (lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
+						break;
 					}
 				}
-				projectile_tick = getTicks();
 			}
-			cout << player->getX() << "" << player->getY() << endl;
+			if (dir & 16){
+				if (getTicks() - projectile_tick > 15){
+					Projectile* p;
+					int event = player->tryToShoot(curr_target, &p);
+					switch (event){
+					case BANG:
+						projectile.lock();
+						projectiles.push_back(*p);
+						projectile.unlock();
+					}
+					projectile_tick = getTicks();
+				}
+			}
+			else projectile_tick = getTicks();
 			for (auto p = begin(projectiles); p != end(projectiles); ++p){
 				bool res = p->update(getMapIndex(), monsters);
 				if (!res){
@@ -122,30 +129,6 @@ class RINS : public Game, public Map{
 					p = projectiles.erase(p);
 					projectile.unlock();
 				}
-			}
-
-			int x_colide, y_colide;
-			int event = player->checkCollisions(lastxpos, lastypos, getMapIndex());
-			switch (event){
-			case OUT_OF_BOUNDS:
-				if (!completed)break;
-				lock1.lock();
-				if (tryRoomChange(player->getTileX(), player->getTileY())){
-					c = getMapEntry();
-					player->setX(c.x);
-					player->setY(c.y);
-					if (getLastExploredRoom() > lastroom){
-						completed = false;
-						spawned = 0;
-					}
-				}
-				lock1.unlock();
-				break;
-			case X_COLLIDE:
-			case Y_COLLIDE:
-			case XY_COLLIDE:
-				if(lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
-				break;
 			}
 
 			bool mustspawn = pattern()%getSpawnRate()==false;
@@ -181,10 +164,6 @@ class RINS : public Game, public Map{
 				}
 			}
 			monster.unlock();
-			//if(curr_target)cout << curr_target->getX() << endl;
-			//box.setX(getMouseX() + deltax);
-			//box.setY(getMouseY() + deltay);
-			//cout << box.getTileX() << " " << box.getTileY() << endl;
 			updatePress();
 			SDL_Delay(10);
 		}
@@ -194,16 +173,6 @@ class RINS : public Game, public Map{
 	}
 
 	void getdir(){
-		//if (getKey(1) == 'a')dir |= 1 << 0;
-		//if (getKey(0) == 'a')dir &= ~(1 << 0);
-		//if (getKey(1) == 'd')dir |= 1 << 1;
-		//if (getKey(0) == 'd')dir &= ~(1 << 1);
-		//if (getKey(1) == 'w')dir |= 1 << 2;
-		//if (getKey(0) == 'w')dir &= ~(1 << 2);
-		//if (getKey(1) == 's')dir |= 1 << 3;
-		//if (getKey(0) == 's')dir &= ~(1 << 3);
-		//if (getKey(1) == ' ')dir |= 1 << 4;
-		//if (getKey(0) == ' ')dir &= ~(1 << 4);
 		if (isPressed("A"))dir |= 1 << 0;
 		else dir &= ~(1 << 0);
 		if (isPressed("D"))dir |= 1 << 1;
@@ -235,7 +204,6 @@ class RINS : public Game, public Map{
 		return false;
 	}
 	void updatePress(){
-		//bool cangetpress = true, pressed = false;
 		pressed = false;
 		if (getLeftClick() && cangetpress){
 			cangetpress = false;

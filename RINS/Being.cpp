@@ -24,6 +24,87 @@ Derived::Derived(Primary prim, int level):
 	dmg_res = prim.agility*1.5;
 }
 
+Hitbox::Hitbox(int tiles_x, int tiles_y, int tile_granularity) : tile_granularity(tile_granularity),
+	tiles_x(tiles_x), tiles_y(tiles_y), move_step_x(1.0 / (tile_granularity * tiles_x)),
+	move_step_y(1.0 / (tile_granularity * tiles_y)){
+}
+
+void Hitbox::setX(double x){
+	this->x = x;
+}
+
+void Hitbox::setY(double y){
+	this->y = y;
+}
+
+double Hitbox::getX(){
+	return x;
+}
+
+double Hitbox::getY(){
+	return y;
+}
+
+int Hitbox::getTileX(){
+	return ((x + move_step_x) / move_step_x) / ((1.0 / tiles_x) / move_step_x);
+}
+
+int Hitbox::getTileY(){
+	return ((y + move_step_y * 3) / move_step_y) / ((1.0 / tiles_y) / move_step_y);
+}
+
+double Hitbox::getStepX() const{
+	return move_step_x;
+}
+
+double Hitbox::getStepY() const{
+	return move_step_y;
+}
+
+int Hitbox::checkCollisions(double comp_to_x, double comp_to_y, const vector<vector<char>>& index){
+	double curr_x = x;
+	double curr_y = y;
+	x = comp_to_x;
+	y = comp_to_y;
+	int last_tile_x = getTileX();
+	int last_tile_y = getTileY();
+	x = curr_x;
+	y = curr_y;
+	int curr_tile_x = getTileX();
+	int curr_tile_y = getTileY();
+	if (!(curr_tile_x < 0 || curr_tile_x >= index.size())){
+		if (!(curr_tile_y < 0 || curr_tile_y >= index[curr_tile_x].size())){
+			if (index[curr_tile_x][curr_tile_y]){
+				if (index[curr_tile_x][curr_tile_y] < 16){  //16 = #wall combinations; the magic tiles' ID's are > than 16
+					if (index[last_tile_x][curr_tile_y] && index[curr_tile_x][last_tile_y]){
+						setY(comp_to_y);
+						setX(comp_to_x);
+						return XY_COLLIDE;
+					}
+					if (index[last_tile_x][curr_tile_y]){
+						setY(comp_to_y);
+						return Y_COLLIDE;
+					}
+					if (index[curr_tile_x][last_tile_y]){
+						setX(comp_to_x);
+						return X_COLLIDE;
+					}
+				}
+				return TRIGGER;
+			}
+			return STATUS_OK;
+		}
+		else {
+			setX(comp_to_x);
+			return OUT_OF_BOUNDS;
+		}
+	}
+	else {
+		setY(comp_to_y);
+		return OUT_OF_BOUNDS;
+	}
+}
+
 Being::Being(double x, double y) : Hitbox(*box),
 	orientation(UP), level(1), prim_stats(Primary()), 
 	der_stats(prim_stats, level), curr_weapon(0) {
@@ -58,14 +139,25 @@ Projectile& Being::shootWeapon(double deg, Hitbox& h) {
 	return (weapons.at(curr_weapon)->shoot(deg, x, y, h));
 }
 
-void Being::nextWeapon() {
-	if(curr_weapon < weapons.size()) ++curr_weapon;
-	else curr_weapon = 0;
-}
+int Being::tryToShoot(Being* target, Projectile** p){
+	if (target){
+		double dx = target->x - x;
+		double dy = y - target->y;
+		double deg = (atan2(dx, dy) - 0.5*M_PI);
+		int di2 = orientation;
+		int tx = 0, ty = 0;
+		if (false);
+		else if (di2 & LEFT)tx = -1;
+		else if (di2 & RIGHT)tx = 1;
+		else if (di2 & UP)ty = 1;
+		else if (di2 & DOWN)ty = -1;
+		if (dx*tx >= 0 && dy*ty >= 0){
+			*p = &(shootWeapon(deg, *new Hitbox(tiles_x, tiles_y, tile_granularity)));
+			return BANG;
 
-void Being::prevWeapon() {
-	if(curr_weapon > 0) ++curr_weapon;
-	else curr_weapon = weapons.size();
+		}
+		else return NOT_IN_FOV;
+	}
 }
 
 void Being::takeProjectile(Projectile& bullet) {
