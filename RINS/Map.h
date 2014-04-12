@@ -8,16 +8,18 @@ using namespace std;
 #ifndef _GLIBCXX_MAP_H
 #define _GLIBCXX_MAP_H
 
+enum blocks{ EXIT = 17, ENTRY };
 class Map{
 	double roomX, roomY;
 	mt19937 pattern;
 	uint32_t curr_seed;
 	enum walls{ LEFT, DOWN, UP, RIGHT };
-	bool last_entry = true;
+	bool last_entry = false;
 	double offsetx = 0, offsety = 0;
 	int map_type;
+	long long int last_room = 1, curr_room = 1;
 public:
-	const int xsize = 16, ysize = 16;
+	static const int xsize = 16, ysize = 16;
 	struct Coord{
 		double x;
 		double y;
@@ -35,6 +37,11 @@ public:
 	bool tryRoomChange(int x, int y);
 	bool updateInternalMapState();
 	int getMapType();
+	int getMaxMonsters();
+	int getSpawnRate();
+	void getRoomSize(double& x, double& y);
+	long long int getLastExploredRoom();
+	long long int getCurrentRoomNumber();
 private:
 	vector<Coord> blocks;
 	vector<vector<char>> room;

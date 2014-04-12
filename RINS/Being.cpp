@@ -1,11 +1,10 @@
 #include "Being.h"
-//0.015625 = 1/64 (one being = one screen square;
+//0.015625 = 1/64 (one being = one screen square; //what? one screen has 16 squares; one step is 1/4 square
 
 using namespace std;
 #include <iostream>
 
-vector<Being*> Being::targets;
-list<Projectile> Being::projectiles;
+Hitbox* Being::box;
 
 Primary::Primary():	
 	strength(5), strength_bonus(0),
@@ -24,67 +23,140 @@ Derived::Derived(Primary prim, int level):
 	dmg_res = prim.agility*1.5;
 }
 
-Being::Being(double x, double y): 
-	x(x), y(y),
-	orientation(UP), move_step(1.0/64), 
-	level(1), prim_stats(Primary()), 
+Hitbox::Hitbox(int tiles_x, int tiles_y, int tile_granularity) : tile_granularity(tile_granularity),
+	tiles_x(tiles_x), tiles_y(tiles_y), move_step_x(1.0 / (tile_granularity * tiles_x)),
+	move_step_y(1.0 / (tile_granularity * tiles_y)){
+}
+
+void Hitbox::setX(double x){
+	this->x = x;
+}
+
+void Hitbox::setY(double y){
+	this->y = y;
+}
+
+double Hitbox::getX(){
+	return x;
+}
+
+double Hitbox::getY(){
+	return y;
+}
+
+int Hitbox::getTileX(){
+	return ((x + move_step_x) / move_step_x) / ((1.0 / tiles_x) / move_step_x);
+}
+
+int Hitbox::getTileY(){
+	return ((y + move_step_y * 3) / move_step_y) / ((1.0 / tiles_y) / move_step_y);
+}
+
+double Hitbox::getStepX() const{
+	return move_step_x;
+}
+
+double Hitbox::getStepY() const{
+	return move_step_y;
+}
+
+int Hitbox::checkCollisions(double comp_to_x, double comp_to_y, const vector<vector<char>>& index){
+	double curr_x = x;
+	double curr_y = y;
+	x = comp_to_x;
+	y = comp_to_y;
+	int last_tile_x = getTileX();
+	int last_tile_y = getTileY();
+	x = curr_x;
+	y = curr_y;
+	int curr_tile_x = getTileX();
+	int curr_tile_y = getTileY();
+	if (!(curr_tile_x < 0 || curr_tile_x >= index.size())){
+		if (!(curr_tile_y < 0 || curr_tile_y >= index[curr_tile_x].size())){
+			if (index[curr_tile_x][curr_tile_y]){
+				if (index[curr_tile_x][curr_tile_y] < 16){  //16 = #wall combinations; the magic tiles' ID's are > than 16
+					if (index[last_tile_x][curr_tile_y] && index[curr_tile_x][last_tile_y]){
+						setY(comp_to_y);
+						setX(comp_to_x);
+						return XY_COLLIDE;
+					}
+					if (index[last_tile_x][curr_tile_y]){
+						setY(comp_to_y);
+						return Y_COLLIDE;
+					}
+					if (index[curr_tile_x][last_tile_y]){
+						setX(comp_to_x);
+						return X_COLLIDE;
+					}
+				}
+				return TRIGGER;
+			}
+			return STATUS_OK;
+		}
+		else {
+			setX(comp_to_x);
+			return OUT_OF_BOUNDS;
+		}
+	}
+	else {
+		setY(comp_to_y);
+		return OUT_OF_BOUNDS;
+	}
+}
+
+Being::Being(double x, double y) : Hitbox(*box),
+	orientation(UP), level(1), prim_stats(Primary()), 
 	der_stats(prim_stats, level), curr_weapon(0) {
+		this->x = x;
+		this->y = y;
 		rnd.seed(time(0));
 	}
 
 map<const char*, int> BeingResources::textures;
 
 void Being::move(int dir, bool reverse) {
-	int newdir = dir << sizeof(int)*8-4;
-	newdir = newdir >> sizeof(int)*8-4;
-	if(newdir)orientation = dir;
-	double move = reverse ? -move_step : move_step;
-	if (dir & LEFT) x-= move;
-	if (dir & RIGHT) x += move;
-	if (dir & UP) y -= move;
-	if (dir & DOWN) y += move;
+	int newdir = dir & 15;
+	if(newdir)orientation = newdir;
+	double move_x = reverse ? -move_step_x : move_step_x;
+	double move_y = reverse ? -move_step_y : move_step_y;
+	if (dir & LEFT) x-= move_x;
+	if (dir & RIGHT) x += move_x;
+	if (dir & UP) y -= move_y;
+	if (dir & DOWN) y += move_y;
+	if (newdir)walk = !walk;
 }
 
 int Being::getHealth() {
 	return der_stats.health;
 }
 
-double Being::getX() const {
-	return x;
-}
-
-double Being::getY() const {
-	return y;
-}
-
-void Being::setX(double newX) {
-	x = newX;
-}
-
-void Being::setY(double newY) {
-	y = newY;
-}
-
 int Being::getOrientation() const {
 	return orientation;
 }
 
-double Being::getStep() const{
-	return move_step;
+Projectile& Being::shootWeapon(double deg, Hitbox& h) {
+	return (weapons.at(curr_weapon)->shoot(deg, x, y, h));
 }
 
-void Being::shootWeapon() {
-	projectiles.push_back((weapons.at(curr_weapon)->shoot(orientation, x+move_step*2, y+move_step*2)));
-}
+int Being::tryToShoot(Being* target, Projectile** p){
+	if (target){
+		double dx = target->x - x;
+		double dy = y - target->y;
+		double deg = (atan2(dx, dy) - 0.5*M_PI);
+		int di2 = orientation;
+		int tx = 0, ty = 0;
+		if (false);
+		else if (di2 & LEFT)tx = -1;
+		else if (di2 & RIGHT)tx = 1;
+		else if (di2 & UP)ty = 1;
+		else if (di2 & DOWN)ty = -1;
+		if (dx*tx >= 0 && dy*ty >= 0){
+			*p = &(shootWeapon(deg, *new Hitbox(tiles_x, tiles_y, tile_granularity)));
+			return BANG;
 
-void Being::nextWeapon() {
-	if(curr_weapon < weapons.size()) ++curr_weapon;
-	else curr_weapon = 0;
-}
-
-void Being::prevWeapon() {
-	if(curr_weapon > 0) ++curr_weapon;
-	else curr_weapon = weapons.size();
+		}
+		else return NOT_IN_FOV;
+	}
 }
 
 void Being::takeProjectile(Projectile& bullet) {
@@ -99,13 +171,23 @@ void Being::takeProjectile(Projectile& bullet) {
 	else der_stats.health -= (bullet.getDamage() - def_skill);
 }
 
+int Being::getLevel(){
+	return level;
+}
+
+bool Being::getWalk(){
+	return walk;
+}
+
+void Being::resetWalk(){
+	walk = false;
+}
+
 mt19937 Being::rnd;
 
-array<Being*(*)(double, double), 1> Being::monsters = { { NULL } };
 
 Being::~Being() {
 	weapons.clear();
-	projectiles.clear();
 }
 
 Marine::Marine(double sx, double yx): 
@@ -115,11 +197,19 @@ Marine::Marine(double sx, double yx):
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
 	energy_weapons = 2 + prim_stats.perception* + prim_stats.luck>>1;
 
-	weapons.push_back(std::unique_ptr<WeaponBase>(new AssaultRifle(small_guns)));
+	weapons.push_back(std::unique_ptr<WeaponBase>(new AssaultRifle(small_guns, typeid(*this).name())));
 }
 
-void Marine::action(const vector<vector<char>>& map_index) {
-	if(der_stats.health == 0) cout << "MARINE DEAD" << endl;
+void Marine::setRange(){
+	range = 100;
+}
+
+bool Marine::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
+	if (der_stats.health == 0){
+		cout << "MARINE DEAD" << endl;
+		return false;
+	}
+	return true;
 }
 
 Pyro::Pyro(double sx, double yx): 
@@ -129,11 +219,15 @@ Pyro::Pyro(double sx, double yx):
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
 	fire = 2 + prim_stats.agility* + prim_stats.luck>>1;
 
-	weapons.push_back(std::unique_ptr<Molotov>(new Molotov(explosives)));
+	weapons.push_back(std::unique_ptr<Molotov>(new Molotov(explosives, typeid(*this).name())));
 }
 
-void Pyro::action(const vector<vector<char>>& map_index) {
-	return;
+void Pyro::setRange(){
+	range = 100;
+}
+
+bool Pyro::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
+	return true;
 }
 
 Psychokinetic::Psychokinetic(double sx, double yx): 
@@ -143,11 +237,15 @@ Psychokinetic::Psychokinetic(double sx, double yx):
 	mental_power = 2 + prim_stats.endurance + prim_stats.intelligence + prim_stats.luck>>1;
 	fire = 2 + prim_stats.agility* + prim_stats.luck>>1;
 
-	weapons.push_back(std::unique_ptr<WeaponBase>(new Pyrokinesis(fire)));
+	weapons.push_back(std::unique_ptr<WeaponBase>(new Pyrokinesis(fire, typeid(*this).name())));
 }
 
-void Psychokinetic::action(const vector<vector<char>>& map_index) {
-	return;
+void Psychokinetic ::setRange(){
+	range = 100;
+}
+
+bool Psychokinetic::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
+	return true;
 }
 
 Android::Android(double sx, double yx): 
@@ -157,68 +255,91 @@ Android::Android(double sx, double yx):
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
 	energy_weapons = 2 + prim_stats.perception* + prim_stats.luck>>1;
 
-	weapons.push_back(std::unique_ptr<WeaponBase>(new Punch(punch)));
+	weapons.push_back(std::unique_ptr<WeaponBase>(new Punch(punch, typeid(*this).name())));
 }
 
-void Android::action(const vector<vector<char>>& map_index) {
-	if(der_stats.health == 0) cout << "DROID DEAD" << endl;
+void Android::setRange(){
+	range = 100;
+}
+
+bool Android::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
+	if (der_stats.health == 0){
+		cout << "DROID DEAD" << endl;
+		return false;
+	}
+	return true;
 }
 
 Zombie::Zombie(double sx, double yx): 
 	Being(sx,yx), target(nullptr) {
 	biting = 2 + prim_stats.strength<<1 + prim_stats.luck>>1;
 
-	weapons.push_back(std::unique_ptr<WeaponBase>(new Bite(biting)));
+	weapons.push_back(std::unique_ptr<WeaponBase>(new Bite(biting, typeid(*this).name())));
 }
-#include <iostream>
-using namespace std;
-void Zombie::action(const vector<vector<char>>& map_index) {
+
+void Zombie::setRange(){
+	range = 100;
+}
+
+bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
 
 	if(der_stats.health == 0) {
 		cout << "ZOMBIE DEAD" << endl;
+		return false;
 	}
 
-	if(target == nullptr) target = targets.at(rnd()%targets.size());
-	double tx = target->getX();
-	double ty = target->getY();
-	extern int ysize;
-	extern int xsize;
+	//if(target == nullptr) target = targets.at(rnd()%targets.size());
+	//double tx = target->getX();
+	//double ty = target->getY();
+	//extern int ysize;
+	//extern int xsize;
 
-	int myx = ((x + move_step) / move_step) / ((1.0 / xsize) / move_step);
-	int myy = ((y + move_step * 3) / move_step) / ((1.0 / ysize) / move_step);
+	//int myx = getTileX(tiles_x);
+	//int myy = getTileY(tiles_y);
 
-	bool there=true;
+	//bool there=true;
 
-	if (x < tx) {
-		if (!map_index[myx + 1][myy])move(RIGHT, false);
-		if (map_index[myx + 1][myy])move(UP, true);
-		there = false;
-	}
-	if(y < ty) {
-		if (!map_index[myx][myy + 1])move(DOWN, false);
-		if (map_index[myx][myy + 1])move(RIGHT, true);
-		there = false;
-	}
-	if(x > tx) {
-		if (!map_index[myx - 1][myy])move(LEFT, false);
-		if (map_index[myx - 1][myy])move(DOWN, true);
-		there = false;
-	}
-	if(y > ty) {
-		if (!map_index[myx][myy - 1])move(UP, false);
-		if (map_index[myx][myy - 1])move(LEFT, true);
-		there = false;
-	}
+	//if (x < tx) {
+	//	if (!map_index[myx + 1][myy])move(RIGHT, false);
+	//	if (map_index[myx + 1][myy])move(UP, true);
+	//	there = false;
+	//}
+	//if(y < ty) {
+	//	if (!map_index[myx][myy + 1])move(DOWN, false);
+	//	if (map_index[myx][myy + 1])move(RIGHT, true);
+	//	there = false;
+	//}
+	//if(x > tx) {
+	//	if (!map_index[myx - 1][myy])move(LEFT, false);
+	//	if (map_index[myx - 1][myy])move(DOWN, true);
+	//	there = false;
+	//}
+	//if(y > ty) {
+	//	if (!map_index[myx][myy - 1])move(UP, false);
+	//	if (map_index[myx][myy - 1])move(LEFT, true);
+	//	there = false;
+	//}
 
-	if(there) {
-		move(RIGHT, false);
-		orientation = LEFT;
-		shootWeapon();
+	//if(there) {
+	double curr_x = getX();
+	double curr_y = getY();
+	int colpos = rnd() % 16;
+	move(colpos, false);
+	int state = checkCollisions(curr_x, curr_y, map_index);
+	if (state == OUT_OF_BOUNDS){
+		x = curr_x;
+		y = curr_y;
 	}
+	//	orientation = LEFT;
+	double deg = rnd() % 360;
+
+	projectiles.push_back(shootWeapon(deg_to_rad(deg), *new Hitbox(tiles_x, tiles_y, tile_granularity)));
+	//}
+	return true;
 	
 }
 
-int BeingResources::getTextureID(const char* ti) {
+const int BeingResources::getTextureID(const char* ti) {
 	return textures[ti];
 }
 

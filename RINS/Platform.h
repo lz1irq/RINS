@@ -33,6 +33,7 @@ class Renderer {
 	SDL_Rect part;
 	TTF_Font* fonts[MAX_TEXTURES];
 	static int current_fonts;
+	double rotate;
 	void applyTexture(SDL_Texture* t, double x, double y, double width, double height);
 public:
 	Renderer(int width, int height, const char* title);
@@ -42,6 +43,8 @@ public:
 	void renderPart(int xparts, int yparts, int xpartnum, int ypartnum);
 	int loadFont(const char* font, int size);
 	void displayText(int font, const Uint16* text, RGBA color, double x, double y, double w, double h);
+	void setRotationAngle(double deg);
+	void setModulateBlending(int texture_ID);
 	~Renderer();
 };
 
@@ -50,11 +53,18 @@ class Game{
 	static int secondaryLoop(void* param);
 	bool quit;
 	bool has_event;
+	int mousex, mousey;
+	Uint32 buttons;
 public:
 	virtual void mainLoop() = 0;
 	virtual void graphicsLoop() = 0;
 	unsigned int getTicks();
 	char getKey(bool pressed);
+	bool isPressed(const char* key);
+	double getMouseX();
+	double getMouseY();
+	bool getLeftClick();
+	bool getRightClick();
 	Game();
 	void loop();
 	~Game();

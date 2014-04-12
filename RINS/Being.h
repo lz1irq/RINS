@@ -1,12 +1,9 @@
 #ifndef _GLIBCXX_BEING_H
 #define _GLIBCXX_BEING_H
 #include "Weapon.h"
-#include <vector>
-#include <memory>
 #include <ctime>
 #include <random>
 #include <array>
-#include <list>
 #include <typeinfo>
 using namespace std;
 struct Primary {
@@ -33,47 +30,63 @@ struct Derived {
 class BeingResources {
 	static map<const char*, int> textures;
 public:
-	static int getTextureID(const char* ti);
+	static const int getTextureID(const char* ti);
 	static void addTextureID(int newID, const char* ti);
 };
 
-enum Monsters{ ZOMBIE = 0 };
+enum Monsters{ ZOMBIE = 0, MAXSIZE };
+enum Collisions{ STATUS_OK, OUT_OF_BOUNDS, TRIGGER, X_COLLIDE, Y_COLLIDE, XY_COLLIDE };
+enum Shoot{BANG, NOT_IN_FOV};
 
-class Being{
+class Hitbox{
+protected:
+	double x, y;
+	const double move_step_x;
+	const double move_step_y;
+	const int tiles_x;
+	const int tiles_y;
+	const int tile_granularity;
+public:
+	Hitbox(int tiles_x, int tiles_y, int tile_granularity);
+	void setX(double x);
+	void setY(double y);
+	double getX();
+	double getY();
+	int getTileX();
+	int getTileY();
+	double getStepX() const;
+	double getStepY() const;
+	int checkCollisions(double comp_to_x, double comp_to_y, const vector<vector<char>>& index);
+};
+
+class Being: public Hitbox{
 protected:
 	int level;
-	double x,y;
-	const double move_step;
 	int orientation;
+	int range;
 	Primary prim_stats;
 	Derived der_stats;
 	int curr_weapon;
 	std::vector<std::unique_ptr<WeaponBase>> weapons;
 	static mt19937 rnd;
+	bool walk = false;
+	virtual void setRange() = 0;
+	Projectile& shootWeapon(double deg, Hitbox& h);
 
 public:
 	Being(double x, double y);
 	int getHealth();
-	virtual void action(const vector<vector<char>>& map_index) = 0;
+	virtual bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) = 0;
 	void addWeapon(WeaponBase* wpn);
 	void move(int dir, bool reverse);
-
-	double getX() const;
-	double getY() const;
-	void setX(double newX);
-	void setY(double newY);
-
+	int getLevel();
+	bool getWalk();
+	void resetWalk();
 	int getOrientation() const;
-	double getStep() const;
 	void takeProjectile(Projectile& bullet);
+	int tryToShoot(Being* target, Projectile** p);
 
-	void shootWeapon();
-	void nextWeapon();
-	void prevWeapon();
-
-	static array<Being*(*)(double, double), 1> monsters;
-	static vector<Being*> targets;
-	static list<Projectile> projectiles;
+	static Hitbox* box;
 
 	virtual ~Being();
 };
@@ -87,8 +100,8 @@ private:
 	int energy_weapons, energy_weapons_bonus;
 public:
 	Marine(double sx, double sy);
-	void action(const vector<vector<char>>& map_index);
-	int getTextureID();
+	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
+	void setRange() final;
 };
 
 class Pyro:public Being, BeingResources {
@@ -98,8 +111,8 @@ private:
 	int fire, fire_bonus;
 public:
 	Pyro(double sx, double sy);
-	void action(const vector<vector<char>>& map_index);
-	int getTextureID();
+	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
+	void setRange() final;
 };
 
 class Psychokinetic: public Being, BeingResources {
@@ -109,8 +122,8 @@ private:
 	int fire, fire_bonus;
 public:
 	Psychokinetic(double sx, double sy);
-	void action(const vector<vector<char>>& map_index);
-	int getTextureID();
+	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
+	void setRange() final;
 };
 
 class Zombie: public Being, BeingResources {
@@ -119,8 +132,8 @@ private:
 	Being* target;
 public:
 	Zombie(double sx, double sy);
-	void action(const vector<vector<char>>& map_index);
-	int getTextureID();
+	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
+	void setRange() final;
 };
 
 class Android: public Being, BeingResources {
@@ -130,8 +143,8 @@ private:
 	int energy_weapons, energy_weapons_bonus;
 public:
 	Android(double sx, double sy);
-	void action(const vector<vector<char>>& map_index);
-	int getTextureID();
+	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
+	void setRange() final;
 };
 
 #endif

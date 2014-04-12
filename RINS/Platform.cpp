@@ -1,5 +1,9 @@
 #include "Platform.h"
 
+namespace shared_sdl{
+	int W, H;
+}
+
 Error::Error(const char* err) : err(err){}
 
 const char* Error::getError(){ return err; }
@@ -9,10 +13,13 @@ Renderer::Renderer(int width, int height, const char* title) : textures(), fonts
 	if ((win = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI)) == nullptr)throw Error(SDL_GetError());
 	if ((ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC)) == nullptr)throw Error(SDL_GetError());
 	SDL_GetWindowSize(win, &W, &H);
+	shared_sdl::W = W;
+	shared_sdl::H = H;
 	part.x = H;
 	part.y = H;
 	cout << W << " " << H << endl;
 	if (TTF_Init() != 0)throw Error(TTF_GetError());
+	rotate = 0;
 }
 
 int Renderer::loadTexture(const char* path) {
@@ -32,8 +39,8 @@ void Renderer::applyTexture(SDL_Texture* t, double x, double y, double width, do
 	if (part.x != 0 && part.y != 0){
 		src.x = 1.0 / part.x*dst.w*part.w;
 		src.y = 1.0 / part.y*dst.h*part.h;
-		src.w = 1.0 / part.x*dst.w*(part.w + 1);
-		src.h = 1.0 / part.y*dst.h*(part.h + 1);
+		src.w = 1.0 / part.x*dst.w;
+		src.h = 1.0 / part.y*dst.h;
 	}
 	else{
 		src.x = 0;
@@ -51,7 +58,13 @@ void Renderer::applyTexture(SDL_Texture* t, double x, double y, double width, do
 		dst.h = h;
 	}
 	dst.x += (W - H) / 2;
-	if (SDL_RenderCopy(ren, t, &src, &dst) != 0)throw Error(SDL_GetError());
+	if (SDL_RenderCopyEx(ren, t, &src, &dst, rotate, NULL, SDL_FLIP_NONE) != 0)throw Error(SDL_GetError());
+	//SDL_SetTextureColorMod(t, 40, 40, 40);
+}
+
+void Renderer::setModulateBlending(int texture_ID){
+	if (textures[texture_ID] == nullptr)throw Error("Bad texture ID!");
+	if (SDL_SetTextureBlendMode(textures[texture_ID], SDL_BLENDMODE_MOD) != 0)throw Error(SDL_GetError());
 }
 
 void Renderer::applyTexture(int texture_ID, double x, double y, double width, double height) {
@@ -88,6 +101,10 @@ void Renderer::displayText(int font, const Uint16* text, RGBA color, double x, d
 	SDL_DestroyTexture(texture);
 }
 
+void Renderer::setRotationAngle(double deg){
+	rotate = deg;
+}
+
 Renderer::~Renderer() {
 	for (int i = 0; i<current_textures; ++i) SDL_DestroyTexture(textures[i]);
 	for (int i = 0; i<current_fonts; ++i) TTF_CloseFont(fonts[i]);
@@ -108,8 +125,9 @@ void Game::loop(){
 	SDL_Thread* thread;
 	if( (thread = SDL_CreateThread(secondaryLoop, "secondaryThread", (void *)this)) == NULL) throw Error( SDL_GetError() );
 	while (!quit) {
-		has_event = SDL_PollEvent(&event);
-		if (has_event && event.type == SDL_QUIT) quit = true;
+		//has_event = SDL_PollEvent(&event);
+		buttons = SDL_GetMouseState(&mousex, &mousey);
+		if (SDL_QuitRequested()) quit = true;
 		mainLoop();
 	}
 	 SDL_WaitThread(thread, NULL);
@@ -131,18 +149,38 @@ unsigned int Game::getTicks() {
 	return SDL_GetTicks();
 }
 
-char Game::getKey(bool pressed){
-	if (!has_event)return 0;
-	switch (event.type) {
-		case SDL_KEYDOWN:
-			if (pressed) return event.key.keysym.sym;
-		break;
-		case SDL_KEYUP:
-			if (!pressed) return event.key.keysym.sym;
-		break;
-		default:
-			return 0;
-	}
+//char Game::getKey(bool pressed){
+//	if (!has_event)return 0;
+//	switch (event.type) {
+//		case SDL_KEYDOWN:
+//			if (pressed) return event.key.keysym.sym;
+//		break;
+//		case SDL_KEYUP:
+//			if (!pressed) return event.key.keysym.sym;
+//		break;
+//		default:
+//			return 0;
+//	}
+//}
+bool Game::isPressed(const char* key){
+	const Uint8 *state = SDL_GetKeyboardState(NULL);
+	return state[SDL_GetScancodeFromName(key)];
+}
+
+double Game::getMouseX(){
+	return (mousex - ((shared_sdl::W - shared_sdl::H) / 2)) / (double)shared_sdl::H;
+}
+
+double Game::getMouseY(){
+	return mousey / (double)shared_sdl::H;
+}
+
+bool Game::getLeftClick(){
+	return buttons&SDL_BUTTON_LMASK;
+}
+
+bool Game::getRightClick(){
+	return buttons&SDL_BUTTON_RMASK;
 }
 
 Game::~Game(){

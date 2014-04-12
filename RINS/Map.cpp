@@ -1,24 +1,25 @@
 #include "Map.h"
 
-int xsize, ysize; //SHOULD BE FIXED
+//int xsize, ysize; //SHOULD BE FIXED
 Map::Map() : roomX(1), roomY(1){
 	room_exit_x = 0;
 	room_exit_y = roomX/2*ysize;
 	room_entry_x = 0;
 	room_entry_y = roomX / 2 * ysize;
-	::xsize = xsize;
-	::ysize = ysize;
+	//::xsize = xsize;
+	//::ysize = ysize;
 }
 
 double Map::alterBeingPosX(double absoluteX){
 	absoluteX += offsetx;
+	//cout << absoluteX - roomX + 1 << endl;
 	if (absoluteX < 0.5)return absoluteX;
 	if (absoluteX > roomX - 0.5)return absoluteX - roomX + 1;
 	return 0.5;
 }
 
 double Map::alterBeingPosY(double absoluteY){
-	absoluteY += offsety;
+	absoluteY += offsety+0.005;
 	if (absoluteY < 0.5)return absoluteY;
 	if (absoluteY > roomY - 0.5)return absoluteY - roomY + 1;
 	return 0.5;
@@ -29,7 +30,7 @@ void Map::loadMap(string seed){
 	uint32_t seeds[1];
 	Seed.generate(&seeds[0], &seeds[1]);
 	curr_seed = seeds[0];
-	curr_seed = system_clock::to_time_t(system_clock::now()); //SHOULD BE FIXED 
+	curr_seed = system_clock::to_time_t(system_clock::now()); //SHOULD BE FIXED
 	generateRoom(curr_seed, true);
 }
 
@@ -50,6 +51,10 @@ bool Map::updateInternalMapState(){
 	if (offsety > 0.01){ offsety -= 0.01; needs_time = true; }
 	if (offsetx < -0.01){ offsetx += 0.01; needs_time = true; }
 	if (offsety < -0.01){ offsety += 0.01; needs_time = true; }
+	if (!needs_time){
+		offsetx = 0;
+		offsety = 0;
+	}
 	return needs_time;
 }
 
@@ -66,10 +71,13 @@ bool Map::tryRoomChange(int x, int y){
 	}
 	if (exit){
 		if (isexit){
+			if (curr_room == last_room)++last_room;
+			++curr_room;
 			generateRoom(++curr_seed, 1);
 			last_entry = false;
 		}
 		if (!isexit){
+			--curr_room;
 			generateRoom(--curr_seed, 0);
 			last_entry = true;
 		}
@@ -78,80 +86,33 @@ bool Map::tryRoomChange(int x, int y){
 
 }
 
+int Map::getMaxMonsters(){
+	return last_room*10;
+}
+
+int Map::getSpawnRate(){
+	return 42/(1+0.1*last_room);
+}
+
+long long int Map::getLastExploredRoom(){
+	return last_room;
+}
+
+long long int Map::getCurrentRoomNumber(){
+	return curr_room;
+
+}
+
+void Map::getRoomSize(double& x, double& y){
+	x = roomX;
+	y = roomY;
+}
+
 int Map::getMapType(){
 	return map_type;
 }
 
 void Map::generateRoom(uint32_t seed_, bool exited){
-	//int num_tiles = 16;//hardcode!
-	//int coef = (2*roomx*roomy);
-	//int num_structures = coef + pattern() % coef;
-	//int yplaces = roomy * num_tiles;	
-	//int xplaces = roomx * num_tiles;	
-	//vector<coord> blocks;
-	//int direction;
-	//int x, y;
-	//int num_blocks;
-	//for (int i = 0; i < num_structures; ++i){
-	//	//int structure_type = pattern() % 6;
-	//	int structure_type = pattern()%6; ///!!!
-	//	switch (structure_type){
-	//	case 0://straight line from wall
-	//		num_blocks = pattern() % num_tiles-1;
-	//		direction =pattern() % 4;
-	//		switch (direction){
-	//		case 0://up
-	//			x = pattern() % xplaces;
-	//			for (int a = 0; a < num_blocks; ++a){
-	//				coord c;
-	//				c.x = (double)x / num_tiles;
-	//				c.y = roomy - 1 / num_tiles - (double)a / num_tiles;
-	//				c.partx = 1;
-	//				c.party = 1;
-	//				blocks.push_back(coord((double)x / num_tiles, roomy - 1 / num_tiles - (double)a / num_tiles));
-	//			}
-	//			break;
-	//		case 1://down
-	//			x = pattern() % xplaces;
-	//			for (int a = 0; a < 1; ++a){
-	//				blocks.push_back(coord((double)x / num_tiles, (double)a / num_tiles));
-	//			}
-	//			break;
-	//		case 2://left
-	//			y = pattern() % yplaces;
-	//			for (int a = 0; a < num_blocks; ++a){
-	//				blocks.push_back(coord((double)a / num_tiles, (double)y / num_tiles));
-	//			}
-	//			break;
-	//		case 3://right
-	//			y = pattern() % yplaces;
-	//			for (int a = 0; a < num_blocks; ++a){
-	//				blocks.push_back(coord(roomx - 1 / num_tiles - (double)a / num_tiles, (double)y / num_tiles));
-	//			}
-	//			break;
-	//		}
-	//		break;
-	//	case 1://three-line zig-zag from wall
-	//		//num_blocks = pattern() % (num_tiles*3 - 10);
-	//		break;
-	//	case 2://two-line zig-zag from wall
-	//		break;
-	//	case 3://straight line
-	//		break;
-	//	case 4://three-line zig-zag
-	//		break;
-	//	case 5://three-line perpendicular
-	//		break;
-	//	}
-	//}
-	//for (int i = 0; i < xplaces; ++i){
-	//	blocks.push_back(coord(0, (double)i / num_tiles));
-	//	blocks.push_back(coord(roomx - roomx / xplaces, (double)i / num_tiles));
-	//}
-	//for (int i = 0; i < yplaces; ++i){
-	//	blocks.push_back(coord((double)i / num_tiles, 0));
-	//	blocks.push_back(coord((double)i / num_tiles, roomy - roomy / xplaces));
-	//}
 	pattern.seed(seed_);
 	uint32_t cx = pattern() % 2000;
 	uint32_t cy = pattern() % 2000;
@@ -186,6 +147,9 @@ void Map::generateRoom(uint32_t seed_, bool exited){
 
 	xmax = xsize*roomX - 1;
 	ymax = ysize*roomY - 1;
+
+	roomX = (xmax + 1) / (double)xsize;
+	roomY = (ymax + 1) / (double)ysize;
 
 	int temp = min(ymax, xmax) - 4;
 	int newplace = 2;
@@ -267,26 +231,15 @@ void Map::generateRoom(uint32_t seed_, bool exited){
 	room = *new vector<vector<char>>(roomX*xsize, vector<char>(roomY*ysize, 0));
 	int xplaces = roomX*xsize, yplaces = roomY*ysize;
 	for (int i = 0; i < xplaces; ++i){
-		room[i][0] = 1;
-		room[i][yplaces - 1] = 1;
-		if (i == 0){
-			room[i][0] = 2;
-			room[i][yplaces - 1] = 2;
-		}
+		room[i][0] = 2;
+		room[i][yplaces - 1] = 2;
 	}
 	for (int i = 0; i < yplaces; ++i){
-		room[0][i] = 3;
-		room[xplaces - 1][i] = 3;
-		if (i == 0){
-			room[0][i] = 2;
-			room[xplaces - 1][i] = 1;
-		}
-		if (i == yplaces - 1){
-			room[xplaces - 1][i] = 4;
-		}
+		room[0][i] = 2;
+		room[xplaces - 1][i] = 2;
 	}
-	room[room_entry_x][room_entry_y] = 0;
-	room[room_exit_x][room_exit_y] = 0;
+	room[room_entry_x][room_entry_y] = ENTRY;
+	room[room_exit_x][room_exit_y] = EXIT;
 
 	//generate some basic structures
 	int numstructs = pattern() % 20;
@@ -319,7 +272,7 @@ void Map::generateRoom(uint32_t seed_, bool exited){
 										if (!room.at(x).at(y + 1)){
 											if (!room.at(x - 1).at(y + 1)){
 												if (!room.at(x - 1).at(y) || begin == false){
-													room[x][y] = 1;
+													room[x][y] = 2;
 												}
 											}
 										}
@@ -351,7 +304,7 @@ void Map::generateRoom(uint32_t seed_, bool exited){
 										if (!room.at(x).at(y + 1)){
 											if (!room.at(x - 1).at(y + 1)){
 												if (!room.at(x - 1).at(y)){
-													room[x][y] = 3;
+													room[x][y] = 2;
 												}
 											}
 										}
@@ -375,7 +328,50 @@ void Map::generateRoom(uint32_t seed_, bool exited){
 	blocks.clear();
 	for (int x = 0; x < room.size(); ++x){
 		for (int y = 0; y < room[x].size(); ++y){
-			if (room[x][y])blocks.push_back(Coord((double)x/xsize, (double)y/ysize, room[x][y]));
+
+			if (room[x][y]){
+				if (room[x][y] < 16){
+					bool hasleft = x == 0 || room[x - 1][y] > 15 ? false : room[x - 1][y];
+					bool hasright = x == room.size() - 1 || room[x + 1][y]  > 15 ? false : room[x + 1][y];
+					bool hasup = y == 0 || room[x][y - 1] > 15 ? false : room[x][y - 1];
+					bool hasdown = y == room[x].size() - 1 || room[x][y + 1] > 15 ? false : room[x][y + 1];
+					char edges = (hasleft << 0) | (hasright << 1) | (hasup << 2) | (hasdown << 3);
+					switch (edges){
+					case 1:
+						room[x][y] = 1;
+						break;
+					case 2:
+						room[x][y] = 2;
+						break;
+					case 3:
+						room[x][y] = 1;
+						break;
+					case 4:
+						room[x][y] = 3;
+						break;
+					case 5:
+						room[x][y] = 4;
+						break;
+					case 6:
+						room[x][y] = 3;
+						break;
+					case 8:
+						room[x][y] = 2;
+						break;
+					case 9:
+						room[x][y] = 1;
+						break;
+					case 10:
+						room[x][y] = 2;
+						break;
+					case 12:
+						room[x][y] = 3;
+						break;
+
+					}
+				}
+				blocks.push_back(Coord((double)x / xsize, (double)y / ysize, room[x][y]));
+			}
 		}
 	}
 }
