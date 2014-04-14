@@ -3,8 +3,7 @@
 #include "Map.h"
 #include <math.h>
 #include <mutex>
-class RINS : public Game, public Map{
-	Renderer rend;
+class RINS : public Game, public Renderer, public Map{
 
 	int bg[3];
 	int wall[3];
@@ -45,27 +44,30 @@ class RINS : public Game, public Map{
 
 			int offset = 0;
 			if (player->getWalk())offset = 2;
-			rend.renderPart(4, 2, offset+((int)log2(player->getOrientation()) >> 1), 1 - ((int)log2(player->getOrientation()) % 2));
+			renderPart(4, 2, offset+((int)log2(player->getOrientation()) >> 1), 1 - ((int)log2(player->getOrientation()) % 2));
 
-			rend.applyTexture(BeingResources::getTextureID(typeid(*player).name()), alterBeingPosX(player->getX()), alterBeingPosY(player->getY()), 1.0 / xsize, 1.0 / ysize);
+			applyTexture(BeingResources::getTextureID(typeid(*player).name()), alterBeingPosX(player->getX()), alterBeingPosY(player->getY()), 1.0 / xsize, 1.0 / ysize);
 
 			monster.lock();//lock the monster!
 			for (auto &i : monsters) {
-				if (i->getWalk())rend.renderPart(4, 2, 2+((int)log2(i->getOrientation()) >> 1), 1 - ((int)log2(i->getOrientation()) % 2));
-				else rend.renderPart(4, 2, ((int)log2(i->getOrientation()) >> 1), 1 - ((int)log2(i->getOrientation()) % 2));
-				rend.applyTexture(BeingResources::getTextureID(typeid(*i).name()), i->getX()-deltax, i->getY()-deltay, 1.0 / xsize, 1.0 / ysize);
+				if (i->getWalk())renderPart(4, 2, 2+((int)log2(i->getOrientation()) >> 1), 1 - ((int)log2(i->getOrientation()) % 2));
+				else renderPart(4, 2, ((int)log2(i->getOrientation()) >> 1), 1 - ((int)log2(i->getOrientation()) % 2));
+				applyTexture(BeingResources::getTextureID(typeid(*i).name()), i->getX()-deltax, i->getY()-deltay, 1.0 / xsize, 1.0 / ysize);
 			}
 			monster.unlock();
-			rend.renderPart(0, 0, 0, 0);
+			renderPart(0, 0, 0, 0);
 			projectile.lock();
 			for (auto &i : projectiles){
-				rend.setRotationAngle(i.getAngleInDeg());
-				rend.applyTexture(WeaponResources::getTexture(i.getType()), i.getX() - deltax + 1.5*player->getStepX(), i.getY() - deltay + 1.5*player->getStepY(), player->getStepX(), player->getStepY());
-				rend.setRotationAngle(0);
+				setRotationAngle(i.getAngleInDeg());
+				applyTexture(WeaponResources::getTexture(i.getType()), i.getX() - deltax + 1.5*player->getStepX(), i.getY() - deltay + 1.5*player->getStepY(), player->getStepX(), player->getStepY());
+				setRotationAngle(0);
 			}
 			projectile.unlock();
 
-			rend.renderScene();
+			applyTexture(side[getMapType()][0], -1, 0, 1, 1);
+			applyTexture(side[getMapType()][1], 1, 0, 1, 1);
+
+			renderScene();
 		}
 		catch (Error e){
 			cout << e.getError() << endl;
@@ -221,10 +223,10 @@ class RINS : public Game, public Map{
 		int maptype = getMapType();
 		deltax = player->getX() - alterBeingPosX(player->getX());
 		deltay = player->getY() - alterBeingPosY(player->getY());
-		rend.renderPart(0, 0, 0, 0);
-		rend.applyTexture(bg[maptype], - deltax, -deltay, (double)(getMapIndex().size() / (double)xsize), (double)(getMapIndex()[0].size() / (double)ysize));
-		rend.renderPart(0, 0, 0, 0);
-		if(completed)rend.applyTexture(red, -deltax, -deltay, (double)(getMapIndex().size() / (double)xsize), (double)(getMapIndex()[0].size() / (double)ysize));
+		renderPart(0, 0, 0, 0);
+		applyTexture(bg[maptype], - deltax, -deltay, (double)(getMapIndex().size() / (double)xsize), (double)(getMapIndex()[0].size() / (double)ysize));
+		renderPart(0, 0, 0, 0);
+		if(completed)applyTexture(red, -deltax, -deltay, (double)(getMapIndex().size() / (double)xsize), (double)(getMapIndex()[0].size() / (double)ysize));
 		double room_x, room_y;
 		char wpos, hpos;
 		getRoomSize(room_x, room_y);
@@ -241,48 +243,46 @@ class RINS : public Game, public Map{
 			double y = block_y - deltay;
 			switch (getMapObjects().at(i).type){
 			case 1:
-				rend.applyTexture(wall[maptype], x - 1.0 / (2 * xsize), y, 1.0 / xsize, 1.0 / ysize);
-				rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+				applyTexture(wall[maptype], x - 1.0 / (2 * xsize), y, 1.0 / xsize, 1.0 / ysize);
+				applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
 				break;
 			case 2:
-				rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+				applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
 				break;
 			case 3:
-				rend.applyTexture(wall[maptype], x, y - 1.0 / (2 * ysize), 1.0 / xsize, 1.0 / ysize);
-				rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+				applyTexture(wall[maptype], x, y - 1.0 / (2 * ysize), 1.0 / xsize, 1.0 / ysize);
+				applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
 				break;
 			case 4:
-				rend.applyTexture(wall[maptype], x, y - 1.0 / (2 * ysize), 1.0 / xsize, 1.0 / ysize);
-				rend.applyTexture(wall[maptype], x - 1.0 / (2 * xsize), y, 1.0 / xsize, 1.0 / ysize);
-				rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+				applyTexture(wall[maptype], x, y - 1.0 / (2 * ysize), 1.0 / xsize, 1.0 / ysize);
+				applyTexture(wall[maptype], x - 1.0 / (2 * xsize), y, 1.0 / xsize, 1.0 / ysize);
+				applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
 				break;
 			case ENTRY:
-				if (wpos == 0)rend.setRotationAngle(0);
-				if (hpos == 0)rend.setRotationAngle(90);
-				if (wpos == 1)rend.setRotationAngle(180);
-				if (hpos == 1)rend.setRotationAngle(270);
-				rend.applyTexture(entrytex, x, y, 1.0 / xsize, 1.0 / ysize);
-				rend.setRotationAngle(0);
+				if (wpos == 0)setRotationAngle(0);
+				if (hpos == 0)setRotationAngle(90);
+				if (wpos == 1)setRotationAngle(180);
+				if (hpos == 1)setRotationAngle(270);
+				applyTexture(entrytex, x, y, 1.0 / xsize, 1.0 / ysize);
+				setRotationAngle(0);
 				break;
 			case EXIT:
-				if (wpos == 1)rend.setRotationAngle(0);
-				if (hpos == 1)rend.setRotationAngle(90);
-				if (wpos == 0)rend.setRotationAngle(180);
-				if (hpos == 0)rend.setRotationAngle(270);
-				rend.applyTexture(exittex, x, y, 1.0 / xsize, 1.0 / ysize);
-				rend.setRotationAngle(0);
+				if (wpos == 1)setRotationAngle(0);
+				if (hpos == 1)setRotationAngle(90);
+				if (wpos == 0)setRotationAngle(180);
+				if (hpos == 0)setRotationAngle(270);
+				applyTexture(exittex, x, y, 1.0 / xsize, 1.0 / ysize);
+				setRotationAngle(0);
 				break;
 			default:
-				//rend.applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+				//applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
 				break;
 			}
 		}
-		rend.applyTexture(side[maptype][0], -1, 0, 1, 1);
-		rend.applyTexture(side[maptype][1], 1 , 0, 1, 1);
 	}
 public:
 	RINS() try : box(xsize, ysize, 4),
-		rend(640, 480, "RINS"), dir(0), c(0, 0, 0) {
+		Renderer(640, 480, "RINS"), dir(0), c(0, 0, 0) {
 		//Projectile::box = &box;
 		Being::box = &box;
 		loadMap("do u even seed, bro?");
@@ -299,46 +299,50 @@ public:
 		player = &**targets.begin();
 
 
-		BeingResources::addTextureID(rend.loadTexture("Textures/devil2.png"), typeid(Marine).name());
-		BeingResources::addTextureID(rend.loadTexture("Textures/devil2.png"), typeid(Pyro).name());
-		BeingResources::addTextureID(rend.loadTexture("Textures/devil2.png"), typeid(Psychokinetic).name());
-		BeingResources::addTextureID(rend.loadTexture("Textures/devil2.png"), typeid(Android).name());
-		BeingResources::addTextureID(rend.loadTexture("Textures/gangsta2.png"), typeid(Zombie).name());
+		BeingResources::addTextureID(loadTexture("Textures/devil2.png"), typeid(Marine).name());
+		BeingResources::addTextureID(loadTexture("Textures/devil2.png"), typeid(Pyro).name());
+		BeingResources::addTextureID(loadTexture("Textures/devil2.png"), typeid(Psychokinetic).name());
+		BeingResources::addTextureID(loadTexture("Textures/devil2.png"), typeid(Android).name());
+		BeingResources::addTextureID(loadTexture("Textures/gangsta2.png"), typeid(Zombie).name());
 
-		bg[0] = rend.loadTexture("Textures/floor1.jpg");
-		bg[1] = rend.loadTexture("Textures/cement.jpg");
-		bg[2] = rend.loadTexture("Textures/dirt2.jpg");
+		bg[0] = loadTexture("Textures/floor1.jpg");
+		bg[1] = loadTexture("Textures/cement.jpg");
+		bg[2] = loadTexture("Textures/dirt2.jpg");
 
-		wall[0]  = rend.loadTexture("Textures/brick3.png");
-		wall[1]  = rend.loadTexture("Textures/brick4.png");
-		wall[2]  = rend.loadTexture("Textures/brick5.png");
+		wall[0]  = loadTexture("Textures/brick3.png");
+		wall[1]  = loadTexture("Textures/brick4.png");
+		wall[2]  = loadTexture("Textures/brick5.png");
 
-		side[0][0] = rend.loadTexture("Textures/school_1.png");
-		side[0][1] = rend.loadTexture("Textures/school_2.png");
-		side[1][0] = rend.loadTexture("Textures/hospital_1.png");
-		side[1][1] = rend.loadTexture("Textures/hospital_2.png");
-		side[2][0] = rend.loadTexture("Textures/forest_1.png");
-		side[2][1] = rend.loadTexture("Textures/forest_2.png");
+		side[0][0] = loadTexture("Textures/school_1.png");
+		side[0][1] = loadTexture("Textures/school_2.png");
+		side[1][0] = loadTexture("Textures/hospital_1.png");
+		side[1][1] = loadTexture("Textures/hospital_2.png");
+		side[2][0] = loadTexture("Textures/forest_1.png");
+		side[2][1] = loadTexture("Textures/forest_2.png");
 
-		WeaponResources::addTexture(rend.loadTexture("Textures/bullet.png"), BULLET);
-		WeaponResources::addTexture(rend.loadTexture("Textures/bullet2.png"), FIRE);
+		WeaponResources::addTexture(loadTexture("Textures/bullet.png"), BULLET);
+		WeaponResources::addTexture(loadTexture("Textures/bullet2.png"), FIRE);
 
-		entrytex = rend.loadTexture("Textures/entry.png");
-		exittex = rend.loadTexture("Textures/exit.png");
-		red = rend.loadTexture("Textures/red.png");
-		rend.setModulateBlending(red);
+		entrytex = loadTexture("Textures/entry.png");
+		exittex = loadTexture("Textures/exit.png");
+		red = loadTexture("Textures/red.png");
+		setModulateBlending(red);
 
-		main_font = rend.loadFont("Fonts/ARIALUNI.TTF", 40);
+		main_font = loadFont("Fonts/ARIALUNI.TTF", 40);
 
 		monster_types[ZOMBIE] = &createInstance<Zombie>;
 
 		//::xsize = xsize;
 		//::ysize = ysize;
 
-		loop();
+		//loop();
 	}
 	catch (Error e){
 		cout << e.getError() << endl;
+	}
+
+	void centrifuge(){
+		loop();
 	}
 
 	~RINS() {
@@ -350,7 +354,7 @@ public:
 
 int main(int argc, char** argv) {
 	try{
-		RINS rins;
+		RINS().centrifuge();
 	}
 	catch (...){
 		system("pause");
