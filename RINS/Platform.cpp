@@ -193,19 +193,19 @@ Audio::Audio() {
 }
 
 int Audio::loadSong(const char* song) {
-	if(current_songs == MAX_SONGS) throw Error("Can't load any more songs");
+	if(current_songs == MAX_SONGS) throw Error(Mix_GetError());
 	songs[current_songs] = Mix_LoadMUS(song);
 	return current_songs++;
 }
 
 int Audio::loadSound(const char* sound) {
-	if(current_sounds == MAX_SOUNDS) throw Error("Can't load any more sounds");
+	if(current_sounds == MAX_SOUNDS) throw Error(Mix_GetError());
 	sounds[current_sounds] = Mix_LoadWAV(sound);
 	return current_sounds++;
 }
 
 void Audio::playSound(int sound_id) {
-	Mix_PlayChannel(-1, sounds[sound_id], 0);
+	if(Mix_PlayChannel(-1, sounds[sound_id], 0) == -1) throw Error(Mix_GetError());
 }
 
 void Audio::setMusicVolume(int vol) {
@@ -214,6 +214,6 @@ void Audio::setMusicVolume(int vol) {
 
 void Audio::playSong(int song_id) {
 	if( Mix_PlayingMusic() == 0 ) {
-		if( Mix_PlayMusic(songs[song_id], -1 ) == -1 ) throw Error("Can't play music!");
+		if( Mix_PlayMusic(songs[song_id], -1 ) == -1 ) throw Error(Mix_GetError());
 	}
 }
