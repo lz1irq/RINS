@@ -217,3 +217,19 @@ void Audio::playSong(int song_id) {
 		if( Mix_PlayMusic(songs[song_id], -1 ) == -1 ) throw Error(Mix_GetError());
 	}
 }
+
+bool Audio::isPlayingMusic() {
+	return Mix_PlayingMusic();
+}
+
+void Audio::pauseMusic() {
+	if(Mix_PlayingMusic())Mix_PauseMusic();
+}
+void Audio::resumeMusic() {
+	Mix_ResumeMusic();
+}
+
+void Audio::stopMusic() {
+	if(Mix_HaltMusic() == -1) throw Error(Mix_GetError());
+}
+

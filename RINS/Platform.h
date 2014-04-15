@@ -65,6 +65,10 @@ public:
 	void playSong(int song_id);
 	void setMusicVolume(int vol);
 	void playSound(int sound_id);
+	bool isPlayingMusic();
+	void pauseMusic();
+	void resumeMusic();
+	void stopMusic();
 };
 
 class Game{
