@@ -194,13 +194,13 @@ Audio::Audio() {
 
 int Audio::loadSong(const char* song) {
 	if(current_songs == MAX_SONGS) throw Error(Mix_GetError());
-	songs[current_songs] = Mix_LoadMUS(song);
+	if((songs[current_songs] = Mix_LoadMUS(song)) == nullptr) throw Error(Mix_GetError());
 	return current_songs++;
 }
 
 int Audio::loadSound(const char* sound) {
 	if(current_sounds == MAX_SOUNDS) throw Error(Mix_GetError());
-	sounds[current_sounds] = Mix_LoadWAV(sound);
+	if((sounds[current_sounds] = Mix_LoadWAV(sound)) == nullptr) throw Error(Mix_GetError());
 	return current_sounds++;
 }
 
