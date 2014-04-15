@@ -3,7 +3,7 @@
 #include "Map.h"
 #include <math.h>
 #include <mutex>
-class RINS : public Game, public Renderer, public Map{
+class RINS : public Game, public Renderer, public Audio, public Map{
 
 	int bg[3];
 	int wall[3];
@@ -331,6 +331,9 @@ public:
 		main_font = loadFont("Fonts/ARIALUNI.TTF", 40);
 
 		monster_types[ZOMBIE] = &createInstance<Zombie>;
+
+		setMusicVolume(MAX_VOL/8);
+		playSong(loadSong("Sounds/level1.mid"));
 
 		//::xsize = xsize;
 		//::ysize = ysize;

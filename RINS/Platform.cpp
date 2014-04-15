@@ -9,7 +9,6 @@ Error::Error(const char* err) : err(err){}
 const char* Error::getError(){ return err; }
 
 Renderer::Renderer(int width, int height, const char* title) : textures(), fonts(){
-	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)throw Error(SDL_GetError());
 	if ((win = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI)) == nullptr)throw Error(SDL_GetError());
 	if ((ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC)) == nullptr)throw Error(SDL_GetError());
 	SDL_GetWindowSize(win, &W, &H);
@@ -115,6 +114,8 @@ Renderer::~Renderer() {
 
 int Renderer::current_textures = 0;
 int Renderer::current_fonts = 0;
+int Audio::current_sounds = 0;
+int Audio::current_songs = 0;
 
 
 Game::Game() {
@@ -185,4 +186,34 @@ bool Game::getRightClick(){
 
 Game::~Game(){
 	SDL_Quit();
+}
+
+Audio::Audio() {
+	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096) == -1) throw Error(Mix_GetError());
+}
+
+int Audio::loadSong(const char* song) {
+	if(current_songs == MAX_SONGS) throw Error("Can't load any more songs");
+	songs[current_songs] = Mix_LoadMUS(song);
+	return current_songs++;
+}
+
+int Audio::loadSound(const char* sound) {
+	if(current_sounds == MAX_SOUNDS) throw Error("Can't load any more sounds");
+	sounds[current_sounds] = Mix_LoadWAV(sound);
+	return current_sounds++;
+}
+
+void Audio::playSound(int sound_id) {
+	Mix_PlayChannel(-1, sounds[sound_id], 0);
+}
+
+void Audio::setMusicVolume(int vol) {
+	Mix_VolumeMusic(vol);
+}
+
+void Audio::playSong(int song_id) {
+	if( Mix_PlayingMusic() == 0 ) {
+		if( Mix_PlayMusic(songs[song_id], -1 ) == -1 ) throw Error("Can't play music!");
+	}
 }

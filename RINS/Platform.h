@@ -1,10 +1,13 @@
 #include "SDL.h"
 #include "SDL_image.h"
 #include "SDL_ttf.h"
+#include "SDL_mixer.h"
 #include<iostream>
 using namespace std;
 #ifndef _GLIBCXX_PLATFORM_H
 #define _GLIBCXX_PLATFORM_H
+
+#define MAX_VOL MIX_MAX_VOLUME
 
 class Error{
 	const char* err;
@@ -25,10 +28,10 @@ struct RGBA{
 
 class Renderer {
 	static const int MAX_TEXTURES = 1024;
+	SDL_Texture* textures[MAX_TEXTURES];
 	static int current_textures;
 	SDL_Window* win;
 	SDL_Renderer* ren;
-	SDL_Texture* textures[MAX_TEXTURES];
 	int W, H;
 	SDL_Rect part;
 	TTF_Font* fonts[MAX_TEXTURES];
@@ -46,6 +49,22 @@ public:
 	void setRotationAngle(double deg);
 	void setModulateBlending(int texture_ID);
 	~Renderer();
+};
+
+class Audio {
+	static const int MAX_SONGS = 1024;
+	static const int MAX_SOUNDS = 1024;
+	Mix_Music*	  songs[MAX_SONGS];
+	Mix_Chunk*    sounds[MAX_SOUNDS];
+	static int current_sounds;
+	static int current_songs;
+public:
+	Audio();
+	int loadSong(const char* song);
+	int loadSound(const char* sound);
+	void playSong(int song_id);
+	void setMusicVolume(int vol);
+	void playSound(int sound_id);
 };
 
 class Game{
