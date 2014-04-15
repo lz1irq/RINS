@@ -112,7 +112,12 @@ Being::Being(double x, double y) : Hitbox(*box),
 		rnd.seed(time(0));
 	}
 
-map<const char*, int> BeingResources::textures;
+IDs::IDs() {
+	ids[0] = 0;
+	ids[1] = 0;
+}
+
+map<const char*, IDs> BeingResources::textures;
 
 void Being::move(int dir, bool reverse) {
 	int newdir = dir & 15;
@@ -340,9 +345,17 @@ bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& pro
 }
 
 const int BeingResources::getTextureID(const char* ti) {
-	return textures[ti];
+	return textures.at(ti).ids[0];
 }
 
 void BeingResources::addTextureID(int newID, const char* ti) {
-	textures[ti] = newID;
+	textures[ti].ids[0] = newID;
+}
+
+const int BeingResources::getSoundID(const char* si) {
+	return textures.at(si).ids[1];
+}
+
+void BeingResources::addSoundID(int newID, const char* si) {
+	textures[si].ids[1] = newID;
 }

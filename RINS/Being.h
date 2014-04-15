@@ -25,13 +25,19 @@ struct Derived {
 	Derived(Primary prim, int level);
 	};
 
+struct IDs {
+	int ids[2];
+	IDs();
+};
 
 
 class BeingResources {
-	static map<const char*, int> textures;
+	static map<const char*, IDs> textures;
 public:
 	static const int getTextureID(const char* ti);
 	static void addTextureID(int newID, const char* ti);
+	static const int getSoundID(const char* si);
+	static void addSoundID(int newID, const char* si);
 };
 
 enum Monsters{ ZOMBIE = 0, MAXSIZE };
