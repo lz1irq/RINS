@@ -351,7 +351,10 @@ bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& pro
 	double curr_x = getX();
 	double curr_y = getY();
 	int colpos = rnd() % 16;
-	move(colpos, false);
+	if((count + speed) < start_time) {
+		move(colpos, false);
+		count = start_time;
+	}
 	int state = checkCollisions(curr_x, curr_y, map_index);
 	if (state == OUT_OF_BOUNDS){
 		x = curr_x;

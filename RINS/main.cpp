@@ -4,6 +4,8 @@
 #include "Menu.h"
 #include <math.h>
 #include <mutex>
+
+using namespace std;
 class RINS : public Game, public Renderer, public Audio, public Map{
 
 	int bg[3];
@@ -46,7 +48,11 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 	double texth = 0.08;
 
 	void renderHUD() {
-		//displayText(main_font, (Uint16*)std::to_wstring(player->getHealth()), ;
+		RGBA mecol(128, 0, 0, 0);
+		displayText(main_font, (Uint16*)L"HEALTH:",mecol, 0.002, 0.9,0,0);
+		displayText(main_font, (Uint16*)to_wstring(player->getHealth()).c_str(),mecol, 0.005, 0.94,0,0);
+		displayText(main_font, (Uint16*)L"SCORE:",mecol, 0.84, 0.9,0,0);
+		displayText(main_font, (Uint16*)to_wstring(highscore).c_str(),mecol, 0.89, 0.94,0,0);
 	}
 
 	void graphicsLoop() final {
@@ -84,7 +90,9 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 			/*menux.lock();
 			renderMenu();
 			menux.unlock();*/
+			lock1.lock();
 			renderHUD();
+			lock1.unlock();
 			renderScene();
 		}
 		catch (Error e){
@@ -178,6 +186,7 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 				bool res = (*m)->action(getMapIndex(), projectiles, targets, getTicks());
 				if (!res){
 					m = monsters.erase(m);
+					++highscore;
 					curr_target = nullptr;
 				}
 				else{
@@ -400,7 +409,7 @@ public:
 		monster_types[ZOMBIE] = &createInstance<Zombie>;
 
 		setMusicVolume(MAX_VOL/8);
-		playSong(loadSong("Sounds/level1.mid"));
+		//playSong(loadSong("Sounds/level1.mid"));
 
 		menu_bg = loadTexture("Textures/background1.png");
 		button = loadTexture("Textures/button1.png");

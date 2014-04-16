@@ -118,6 +118,8 @@ public:
 
 class Zombie: public Being, BeingResources {
 private:
+	int speed = 20;
+	int count = 0;
 	int biting;
 	Being* target;
 public:
