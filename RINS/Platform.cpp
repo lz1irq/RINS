@@ -241,3 +241,13 @@ void Audio::stopMusic() {
 	if(Mix_HaltMusic() == -1) throw Error(Mix_GetError());
 }
 
+Audio::Audio(){
+	Mix_Quit();
+}
+
+Socket::Socket(){
+	if (SDLNet_Init())throw Error(SDLNet_GetError());
+}
+Socket::~Socket(){
+	SDLNet_Quit();
+}

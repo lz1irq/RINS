@@ -2,6 +2,7 @@
 #include "SDL_image.h"
 #include "SDL_ttf.h"
 #include "SDL_mixer.h"
+#include "SDL_net.h"
 #include<iostream>
 using namespace std;
 #ifndef _GLIBCXX_PLATFORM_H
@@ -74,6 +75,12 @@ public:
 	void pauseMusic();
 	void resumeMusic();
 	void stopMusic();
+	~Audio();
+};
+
+class Socket{
+	Socket();
+	~Socket();
 };
 
 class Game{
