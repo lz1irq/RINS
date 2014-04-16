@@ -8,7 +8,7 @@ using namespace std;
 #ifndef _GLIBCXX_MAP_H
 #define _GLIBCXX_MAP_H
 
-enum blocks{ EXIT = 17, ENTRY };
+enum blocks{ EXIT = 17, ENTRY, VENDING, DROP };
 class Map{
 	double roomX, roomY;
 	mt19937 pattern;
@@ -42,6 +42,7 @@ public:
 	void getRoomSize(double& x, double& y);
 	long long int getLastExploredRoom();
 	long long int getCurrentRoomNumber();
+	void addLoot(int xtile, int ytile);
 private:
 	vector<Coord> blocks;
 	vector<vector<char>> room;

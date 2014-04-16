@@ -112,6 +112,10 @@ int Map::getMapType(){
 	return map_type;
 }
 
+void Map::addLoot(int xtile, int ytile){
+	room[xtile][ytile] = DROP;
+}
+
 void Map::generateRoom(uint32_t seed_, bool exited){
 	pattern.seed(seed_);
 	uint32_t cx = pattern() % 2000;
@@ -321,6 +325,13 @@ void Map::generateRoom(uint32_t seed_, bool exited){
 			break;
 		}
 	}
+	int numvending = pattern() % 4;
+	for (int i = 0; i < numvending; ++i){
+		int sx = 1 + (pattern() % (xmax - 2));
+		int sy = 1 + (pattern() % (ymax - 2));
+		room[sx][sy] = VENDING;
+	}
+
 	map_type = pattern() % 3;
 	//generate some basic structures
 

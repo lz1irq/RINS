@@ -37,6 +37,8 @@ class Psychokinetic;
 class Pyro;
 class Android;
 
+enum Items{ BODYARMOR = 0, SCOPE, PSYCHOAMP, MAXITEMS };
+
 class Item {
 protected:
 	Primary prim;
@@ -51,6 +53,8 @@ public:
 	Specific& getSpecificBonuses();
 	bool checkClass(std::string cl);
 };
+
+template<typename T> Item * createItem() { return new T(); }
 
 class BodyArmour: public Item {
 public:

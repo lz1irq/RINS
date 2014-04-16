@@ -2,6 +2,7 @@
 #include "Being.h"
 #include "Map.h"
 #include "Menu.h"
+#include "Machine.h"
 #include <math.h>
 #include <mutex>
 
@@ -11,7 +12,7 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 	int bg[3];
 	int wall[3];
 	int side[3][2];
-	int entrytex, exittex, red;
+	int entrytex, exittex, red, vendtex, droptex;
 
 	int dir, tmpdir2;
 	double lastxpos, lastypos, deltax, deltay;
@@ -36,6 +37,7 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 
 	Being* curr_target = nullptr;
 	array<Being*(*)(double, double), MAXSIZE> monster_types;
+	array<Item*(*)(), MAXITEMS> item_types;
 	list<Projectile> projectiles;
 
 	int menu_bg, button, overlay, b2, b3;
@@ -51,6 +53,7 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 	bool enable_music = false;
 
 	int song1;
+	map<pair<int, int>, Machine> machines;
 
 	void renderHUD() {
 		RGBA mecol(128, 0, 0, 0);
@@ -134,6 +137,7 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 							if (getLastExploredRoom() > lastroom){
 								completed = false;
 								spawned = 0;
+								machines.clear();
 							}
 						}
 						lock1.unlock();
@@ -142,6 +146,22 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 					case Y_COLLIDE:
 					case XY_COLLIDE:
 						if (lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
+						break;
+					case TRIGGER:
+						if (getMapIndex()[player->getTileX()][player->getTileY()] == VENDING || getMapIndex()[player->getTileX()][player->getTileY()] == DROP){//dropped items are free and can contain money?
+							pair<int, int> p = make_pair(player->getTileX(), player->getTileY());
+							if (machines.find(p) == machines.end()){
+								machines[p] = *new Machine();
+								int items = pattern() % 10;
+								for (int i = 0; i < 10; ++i){
+									int item = pattern() % MAXITEMS;
+									machines[p].addItem(*item_types[item]());
+								}
+							}
+							else{
+
+							}
+						}
 						break;
 					}
 				}
@@ -192,6 +212,7 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 			for (auto m = begin(monsters); m != end(monsters); ++m, ++tar){
 				bool res = (*m)->action(getMapIndex(), projectiles, targets, getTicks());
 				if (!res){
+					addLoot((*m)->getTileX(), (*m)->getTileY());
 					m = monsters.erase(m);
 					++highscore;
 					curr_target = nullptr;
@@ -375,6 +396,12 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 				applyTexture(exittex, x, y, 1.0 / xsize, 1.0 / ysize);
 				setRotationAngle(0);
 				break;
+			case VENDING:
+				applyTexture(vendtex, x, y, 1.0 / xsize, 1.0 / ysize);
+				break;
+			case DROP:
+				applyTexture(droptex, x, y, 1.0 / xsize, 1.0 / ysize);
+				break;
 			default:
 				//applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
 				break;
@@ -426,12 +453,17 @@ public:
 
 		entrytex = loadTexture("Textures/entry.png");
 		exittex = loadTexture("Textures/exit.png");
+		vendtex = loadTexture("Textures/vendtex.png");
+		droptex = loadTexture("Textures/drop.png");
 		red = loadTexture("Textures/red.png");
 		setModulateBlending(red);
 
 		main_font = loadFont("Fonts/ARIALUNI.TTF", 20);
 
 		monster_types[ZOMBIE] = &createInstance<Zombie>;
+		item_types[BODYARMOR] = &createItem<BodyArmour>;
+		item_types[SCOPE] = &createItem<Scope>;
+		item_types[PSYCHOAMP] = &createItem<PsychoAmp>;
 
 		setMusicVolume(MAX_VOL/8);
 		song1 = loadSong("Sounds/level1.mid");
