@@ -248,6 +248,28 @@ Audio::~Audio(){
 Socket::Socket(){
 	if (SDLNet_Init())throw Error(SDLNet_GetError());
 }
+
+void Socket::startServer(int players, int port){
+	if (SDLNet_ResolveHost(&ip, NULL, port))throw Error(SDLNet_GetError());
+	if (!(sd = SDLNet_TCP_Open(&ip)))throw Error(SDLNet_GetError());
+}
+
+void Socket::gatherPlayers(){
+	if ((csd = SDLNet_TCP_Accept(sd))){
+		if ((numused = SDLNet_TCP_AddSocket(socketset, csd)))throw Error(SDLNet_GetError());
+	}
+}
+
+void Socket::ConnectToServer(int port, const char* ip_) {
+	if (SDLNet_ResolveHost(&ip, ip_, port))throw Error(SDLNet_GetError());
+	sd = SDLNet_TCP_Open(&ip);
+
+}
+
+void Socket::disconncet(){
+	SDLNet_TCP_Close(sd);
+}
+
 Socket::~Socket(){
 	SDLNet_Quit();
 }

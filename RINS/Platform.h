@@ -79,7 +79,15 @@ public:
 };
 
 class Socket{
+	IPaddress ip;
+	TCPsocket sd, csd;
+	SDLNet_SocketSet socketset;
+	int numused = 0;
 	Socket();
+	void startServer(int players, int port);
+	void gatherPlayers();
+	void ConnectToServer(int port, const char* ip);
+	void disconncet();
 	~Socket();
 };
 

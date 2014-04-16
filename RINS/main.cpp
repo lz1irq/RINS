@@ -38,14 +38,19 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 	array<Being*(*)(double, double), MAXSIZE> monster_types;
 	list<Projectile> projectiles;
 
-	int menu_bg, button, overlay;
+	int menu_bg, button, overlay, b2, b3;
 	Menu menu;
+	Menu* curr_m;
 	int  menu_select = -1;
 	double optionysize = 0.1;
 	double optionspacing = 0.01;
 	double optionxsize = 0.3;
 	double yoffset;
 	double texth = 0.08;
+	bool show_menu = true;
+	bool enable_music = false;
+
+	int song1;
 
 	void renderHUD() {
 		RGBA mecol(128, 0, 0, 0);
@@ -64,15 +69,15 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 
 			int offset = 0;
 			if (player->getWalk())offset = 2;
-			renderPart(4, 2, offset+((int)log2(player->getOrientation()) >> 1), 1 - ((int)log2(player->getOrientation()) % 2));
+			renderPart(4, 2, offset + ((int)log2(player->getOrientation()) >> 1), 1 - ((int)log2(player->getOrientation()) % 2));
 
 			applyTexture(BeingResources::getTextureID(typeid(*player).name()), alterBeingPosX(player->getX()), alterBeingPosY(player->getY()), 1.0 / xsize, 1.0 / ysize);
 
 			monster.lock();//lock the monster!
 			for (auto &i : monsters) {
-				if (i->getWalk())renderPart(4, 2, 2+((int)log2(i->getOrientation()) >> 1), 1 - ((int)log2(i->getOrientation()) % 2));
+				if (i->getWalk())renderPart(4, 2, 2 + ((int)log2(i->getOrientation()) >> 1), 1 - ((int)log2(i->getOrientation()) % 2));
 				else renderPart(4, 2, ((int)log2(i->getOrientation()) >> 1), 1 - ((int)log2(i->getOrientation()) % 2));
-				applyTexture(BeingResources::getTextureID(typeid(*i).name()), i->getX()-deltax, i->getY()-deltay, 1.0 / xsize, 1.0 / ysize);
+				applyTexture(BeingResources::getTextureID(typeid(*i).name()), i->getX() - deltax, i->getY() - deltay, 1.0 / xsize, 1.0 / ysize);
 			}
 			monster.unlock();
 			renderPart(0, 0, 0, 0);
@@ -87,9 +92,11 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 			applyTexture(side[getMapType()][0], -1, 0, 1, 1);
 			applyTexture(side[getMapType()][1], 1, 0, 1, 1);
 
-			/*menux.lock();
-			renderMenu();
-			menux.unlock();*/
+			if (show_menu){
+				menux.lock();
+				renderMenu();
+				menux.unlock();
+			}
 			lock1.lock();
 			renderHUD();
 			lock1.unlock();
@@ -197,10 +204,11 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 			}
 			monster.unlock();
 
-
-			/*menux.lock();
-			checkMenu();
-			menux.unlock();*/
+			if (show_menu){
+				menux.lock();
+				checkMenu();
+				menux.unlock();
+			}
 
 			updatePress();
 			SDL_Delay(10);
@@ -212,17 +220,28 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 
 	void renderMenu(){
 		applyTexture(menu_bg, 0, 0, 1, 1);
-		yoffset = (menu.getNumOptions() - 1)*(optionysize + optionspacing) / 2.0;
+		yoffset = (curr_m->getNumOptions() - 1)*(optionysize + optionspacing) / 2.0;
 		double w, h;
 		RGBA mecol(255, 100, 255, 0);
-		for(int i = 0; i < menu.getNumOptions(); ++i){
-			Button* bb = dynamic_cast<Button*>(&menu.selectOption(i));
-			if (menu.getHitbox().at(i))mecol.setR(255);
+		for (int i = 0; i < curr_m->getNumOptions(); ++i){
+			Button* bb = dynamic_cast<Button*>(&curr_m->selectOption(i));
+			Checkbox* cc = dynamic_cast<Checkbox*>(&curr_m->selectOption(i));
+			if (curr_m->getHitbox().at(i))mecol.setR(255);
 			else mecol.setR(0);
-			if (bb){
-				applyTexture(button, 0.5 - optionxsize / 2.0, 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset, optionxsize, optionysize);
-				getTextWH(main_font, (Uint16*)menu.selectOption(i).getText().c_str(), w, h);
-				displayText(main_font, (Uint16*)menu.selectOption(i).getText().c_str(), 
+			if (bb || cc){
+				int tex;
+				if (bb)tex = button;
+				if (cc){
+					if (cc->access())tex = b2;
+					else tex = b3;
+				}
+				applyTexture(tex, 0.5 - optionxsize / 2.0, 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset, optionxsize, optionysize);
+				getTextWH(main_font, (Uint16*)curr_m->selectOption(i).getText().c_str(), w, h);
+				if (curr_m->getHitbox().at(i)){
+					applyTexture(overlay, 0.5 - optionxsize / 2.0, 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset, optionxsize, optionysize);
+					getTextWH(main_font, (Uint16*)curr_m->selectOption(i).getText().c_str(), w, h);
+				}
+				displayText(main_font, (Uint16*)curr_m->selectOption(i).getText().c_str(),
 					mecol, 0.5 -w/2 , 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset +h/2 , w, h);
 			}
 		}
@@ -230,21 +249,27 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 
 	void checkMenu(){
 		double w, h;
-		for (int i = 0; i < menu.getNumOptions(); ++i){
-			Button* bb = dynamic_cast<Button*>(&menu.selectOption(i));
-			if (bb){
-				menu.getHitbox().at(i) = false;
+		for (int i = 0; i < curr_m->getNumOptions(); ++i){
+			Button* bb = dynamic_cast<Button*>(&curr_m->selectOption(i));
+			Checkbox* cz = dynamic_cast<Checkbox*>(&curr_m->selectOption(i));
+			if (bb || cz){
+				curr_m->getHitbox().at(i) = false;
 				if (getMouseX() > 0.5 - optionxsize / 2.0 && getMouseX() < 0.5 + optionxsize / 2.0){
 					if (getMouseY() > 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset && getMouseY() < 0.5 +
 						(optionysize + optionspacing)*i + (optionysize + optionspacing) / 2.0 - yoffset - optionspacing){
-						menu.getHitbox().at(i) = true;
-						Command* cc = dynamic_cast<Command*>(&menu.selectOption(i).getObject());
-						if (cc){
-							if (pressed)menu_select = i;
-							if (menu_select == i && cangetpress){
+						curr_m->getHitbox().at(i) = true;
+						if (pressed)menu_select = i;
+						Command* cc = dynamic_cast<Command*>(&curr_m->selectOption(i).getObject());
+						Menu* mm = dynamic_cast<Menu*>(&curr_m->selectOption(i).getObject());
+						if (menu_select == i && cangetpress){
+							if (cc){
 								cc->exec();
-								menu_select = -1;
+								if(cz)cz->access() = !cz->access();
 							}
+							if (mm){
+								curr_m = mm;
+							}
+							menu_select = -1;
 						}
 					}
 				}
@@ -409,30 +434,29 @@ public:
 		monster_types[ZOMBIE] = &createInstance<Zombie>;
 
 		setMusicVolume(MAX_VOL/8);
-		//playSong(loadSong("Sounds/level1.mid"));
+		song1 = loadSong("Sounds/level1.mid");
+		//playSong(song1);
 
 		menu_bg = loadTexture("Textures/background1.png");
 		button = loadTexture("Textures/button1.png");
+		b2 = loadTexture("Textures/button2.png");
+		b3 = loadTexture("Textures/button3.png");
 		overlay = loadTexture("Textures/overlay1.png");
+		setModulateBlending(overlay);
 
-		class cmd1 : public Command{
-			void* exec(){
-				cout << "click1" << endl;
-			}
-		};
-		class cmd2 : public Command{
-			void* exec(){
-				cout << "click2" << endl;
-			}
-		};
-		class cmd3 : public Command{
-			void* exec(){
-				cout << "click3" << endl;
-			}
-		};
+		Menu& m2 = *new Menu();
+		m2.addField(*new Button(L"Server name", *new Command([](){ cout << "noname" << endl; })))
+			.addField(*new Button(L"Main menu", menu));
 
+		Menu& m3 = *new Menu();
+		m3.addField(*new Checkbox(L"Enabled", *new Command([this](){ enable_music = !enable_music; if (enable_music)playSong(song1); else stopMusic(); cout << isPlayingMusic() << endl; }), false))
+			.addField(*new Button(L"Main menu", menu));
 
-		menu.addField(*new Button(L"Insane", *new cmd1())).addField(*new Button(L"Беше", *new cmd2())).addField(*new Button(L"瓜田李下", *new cmd3()));
+		menu.addField(*new Button(L"Singleplayer", *new Command([this](){ show_menu = false; })))
+			.addField(*new Button(L"Multiplayer", m2))
+			.addField(*new Button(L"Sound", m3));
+
+		curr_m = &menu;
 
 		//::xsize = xsize;
 		//::ysize = ysize;

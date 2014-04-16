@@ -2,6 +2,7 @@
 #define _GLIBCXX_MENU_H
 #include <string>
 #include <vector>
+#include <functional>
 using namespace std;
 
 class MenuObject{
@@ -30,13 +31,27 @@ public:
 	Button(wstring name, MenuObject& assoc) : MenuControl(name, assoc){}
 
 };
+
+class Checkbox : public MenuControl{
+	bool set;
+public:
+	Checkbox(wstring name, MenuObject& assoc, bool isSet) : MenuControl(name, assoc), set(isSet){}
+	bool& access(){
+		return set;
+	}
+};
+
 class Radio: public MenuControl{
 
 };
 
 class Command: public MenuObject{
+	function<void()> func;
 public:
-	virtual void* exec() = 0;
+	Command(function<void()> lambda) : func(lambda){}
+	void exec(){
+		func();
+	}
 };
 
 class Menu: public MenuObject{
