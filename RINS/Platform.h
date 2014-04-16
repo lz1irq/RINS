@@ -24,6 +24,10 @@ struct RGBA{
 		col.b = B;
 		col.a = A;
 	}
+	void setR(Uint8 r){ col.r = r; }
+	void setG(Uint8 g){ col.g = g; }
+	void setB(Uint8 b){ col.b = b; }
+	void setA(Uint8 a){ col.a = a; }
 };
 
 class Renderer {
@@ -46,6 +50,7 @@ public:
 	void renderPart(int xparts, int yparts, int xpartnum, int ypartnum);
 	int loadFont(const char* font, int size);
 	void displayText(int font, const Uint16* text, RGBA color, double x, double y, double w, double h);
+	void getTextWH(int font, const Uint16* text, double& w, double& h);
 	void setRotationAngle(double deg);
 	void setModulateBlending(int texture_ID);
 	~Renderer();

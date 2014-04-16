@@ -1,4 +1,4 @@
-#include "Platform.h"
+﻿#include "Platform.h"
 #include "Being.h"
 #include "Map.h"
 #include "Menu.h"
@@ -22,7 +22,7 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 
 	int last_tick = 0, timer2 = 0, projectile_tick = 0;
 
-	mutex lock1, monster, projectile;
+	mutex lock1, monster, projectile, menux;
 
 	int highscore = 0, spawned = 0, lastroom = 0;
 	int main_font;
@@ -38,6 +38,13 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 
 	int menu_bg, button, overlay;
 	Menu menu;
+	int  menu_select = -1;
+	double optionysize = 0.1;
+	double optionspacing = 0.01;
+	double optionxsize = 0.3;
+	double yoffset;
+	double texth = 0.08;
+
 
 	void graphicsLoop() final {
 		try{
@@ -71,7 +78,9 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 			applyTexture(side[getMapType()][0], -1, 0, 1, 1);
 			applyTexture(side[getMapType()][1], 1, 0, 1, 1);
 
+			menux.lock();
 			renderMenu();
+			menux.unlock();
 
 			renderScene();
 		}
@@ -175,6 +184,12 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 				}
 			}
 			monster.unlock();
+
+
+			menux.lock();
+			checkMenu();
+			menux.unlock();
+
 			updatePress();
 			SDL_Delay(10);
 		}
@@ -185,13 +200,45 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 
 	void renderMenu(){
 		applyTexture(menu_bg, 0, 0, 1, 1);
-		double optionysize = 0.1;
-		double optionspacing = 0.01;
-		double optionxsize = 0.3;
-		double yoffset = menu.getNumOptions()*(optionysize+optionspacing)/2.0;
+		yoffset = (menu.getNumOptions() - 1)*(optionysize + optionspacing) / 2.0;
+		double w, h;
+		RGBA mecol(255, 100, 255, 0);
 		for(int i = 0; i < menu.getNumOptions(); ++i){
-			applyTexture(button, 0.5-optionxsize/2.0,0.5-(optionysize+optionspacing)/2.0-yoffset, optionxsize, optionysize);
+			Button* bb = dynamic_cast<Button*>(&menu.selectOption(i));
+			if (menu.getHitbox().at(i))mecol.setR(255);
+			else mecol.setR(0);
+			if (bb){
+				applyTexture(button, 0.5 - optionxsize / 2.0, 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset, optionxsize, optionysize);
+				getTextWH(main_font, (Uint16*)menu.selectOption(i).getText().c_str(), w, h);
+				displayText(main_font, (Uint16*)menu.selectOption(i).getText().c_str(), 
+					mecol, 0.5 -w/2 , 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset +h/2 , w, h);
+			}
 		}
+	}
+
+	void checkMenu(){
+		double w, h;
+		for (int i = 0; i < menu.getNumOptions(); ++i){
+			Button* bb = dynamic_cast<Button*>(&menu.selectOption(i));
+			if (bb){
+				menu.getHitbox().at(i) = false;
+				if (getMouseX() > 0.5 - optionxsize / 2.0 && getMouseX() < 0.5 + optionxsize / 2.0){
+					if (getMouseY() > 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset && getMouseY() < 0.5 +
+						(optionysize + optionspacing)*i + (optionysize + optionspacing) / 2.0 - yoffset - optionspacing){
+						menu.getHitbox().at(i) = true;
+						Command* cc = dynamic_cast<Command*>(&menu.selectOption(i).getObject());
+						if (cc){
+							if (pressed)menu_select = i;
+							if (menu_select == i && cangetpress){
+								cc->exec();
+								menu_select = -1;
+							}
+						}
+					}
+				}
+			}
+		}
+		if (cangetpress)menu_select = -1;
 	}
 
 	void getdir(){
@@ -345,7 +392,7 @@ public:
 		red = loadTexture("Textures/red.png");
 		setModulateBlending(red);
 
-		main_font = loadFont("Fonts/ARIALUNI.TTF", 40);
+		main_font = loadFont("Fonts/ARIALUNI.TTF", 20);
 
 		monster_types[ZOMBIE] = &createInstance<Zombie>;
 
@@ -356,7 +403,24 @@ public:
 		button = loadTexture("Textures/button1.png");
 		overlay = loadTexture("Textures/overlay1.png");
 
-		menu.addField(*new MenuControl("opt1").addField(*new MenuControl("opt2").addField(*new MenuControl("opt3");
+		class cmd1 : public Command{
+			void* exec(){
+				cout << "click1" << endl;
+			}
+		};
+		class cmd2 : public Command{
+			void* exec(){
+				cout << "click2" << endl;
+			}
+		};
+		class cmd3 : public Command{
+			void* exec(){
+				cout << "click3" << endl;
+			}
+		};
+
+
+		menu.addField(*new Button(L"Insane", *new cmd1())).addField(*new Button(L"Беше", *new cmd2())).addField(*new Button(L"瓜田李下", *new cmd3()));
 
 		//::xsize = xsize;
 		//::ysize = ysize;
