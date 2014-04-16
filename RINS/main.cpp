@@ -45,6 +45,9 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 	double yoffset;
 	double texth = 0.08;
 
+	void renderHUD() {
+		//displayText(main_font, (Uint16*)std::to_wstring(player->getHealth()), ;
+	}
 
 	void graphicsLoop() final {
 		try{
@@ -78,10 +81,10 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 			applyTexture(side[getMapType()][0], -1, 0, 1, 1);
 			applyTexture(side[getMapType()][1], 1, 0, 1, 1);
 
-			menux.lock();
+			/*menux.lock();
 			renderMenu();
-			menux.unlock();
-
+			menux.unlock();*/
+			renderHUD();
 			renderScene();
 		}
 		catch (Error e){
@@ -186,9 +189,9 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 			monster.unlock();
 
 
-			menux.lock();
+			/*menux.lock();
 			checkMenu();
-			menux.unlock();
+			menux.unlock();*/
 
 			updatePress();
 			SDL_Delay(10);

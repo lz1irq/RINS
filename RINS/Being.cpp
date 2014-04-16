@@ -3,25 +3,9 @@
 
 using namespace std;
 #include <iostream>
+#include <typeinfo>
 
 Hitbox* Being::box;
-
-Primary::Primary():	
-	strength(5), strength_bonus(0),
-	perception(5), perception_bonus(0),
-	endurance(5), endurance_bonus(0),
-	intelligence(5), intelligence_bonus(0),
-	agility(5), agility_bonus(0),
-	luck(5), luck_bonus(0) {}
-
-Derived::Derived(Primary prim, int level):
-	crit_bonus(0), dmg_res_bonus(0),
-	melee_dmg_bonus(0), fire_res(0), fire_res_bonus(0) {
-	crit_chance = prim.luck * 0.01;
-	health = 90 + prim.endurance*2 + 10*level;
-	melee_dmg = prim.strength/2;
-	dmg_res = prim.agility*1.5;
-}
 
 Hitbox::Hitbox(int tiles_x, int tiles_y, int tile_granularity) : tile_granularity(tile_granularity),
 	tiles_x(tiles_x), tiles_y(tiles_y), move_step_x(1.0 / (tile_granularity * tiles_x)),
@@ -162,6 +146,44 @@ int Being::tryToShoot(Being* target, Projectile** p){
 		}
 		else return NOT_IN_FOV;
 	}
+}
+
+void Being::equipItem(Item& item) {
+	if( item.checkClass("all") || item.checkClass(typeid(*this).name()) ) {
+		Primary prim = item.getPrimaryBonuses();
+		Derived der = item.getDerivedBonuses();
+		Specific spec = item.getSpecificBonuses();
+
+		prim_stats.agility_bonus += prim.agility_bonus;
+		prim_stats.endurance_bonus += prim.endurance_bonus;
+		prim_stats.intelligence_bonus += prim.intelligence_bonus;
+		prim_stats.luck_bonus += prim.luck_bonus;
+		prim_stats.perception_bonus += prim.perception_bonus;
+		prim_stats.strength_bonus += prim.strength_bonus;
+
+		der_stats.crit_bonus += der.crit_bonus;
+		der_stats.dmg_res_bonus += der.dmg_res_bonus;
+		der_stats.fire_res_bonus += der.fire_res_bonus;
+		der_stats.melee_dmg_bonus += der.melee_dmg_bonus;
+	}
+}
+
+void Being::unequipItem(Item& item) {
+	Primary prim = item.getPrimaryBonuses();
+	Derived der = item.getDerivedBonuses();
+	Specific spec = item.getSpecificBonuses();
+
+	prim_stats.agility_bonus -= prim.agility_bonus;
+	prim_stats.endurance_bonus -= prim.endurance_bonus;
+	prim_stats.intelligence_bonus -= prim.intelligence_bonus;
+	prim_stats.luck_bonus -= prim.luck_bonus;
+	prim_stats.perception_bonus -= prim.perception_bonus;
+	prim_stats.strength_bonus -= prim.strength_bonus;
+
+	der_stats.crit_bonus -= der.crit_bonus;
+	der_stats.dmg_res_bonus -= der.dmg_res_bonus;
+	der_stats.fire_res_bonus -= der.fire_res_bonus;
+	der_stats.melee_dmg_bonus -= der.melee_dmg_bonus;
 }
 
 void Being::takeProjectile(Projectile& bullet) {

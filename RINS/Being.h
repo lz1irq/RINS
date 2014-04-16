@@ -1,29 +1,12 @@
 #ifndef _GLIBCXX_BEING_H
 #define _GLIBCXX_BEING_H
 #include "Weapon.h"
+#include "Item.h"
 #include <ctime>
 #include <random>
 #include <array>
 #include <typeinfo>
 using namespace std;
-struct Primary {
-	int strength, strength_bonus;
-	int perception, perception_bonus;
-	int endurance, endurance_bonus;
-	int intelligence, intelligence_bonus;
-	int agility, agility_bonus;
-	int luck, luck_bonus;
-	Primary();
-	};
-
-struct Derived {
-	double crit_chance, crit_bonus;
-	int dmg_res, dmg_res_bonus;
-	int health;
-	int melee_dmg, melee_dmg_bonus;
-	int fire_res, fire_res_bonus;
-	Derived(Primary prim, int level);
-	};
 
 struct IDs {
 	int ids[2];
@@ -91,7 +74,8 @@ public:
 	int getOrientation() const;
 	void takeProjectile(Projectile& bullet);
 	int tryToShoot(Being* target, Projectile** p);
-
+	void equipItem(Item& item);
+	void unequipItem(Item& item);
 	static Hitbox* box;
 
 	virtual ~Being();

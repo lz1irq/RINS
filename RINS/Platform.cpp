@@ -241,7 +241,7 @@ void Audio::stopMusic() {
 	if(Mix_HaltMusic() == -1) throw Error(Mix_GetError());
 }
 
-Audio::Audio(){
+Audio::~Audio(){
 	Mix_Quit();
 }
 
