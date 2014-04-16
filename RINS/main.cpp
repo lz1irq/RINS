@@ -1,6 +1,7 @@
 #include "Platform.h"
 #include "Being.h"
 #include "Map.h"
+#include "Menu.h"
 #include <math.h>
 #include <mutex>
 class RINS : public Game, public Renderer, public Audio, public Map{
@@ -35,6 +36,9 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 	array<Being*(*)(double, double), MAXSIZE> monster_types;
 	list<Projectile> projectiles;
 
+	int menu_bg, button, overlay;
+	Menu menu;
+
 	void graphicsLoop() final {
 		try{
 
@@ -66,6 +70,8 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 
 			applyTexture(side[getMapType()][0], -1, 0, 1, 1);
 			applyTexture(side[getMapType()][1], 1, 0, 1, 1);
+
+			renderMenu();
 
 			renderScene();
 		}
@@ -174,6 +180,17 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 		}
 		catch (Error e) {
 			cout << e.getError() << endl;
+		}
+	}
+
+	void renderMenu(){
+		applyTexture(menu_bg, 0, 0, 1, 1);
+		double optionysize = 0.1;
+		double optionspacing = 0.01;
+		double optionxsize = 0.3;
+		double yoffset = menu.getNumOptions()*(optionysize+optionspacing)/2.0;
+		for(int i = 0; i < menu.getNumOptions(); ++i){
+			applyTexture(button, 0.5-optionxsize/2.0,0.5-(optionysize+optionspacing)/2.0-yoffset, optionxsize, optionysize);
 		}
 	}
 
@@ -334,6 +351,12 @@ public:
 
 		setMusicVolume(MAX_VOL/8);
 		playSong(loadSong("Sounds/level1.mid"));
+
+		menu_bg = loadTexture("Textures/background1.png");
+		button = loadTexture("Textures/button1.png");
+		overlay = loadTexture("Textures/overlay1.png");
+
+		menu.addField(*new MenuControl("opt1").addField(*new MenuControl("opt2").addField(*new MenuControl("opt3");
 
 		//::xsize = xsize;
 		//::ysize = ysize;
