@@ -114,6 +114,8 @@ int Map::getMapType(){
 
 void Map::addLoot(int xtile, int ytile){
 	room[xtile][ytile] = DROP;
+	blocks.push_back(Coord((double)xtile / xsize, (double)ytile / ysize, DROP));
+
 }
 
 void Map::generateRoom(uint32_t seed_, bool exited){
