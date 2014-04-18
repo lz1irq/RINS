@@ -224,7 +224,7 @@ Marine::Marine(double sx, double yx):
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
 	energy_weapons = 2 + prim_stats.perception* + prim_stats.luck>>1;
 
-	weapons.push_back(std::unique_ptr<WeaponBase>(new AssaultRifle(small_guns, typeid(*this).name())));
+	weapons.push_back(std::unique_ptr<WeaponBase>(new AssaultRifle(small_guns, this)));
 }
 
 void Marine::setRange(){
@@ -246,7 +246,7 @@ Pyro::Pyro(double sx, double yx):
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
 	fire = 2 + prim_stats.agility* + prim_stats.luck>>1;
 
-	weapons.push_back(std::unique_ptr<Molotov>(new Molotov(explosives, typeid(*this).name())));
+	weapons.push_back(std::unique_ptr<Molotov>(new Molotov(explosives, this)));
 }
 
 void Pyro::setRange(){
@@ -264,7 +264,7 @@ Psychokinetic::Psychokinetic(double sx, double yx):
 	mental_power = 2 + prim_stats.endurance + prim_stats.intelligence + prim_stats.luck>>1;
 	fire = 2 + prim_stats.agility* + prim_stats.luck>>1;
 
-	weapons.push_back(std::unique_ptr<WeaponBase>(new Pyrokinesis(fire, typeid(*this).name())));
+	weapons.push_back(std::unique_ptr<WeaponBase>(new Pyrokinesis(fire, this)));
 }
 
 void Psychokinetic ::setRange(){
@@ -282,7 +282,7 @@ Android::Android(double sx, double yx):
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
 	energy_weapons = 2 + prim_stats.perception* + prim_stats.luck>>1;
 
-	weapons.push_back(std::unique_ptr<WeaponBase>(new Punch(punch, typeid(*this).name())));
+	weapons.push_back(std::unique_ptr<WeaponBase>(new Punch(punch, this)));
 }
 
 void Android::setRange(){
@@ -301,7 +301,7 @@ Zombie::Zombie(double sx, double yx):
 	Being(sx,yx), target(nullptr) {
 	biting = 2 + prim_stats.strength<<1 + prim_stats.luck>>1;
 
-	weapons.push_back(std::unique_ptr<WeaponBase>(new Bite(biting, typeid(*this).name())));
+	weapons.push_back(std::unique_ptr<WeaponBase>(new Bite(biting, this)));
 }
 
 void Zombie::setRange(){

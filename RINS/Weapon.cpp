@@ -12,7 +12,7 @@ double rad_to_deg(double rad){
 //Hitbox* Projectile::box;
 #include <iostream>
 using namespace std;
-Projectile::Projectile(unsigned int ptype, int pdmg, int pfly_t, int pdet_t, double angle, double px, double py, const char* shooter, Hitbox& h) :
+Projectile::Projectile(unsigned int ptype, int pdmg, int pfly_t, int pdet_t, double angle, double px, double py, Being* shooter, Hitbox& h) :
 type(ptype), dmg(pdmg), box(h),
 fly_t(pfly_t), det_t(pdet_t),
 dir(angle), x(px), y(py), shooter(shooter)
@@ -45,7 +45,7 @@ bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<B
 		int px = (box.getX() + (*m)->getStepX()*1.5) / box.getStepX();
 		int py = (box.getY() + (*m)->getStepY()*1.5) / box.getStepY();
 		if ((px - mx) <= 1 && (px - mx) >= 0 && (py - my) <= 1 && (py - my) >= 0){
-			if (strcmp(typeid(**m).name(), shooter)){
+			if (&*(*m) != shooter){
 				(*m)->takeProjectile(*this);
 				return false;//explode!
 			}
@@ -57,7 +57,7 @@ bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<B
 		int px = (box.getX() + (*m)->getStepX()*1.5) / box.getStepX();
 		int py = (box.getY() + (*m)->getStepY()*1.5) / box.getStepY();
 		if ((px - mx) <= 1 && (px - mx) >= 0 && (py - my) <= 1 && (py - my) >= 0){
-			if (strcmp(typeid(**m).name(), shooter)){
+			if (&*(*m) != shooter){
 				(*m)->takeProjectile(*this);
 				return false;//explode!
 			}
@@ -105,7 +105,7 @@ void WeaponBase::pickUp() {
 	picked_up = true;
 }
 
-AssaultRifle::AssaultRifle(int wskill, const char* assoc_class) : WeaponBase(BULLET, wskill, 15, 30) {
+AssaultRifle::AssaultRifle(int wskill, Being* assoc_class) : WeaponBase(BULLET, wskill, 15, 30) {
 	this->assoc_class = assoc_class;
 }
 
@@ -113,7 +113,7 @@ Projectile& AssaultRifle::shoot(double angle, double px, double py, Hitbox& h) {
 	return *new Projectile(type, dmg, 80, 100, angle, px, py, assoc_class, h);
 }
 
-Pyrokinesis::Pyrokinesis(int wskill, const char* assoc_class) : WeaponBase(FIRE, wskill, 15, 30) {
+Pyrokinesis::Pyrokinesis(int wskill, Being* assoc_class) : WeaponBase(FIRE, wskill, 15, 30) {
 	this->assoc_class = assoc_class;
 }
 
@@ -121,7 +121,7 @@ Projectile& Pyrokinesis::shoot(double angle, double px, double py, Hitbox& h) {
 	return *new Projectile(type, dmg, 80, 100, angle, px, py, assoc_class, h);
 }
 
-Molotov::Molotov(int wskill, const char* assoc_class) : WeaponBase(FIRE, wskill, 15, 30) {
+Molotov::Molotov(int wskill, Being* assoc_class) : WeaponBase(FIRE, wskill, 15, 30) {
 	this->assoc_class = assoc_class;
 }
 
@@ -129,7 +129,7 @@ Projectile& Molotov::shoot(double angle, double px, double py, Hitbox& h) {
 	return *new Projectile(type, dmg, 80, 100, angle, px, py, assoc_class, h);
 }
 
-Punch::Punch(int wskill, const char* assoc_class) : WeaponBase(BULLET, wskill, 15, 30) {
+Punch::Punch(int wskill, Being* assoc_class) : WeaponBase(BULLET, wskill, 15, 30) {
 	this->assoc_class = assoc_class;
 }
 
@@ -137,7 +137,7 @@ Projectile& Punch::shoot(double angle, double px, double py, Hitbox& h) {
 	return *new Projectile(type, dmg, 80, 100, angle, px, py, assoc_class, h);
 }
 
-Bite::Bite(int wskill, const char* assoc_class) : WeaponBase(BULLET, wskill, 40, 30) {
+Bite::Bite(int wskill, Being* assoc_class) : WeaponBase(BULLET, wskill, 40, 30) {
 	this->assoc_class = assoc_class;
 }
 
