@@ -247,6 +247,7 @@ Audio::~Audio(){
 
 Socket::Socket(){
 	if (SDLNet_Init())throw Error(SDLNet_GetError());
+	if ((socketset = SDLNet_AllocSocketSet(16)) == nullptr)throw Error(SDLNet_GetError());
 }
 
 void Socket::startServer(int players, int port){
@@ -256,7 +257,6 @@ void Socket::startServer(int players, int port){
 
 int Socket::gatherPlayers(){
 	if ((csd = SDLNet_TCP_Accept(sd))){
-		cout << "ok" << endl;
 		if ((numused = SDLNet_TCP_AddSocket(socketset, csd))==-1)throw Error(SDLNet_GetError());
 		return numused;
 	}

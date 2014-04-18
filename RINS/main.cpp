@@ -488,7 +488,7 @@ public:
 
 		Menu& m2 = *new Menu();
 		m2.addField(*new Button(L"Start server", *new Command([this](){ server = true; })))
-			.addField(*new Button(L"Connect to 78.83.105.132", *new Command([this](){ ConnectToServer(1337, "127.0.0.1"); })))
+			.addField(*new Button(L"Connect to 78.83.105.132", *new Command([this](){ ConnectToServer(1337, "84.238.225.229"); })))
 			.addField(*new Button(L"Main menu", menu));
 
 		Menu& m3 = *new Menu();
