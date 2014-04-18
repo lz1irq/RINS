@@ -256,6 +256,7 @@ void Socket::startServer(int players, int port){
 
 int Socket::gatherPlayers(){
 	if ((csd = SDLNet_TCP_Accept(sd))){
+		cout << "ok" << endl;
 		if ((numused = SDLNet_TCP_AddSocket(socketset, csd))==-1)throw Error(SDLNet_GetError());
 		return numused;
 	}

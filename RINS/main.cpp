@@ -238,7 +238,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					startServer(4, 1337);
 					started = true;
 				}
-				cout << gatherPlayers() << endl;
+				gatherPlayers();
 			}
 
 			updatePress();
@@ -488,7 +488,7 @@ public:
 
 		Menu& m2 = *new Menu();
 		m2.addField(*new Button(L"Start server", *new Command([this](){ server = true; })))
-			.addField(*new Button(L"Connect to 78.83.105.132", *new Command([this](){ ConnectToServer(1337, "78.83.105.132"); })))
+			.addField(*new Button(L"Connect to 78.83.105.132", *new Command([this](){ ConnectToServer(1337, "127.0.0.1"); })))
 			.addField(*new Button(L"Main menu", menu));
 
 		Menu& m3 = *new Menu();
