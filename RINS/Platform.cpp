@@ -254,15 +254,16 @@ void Socket::startServer(int players, int port){
 	if (!(sd = SDLNet_TCP_Open(&ip)))throw Error(SDLNet_GetError());
 }
 
-void Socket::gatherPlayers(){
+int Socket::gatherPlayers(){
 	if ((csd = SDLNet_TCP_Accept(sd))){
-		if ((numused = SDLNet_TCP_AddSocket(socketset, csd)))throw Error(SDLNet_GetError());
+		if ((numused = SDLNet_TCP_AddSocket(socketset, csd))==-1)throw Error(SDLNet_GetError());
+		return numused;
 	}
 }
 
 void Socket::ConnectToServer(int port, const char* ip_) {
 	if (SDLNet_ResolveHost(&ip, ip_, port))throw Error(SDLNet_GetError());
-	sd = SDLNet_TCP_Open(&ip);
+	if (!(sd = SDLNet_TCP_Open(&ip)))throw Error(SDLNet_GetError());
 
 }
 

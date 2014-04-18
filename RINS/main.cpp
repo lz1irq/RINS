@@ -7,7 +7,7 @@
 #include <mutex>
 
 using namespace std;
-class RINS : public Game, public Renderer, public Audio, public Map{
+class RINS : public Game, public Renderer, public Audio, public Map, public Socket{
 
 	int bg[3];
 	int wall[3];
@@ -51,6 +51,8 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 	double texth = 0.08;
 	bool show_menu = true;
 	bool enable_music = false;
+	bool server = false;
+	bool started = false;
 
 	int song1;
 	map<pair<int, int>, Machine> machines;
@@ -229,6 +231,14 @@ class RINS : public Game, public Renderer, public Audio, public Map{
 				menux.lock();
 				checkMenu();
 				menux.unlock();
+			}
+
+			if (server){
+				if (!started){
+					startServer(4, 1337);
+					started = true;
+				}
+				cout << gatherPlayers() << endl;
 			}
 
 			updatePress();
@@ -477,7 +487,8 @@ public:
 		setModulateBlending(overlay);
 
 		Menu& m2 = *new Menu();
-		m2.addField(*new Button(L"Server name", *new Command([](){ cout << "noname" << endl; })))
+		m2.addField(*new Button(L"Start server", *new Command([this](){ server = true; })))
+			.addField(*new Button(L"Connect to 78.83.105.132", *new Command([this](){ ConnectToServer(1337, "78.83.105.132"); })))
 			.addField(*new Button(L"Main menu", menu));
 
 		Menu& m3 = *new Menu();

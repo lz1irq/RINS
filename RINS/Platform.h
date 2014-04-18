@@ -83,9 +83,10 @@ class Socket{
 	TCPsocket sd, csd;
 	SDLNet_SocketSet socketset;
 	int numused = 0;
+public:
 	Socket();
 	void startServer(int players, int port);
-	void gatherPlayers();
+	int gatherPlayers();
 	void ConnectToServer(int port, const char* ip);
 	void disconncet();
 	~Socket();
