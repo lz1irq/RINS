@@ -5,9 +5,12 @@
 using namespace std;
 
 class Machine{
-	list<Item> items;
+	list<Item*> items;
+	list<Item*>::iterator it = items.end();
 public:
-	void addItem(Item i);
+	void addItem(Item& i);
+	Item& getNextItem();
+	int itemCount();
 };
 
 #endif

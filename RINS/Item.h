@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <vector>
+#include <map>
+#include<typeinfo>
 using namespace std;
 
 struct Primary {
@@ -39,19 +41,28 @@ class Android;
 
 enum Items{ BODYARMOR = 0, SCOPE, PSYCHOAMP, MAXITEMS };
 
+class ItemResources {
+	static map<const type_info*, int> textures;
+public:
+	static void addTextureID(int tid, const type_info* item);
+	static int getTextureID(const type_info* item);
+};
+
 class Item {
 protected:
 	Primary prim;
 	Derived der;
 	Specific spec;
-	vector<string> classes;
+	vector<const type_info*> classes;
 	string name;
 public:
 	Item(string iname);
 	Primary& getPrimaryBonuses();
 	Derived& getDerivedBonuses();
 	Specific& getSpecificBonuses();
-	bool checkClass(std::string cl);
+	bool checkClass(const type_info* cl);
+	string getName();
+	virtual ~Item() {};
 };
 
 template<typename T> Item * createItem() { return new T(); }

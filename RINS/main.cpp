@@ -25,7 +25,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 	int last_tick = 0, timer2 = 0, projectile_tick = 0;
 
-	mutex lock1, monster, projectile, menux;
+	mutex lock1, monster, projectile, menux, machine;
 
 	int highscore = 0, spawned = 0, lastroom = 0;
 	int main_font;
@@ -53,17 +53,81 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	bool enable_music = false;
 	bool server = false;
 	bool started = false;
+	Machine* curr_machine = nullptr;
+	bool over_machine = false;
+	bool render_machine = false;
 
 	int song1;
 	map<pair<int, int>, Machine> machines;
 
-	void renderHUD() {
-		RGBA mecol(128, 0, 0, 0);
-		displayText(main_font, (Uint16*)L"HEALTH:",mecol, 0.002, 0.9,0,0);
-		displayText(main_font, (Uint16*)to_wstring(player->getHealth()).c_str(),mecol, 0.005, 0.94,0,0);
-		displayText(main_font, (Uint16*)L"SCORE:",mecol, 0.84, 0.9,0,0);
-		displayText(main_font, (Uint16*)to_wstring(highscore).c_str(),mecol, 0.89, 0.94,0,0);
+	
+	 bool mouseOverTile(int tx, int ty){
+		box.setX(getMouseX() + deltax);
+		box.setY(getMouseY() + deltay);
+		if(box.getTileX() == tx && box.getTileY() == ty)return true;
+		return false;
 	}
+
+	void renderHUD() {
+		RGBA mecol(255, 255, 0, 0);
+		double w,h;
+
+		getTextWH(main_font, (Uint16*)L"HEALTH:", w, h);
+		w *= 0.06/h;
+		h = 0.06;
+		displayText(main_font, (Uint16*)L"HEALTH:",mecol, 0.0, 0.9,w,h);
+
+		getTextWH(main_font, (Uint16*)to_wstring(player->getHealth()).c_str(), w, h);
+		w *= 0.06/h;
+		h = 0.06;
+		displayText(main_font, (Uint16*)to_wstring(player->getHealth()).c_str(),mecol, 0.005, 0.94,w,h);
+		
+		getTextWH(main_font, (Uint16*)L"SCORE:", w, h);
+		w *= 0.06/h;
+		h = 0.06;
+		displayText(main_font, (Uint16*)L"SCORE:",mecol, 1 - w, 0.9,w,h);
+				
+		getTextWH(main_font, (Uint16*)to_wstring(highscore).c_str(), w, h);
+		w *= 0.06/h;
+		h = 0.06;
+		displayText(main_font, (Uint16*)to_wstring(highscore).c_str(),mecol, 1-w, 0.94,w,h);
+	}
+
+	void renderVendingMachine() {
+		double ystart = 0.01;
+		double xstart = 0.01;
+		double itemx = 0.16;
+		double itemy = 0.16;
+		int rows = 0;
+		applyTexture(menu_bg, xstart, ystart, 0.48,0.85);
+		applyTexture(menu_bg, xstart+0.5,ystart, 0.48,0.85);
+		int itemc = curr_machine->itemCount();
+		cout << itemc << endl;
+		for(int i=0;i<itemc;++i) {
+			Item& it = curr_machine->getNextItem();
+			int tid = ItemResources::getTextureID(&typeid(it));
+			double xp = 0.003+(i%3)*itemx;
+			double yp = 0.04+rows*itemy;
+			if(i%3 == 0) ++rows;
+			applyTexture(tid, xp, yp, itemx, itemy);
+			
+		}
+	}
+		
+	void checkVendingMachines(int x, int y) {
+		if(!over_machine) {
+			if(mouseOverTile(x,y) && pressed) over_machine = true;
+		}
+		else {
+			if(mouseOverTile(x,y) && cangetpress) {
+				over_machine = false;
+				;
+				render_machine = true;
+				;
+			}
+		}
+	}
+
 
 	void graphicsLoop() final {
 		try{
@@ -102,6 +166,9 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				renderMenu();
 				menux.unlock();
 			}
+
+			if(render_machine) renderVendingMachine();
+
 			lock1.lock();
 			renderHUD();
 			lock1.unlock();
@@ -161,7 +228,9 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 								}
 							}
 							else{
-
+								;
+								curr_machine = &machines.at(make_pair(player->getTileX(), player->getTileY()));
+								;
 							}
 						}
 						break;
@@ -209,6 +278,9 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					monster.unlock();
 				}
 			}
+
+			if(curr_machine)checkVendingMachines(player->getTileX(), player->getTileY());
+
 			int tar = 0;
 			monster.lock();
 			for (auto m = begin(monsters); m != end(monsters); ++m, ++tar){
@@ -216,7 +288,9 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				if (!res){
 					addLoot((*m)->getTileX(), (*m)->getTileY());
 					m = monsters.erase(m);
+					lock1.lock();
 					++highscore;
+					lock1.unlock();
 					curr_target = nullptr;
 				}
 				else{
@@ -245,7 +319,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			SDL_Delay(10);
 		}
 		catch (Error e) {
-			cout << e.getError() << endl;
+			cout << e.getError() << endl; 
 		}
 	}
 
@@ -443,6 +517,10 @@ public:
 		BeingResources::addTextureID(loadTexture("Textures/devil2.png"), typeid(Android).name());
 		BeingResources::addTextureID(loadTexture("Textures/gangsta2.png"), typeid(Zombie).name());
 
+		ItemResources::addTextureID(loadTexture("Textures/scope.png"), &typeid(Scope));
+		ItemResources::addTextureID(loadTexture("Textures/armour.jpeg"), &typeid(BodyArmour));
+		ItemResources::addTextureID(loadTexture("Textures/amp.jpg"), &typeid(PsychoAmp));
+
 		bg[0] = loadTexture("Textures/floor1.jpg");
 		bg[1] = loadTexture("Textures/cement.jpg");
 		bg[2] = loadTexture("Textures/dirt2.jpg");
@@ -500,6 +578,7 @@ public:
 			.addField(*new Button(L"Sound", m3));
 
 		curr_m = &menu;
+		
 
 		//::xsize = xsize;
 		//::ysize = ysize;

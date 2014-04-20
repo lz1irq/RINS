@@ -149,7 +149,7 @@ int Being::tryToShoot(Being* target, Projectile** p){
 }
 
 void Being::equipItem(Item& item) {
-	if( item.checkClass("all") || item.checkClass(typeid(*this).name()) ) {
+	if( item.checkClass(&typeid(*this))) {
 		Primary prim = item.getPrimaryBonuses();
 		Derived der = item.getDerivedBonuses();
 		Specific spec = item.getSpecificBonuses();

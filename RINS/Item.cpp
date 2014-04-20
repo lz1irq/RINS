@@ -21,7 +21,22 @@ Specific::Specific(): small_guns(0), big_guns(0), energy_weapons(0),
 		explosives(0), fire(0),  mind_infiltration(0), mental_power(0),
 		punch(0) {}
 
+map<const type_info*, int> ItemResources::textures;
+
+void ItemResources::addTextureID(int tid, const type_info* item) {
+	cout << item->name() << endl;
+	textures[item] = tid;
+}
+
+int ItemResources::getTextureID(const type_info* item) {
+	return textures.at(item);
+}
+
 Item::Item(string iname): prim(Primary()), der(Derived(prim, 0)), spec(Specific()), name(iname) {}
+
+string Item::getName() {
+	return name;
+}
 
 Primary& Item::getPrimaryBonuses() {
 	return prim;
@@ -35,7 +50,7 @@ Specific& Item::getSpecificBonuses() {
 	return spec;
 }
 
-bool Item::checkClass(std::string cl) {
+bool Item::checkClass(const type_info* cl) {
 	for(int i=0;i<classes.size();++i) {
 		if(classes.at(i) == cl) return true;
 	}
@@ -43,19 +58,22 @@ bool Item::checkClass(std::string cl) {
 }
 
 BodyArmour::BodyArmour(): Item("Body Armour") {
-	classes.push_back("all");
+	classes.push_back(&typeid(Marine));
+	classes.push_back(&typeid(Pyro));
+	classes.push_back(&typeid(Android));
+	classes.push_back(&typeid(Psychokinetic));
 	der.dmg_res_bonus = 5;
 }
 
 Scope::Scope(): Item("Scope") {
-	classes.push_back(typeid(Marine).name());
-	classes.push_back(typeid(Pyro).name());
-	classes.push_back(typeid(Android).name());
+	classes.push_back(&typeid(Marine));
+	classes.push_back(&typeid(Pyro));
+	classes.push_back(&typeid(Android));
 	prim.perception_bonus = 4;
 }
 
-PsychoAmp::PsychoAmp(): Item("Psychological Amplifier") {
-	classes.push_back(typeid(Psychokinetic).name());
+PsychoAmp::PsychoAmp(): Item("Psycho Amp") {
+	classes.push_back(&typeid(Psychokinetic));
 	spec.mental_power = 4;
 }
 

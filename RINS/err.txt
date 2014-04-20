@@ -1,0 +1,15 @@
+640 480
+Chose class: 
+0. Marine 
+1. Pyro 
+2. Psychokinetic
+3. Android
+ZOMBIE DEAD
+ZOMBIE DEAD
+ZOMBIE DEAD
+ZOMBIE DEAD
+ZOMBIE DEAD
+ZOMBIE DEAD
+ZOMBIE DEAD
+ZOMBIE DEAD
+Body Armour
