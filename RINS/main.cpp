@@ -122,11 +122,11 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			if(mouseOverTile(x,y) && pressed) over_machine = true;
 		}
 		else {
-			if(mouseOverTile(x,y) && cangetpress) {
+			if (cangetpress){
 				over_machine = false;
-				;
-				render_machine = true;
-				;
+				if (mouseOverTile(x, y)) {
+					render_machine = true;
+				}
 			}
 		}
 	}
@@ -183,126 +183,129 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 	void mainLoop() final {
 		try {
-			tmpdir2 = dir;
-			getdir();
-			lastxpos = player->getX();
-			lastypos = player->getY();
+			if (!show_menu){
+				tmpdir2 = dir;
+				getdir();
+				lastxpos = player->getX();
+				lastypos = player->getY();
 
-			if (updateInternalMapState()) dir = 0;
+				if (updateInternalMapState()) dir = 0;
 
-			if (getTicks() - last_tick > 33){
-				player->move(dir, false);
-				last_tick = getTicks();
-				if(lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
-				else{
-					int event = player->checkCollisions(lastxpos, lastypos, getMapIndex());
-					switch (event){
-					case OUT_OF_BOUNDS:
-						if (!completed)break;
-						lock1.lock();
-						if (tryRoomChange(player->getTileX(), player->getTileY())){
-							c = getMapEntry();
-							player->setX(c.x);
-							player->setY(c.y);
-							if (getLastExploredRoom() > lastroom){
-								completed = false;
-								spawned = 0;
-								machines.clear();
-							}
-						}
-						lock1.unlock();
-						break;
-					case X_COLLIDE:
-					case Y_COLLIDE:
-					case XY_COLLIDE:
-						if (lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
-						break;
-					case TRIGGER:
-						if (getMapIndex()[player->getTileX()][player->getTileY()] == VENDING || getMapIndex()[player->getTileX()][player->getTileY()] == DROP){//dropped items are free and can contain money?
-							pair<int, int> p = make_pair(player->getTileX(), player->getTileY());
-							if (machines.find(p) == machines.end()){
-								machines[p] = *new Machine();
-								int items = pattern() % 10;
-								for (int i = 0; i < 10; ++i){
-									int item = pattern() % MAXITEMS;
-									machines[p].addItem(*item_types[item]());
+				if (getTicks() - last_tick > 33){
+					player->move(dir, false);
+					last_tick = getTicks();
+					if (lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
+					else{
+						int event = player->checkCollisions(lastxpos, lastypos, getMapIndex());
+						switch (event){
+						case OUT_OF_BOUNDS:
+							if (!completed)break;
+							lock1.lock();
+							if (tryRoomChange(player->getTileX(), player->getTileY())){
+								c = getMapEntry();
+								player->setX(c.x);
+								player->setY(c.y);
+								if (getLastExploredRoom() > lastroom){
+									completed = false;
+									spawned = 0;
+									machines.clear();
 								}
 							}
-							else{
-								;
-								curr_machine = &machines.at(make_pair(player->getTileX(), player->getTileY()));
-								;
+							lock1.unlock();
+							break;
+						case X_COLLIDE:
+						case Y_COLLIDE:
+						case XY_COLLIDE:
+							if (lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
+							break;
+						case TRIGGER:
+							if (getMapIndex()[player->getTileX()][player->getTileY()] == VENDING || getMapIndex()[player->getTileX()][player->getTileY()] == DROP){//dropped items are free and can contain money?
+								pair<int, int> p = make_pair(player->getTileX(), player->getTileY());
+								if (machines.find(p) == machines.end()){
+									machines[p] = *new Machine();
+									int items = pattern() % 10;
+									for (int i = 0; i < 10; ++i){
+										int item = pattern() % MAXITEMS;
+										machines[p].addItem(*item_types[item]());
+									}
+								}
+								else{
+									;
+									curr_machine = &machines.at(make_pair(player->getTileX(), player->getTileY()));
+									;
+								}
 							}
+							break;
 						}
-						break;
 					}
 				}
-			}
-			if (dir & 16){
-				if (getTicks() - projectile_tick > 15){
-					Projectile* p;
-					int event = player->tryToShoot(curr_target, &p);
-					switch (event){
-					case BANG:
-						//projectile.lock();
-						projectiles.push_back(*p);
-						//projectile.unlock();
+				if (dir & 16){
+					if (getTicks() - projectile_tick > 15){
+						Projectile* p;
+						int event = player->tryToShoot(curr_target, &p);
+						switch (event){
+						case BANG:
+							//projectile.lock();
+							projectiles.push_back(*p);
+							//projectile.unlock();
+						}
+						projectile_tick = getTicks();
 					}
-					projectile_tick = getTicks();
 				}
-			}
-			else projectile_tick = getTicks();
-			for (auto p = begin(projectiles); p != end(projectiles); ++p){
-				bool res = p->update(getMapIndex(), monsters, targets);
-				if (!res){
-					projectile.lock();
-					p = projectiles.erase(p);
-					projectile.unlock();
+				else projectile_tick = getTicks();
+				for (auto p = begin(projectiles); p != end(projectiles); ++p){
+					bool res = p->update(getMapIndex(), monsters, targets);
+					if (!res){
+						projectile.lock();
+						p = projectiles.erase(p);
+						projectile.unlock();
+					}
 				}
-			}
 
-			bool mustspawn = pattern()%getSpawnRate()==false;
-			int spawntype = pattern()%monster_types.size();
-			int x = pattern()%getMapIndex().size();
-			int y = pattern()%getMapIndex()[x].size();
-			if(mustspawn && !getMapIndex()[x][y]){
-				if (spawned == getMaxMonsters()){
-					if (monsters.size() == 0){
-						completed = true;
-						lastroom = getLastExploredRoom();
+				bool mustspawn = pattern() % getSpawnRate() == false;
+				int spawntype = pattern() % monster_types.size();
+				int x = pattern() % getMapIndex().size();
+				int y = pattern() % getMapIndex()[x].size();
+				if (mustspawn && !getMapIndex()[x][y]){
+					if (spawned == getMaxMonsters()){
+						if (monsters.size() == 0){
+							completed = true;
+							lastroom = getLastExploredRoom();
+						}
+					}
+					else{
+						monster.lock();
+						monsters.push_back(unique_ptr<Being>(monster_types[spawntype]((double)x / xsize, (double)y / ysize)));
+						++spawned;
+						monster.unlock();
 					}
 				}
-				else{
-					monster.lock();
-					monsters.push_back(unique_ptr<Being>(monster_types[spawntype]((double)x / xsize, (double)y / ysize)));
-					++spawned;
-					monster.unlock();
-				}
-			}
 
-			if(curr_machine)checkVendingMachines(player->getTileX(), player->getTileY());
+				if (curr_machine)checkVendingMachines(player->getTileX(), player->getTileY());
 
-			int tar = 0;
-			monster.lock();
-			for (auto m = begin(monsters); m != end(monsters); ++m, ++tar){
-				bool res = (*m)->action(getMapIndex(), projectiles, targets, getTicks());
-				if (!res){
-					addLoot((*m)->getTileX(), (*m)->getTileY());
-					Being* ptr = &**m;
-					cout << ptr << endl;
-					m = monsters.erase(m);
-					lock1.lock();
-					++highscore;
-					lock1.unlock();
-					curr_target = nullptr;
-				}
-				else{
-					if (mouseOverTarget((*m)->getX(), (*m)->getY()) && pressed){
-						curr_target = &**m;
+				int tar = 0;
+				monster.lock();
+				for (auto m = begin(monsters); m != end(monsters); ++m, ++tar){
+					bool res = (*m)->action(getMapIndex(), projectiles, targets, getTicks());
+					if (!res){
+						addLoot((*m)->getTileX(), (*m)->getTileY());
+						Being* ptr = &**m;
+						cout << ptr << endl;
+						m = monsters.erase(m);
+						lock1.lock();
+						++highscore;
+						lock1.unlock();
+						curr_target = nullptr;
+					}
+					else{
+						if (mouseOverTarget((*m)->getX(), (*m)->getY()) && pressed){
+							curr_target = &**m;
+						}
 					}
 				}
+				monster.unlock();
+
 			}
-			monster.unlock();
 
 			if (show_menu){
 				menux.lock();
@@ -315,7 +318,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					startServer(4, 1337);
 					started = true;
 				}
-				gatherPlayers();
+				cout << gatherPlayers() << endl;
 			}
 
 			updatePress();
