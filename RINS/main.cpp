@@ -317,9 +317,12 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					}
 				}
 				if (!server && !started){
-					char* c = new char[10];
-					strcpy(c, "123456789 ");
-					sendToServer(c, 10);
+					char* c = new char[4];
+					c[0] = ((char*)dir)[0];
+					c[1] = ((char*)dir)[1];
+					c[2] = ((char*)dir)[2];
+					c[3] = ((char*)dir)[3];
+					sendCommand(KEYBOARD, 4, c);
 				}
 
 			}
@@ -350,6 +353,20 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		catch (Error e) {
 			cout << e.getError() << endl; 
 		}
+	}
+
+	enum Commands{KEYBOARD};
+
+	void sendCommand(short num, short datasz, const char* data){
+		datasz += 4;
+		char *buf = new char[datasz];
+		buf[0] = ((char*)num)[0];
+		buf[1] = ((char*)num)[1];
+		buf[2] = ((char*)datasz)[0];
+		buf[3] = ((char*)datasz)[1];
+		strcpy(&buf[4], data);
+		sendToServer(buf, 10);
+		delete buf;
 	}
 
 	wstring utf8_to_utf16(const string& utf8){
