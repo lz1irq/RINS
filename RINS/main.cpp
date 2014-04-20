@@ -305,6 +305,22 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				}
 				monster.unlock();
 
+
+
+				if (!server && started){
+					updateClients();
+					list<Socket::Client>& lsc = getClients();
+					for (auto& i : lsc){
+						int len;
+						char* c = i.getBuf(len);
+						cout << string(c, len) << endl;
+					}
+				}
+
+				if (!server && !started){
+					sendToServer("THE GAME; ", strlen("THE GAME; "));
+				}
+
 			}
 
 			if (show_menu){
@@ -315,10 +331,16 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 			if (server){
 				if (!started){
-					startServer(4, 1337);
+					startServer(1, 1337);
 					started = true;
 				}
-				cout << gatherPlayers() << endl;
+				if (gatherPlayers() != 1){
+					//CIKLQ
+				}
+				else{
+					show_menu = false;
+					server = false;
+				}
 			}
 
 			updatePress();

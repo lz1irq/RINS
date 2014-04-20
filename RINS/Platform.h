@@ -4,6 +4,7 @@
 #include "SDL_mixer.h"
 #include "SDL_net.h"
 #include <string.h>
+#include <list>
 #include<iostream>
 using namespace std;
 #ifndef _GLIBCXX_PLATFORM_H
@@ -80,16 +81,41 @@ public:
 };
 
 class Socket{
+public:
+	class Client;
+private:
 	IPaddress ip;
-	TCPsocket sd, csd;
+	TCPsocket sd;
 	SDLNet_SocketSet socketset;
 	int numused = 0;
+	list<Client> clients;
 public:
+	class Client{
+		friend class Socket;
+	protected:
+		TCPsocket sock;
+		const int bf = 10240;
+		Client(TCPsocket s): sock(s){
+			memset(buf, 0, bf);
+			len = 0;
+		}
+		char buf[10240];
+		int len;
+	public:
+		char* getBuf(int& len){
+			len = this->len;
+			return buf;
+		}
+	};
 	Socket();
 	void startServer(int players, int port);
 	int gatherPlayers();
 	void ConnectToServer(int port, const char* ip);
 	void disconncet();
+	void updateClients();
+	//void sendToClient()using client
+	void sendToServer(char* text, int len);
+	list<Client>& getClients();
 	~Socket();
 };
 

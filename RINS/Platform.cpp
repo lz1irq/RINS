@@ -337,18 +337,53 @@ void Socket::startServer(int players, int port){
 }
 
 int Socket::gatherPlayers(){
+	TCPsocket csd;
 	if ((csd = SDLNet_TCP_Accept(sd))){
 		int i;
 		if ((i = SDLNet_TCP_AddSocket(socketset, csd)) == -1)throw Error(SDLNet_GetError());
-		else ++numused;
+		else{
+			++numused;
+			clients.push_back(*new Client(csd));
+		}
 	}
 	return numused;
+}
+
+void Socket::updateClients(){
+	int active;
+	if ((active = SDLNet_CheckSockets(socketset, 1)) == -1)throw Error(SDLNet_GetError());
+	else if(active > 0){
+		for (auto i = begin(clients); i != end(clients); ++i){
+			if (SDLNet_SocketReady((*i).sock)){
+				int len;
+				if ((*i).len == (*i).bf)continue;
+				if ((len = SDLNet_TCP_Recv((*i).sock, &(*i).buf[len], (*i).bf - (*i).len)) > 0){
+					(*i).len += len;
+				}
+				else if (len == 0){
+					SDLNet_TCP_Close((*i).sock);
+					i = clients.erase(i);
+					--numused;
+					return;
+				}
+				else throw Error(SDLNet_GetError());
+			}
+		}
+	}
 }
 
 void Socket::ConnectToServer(int port, const char* ip_) {
 	if (SDLNet_ResolveHost(&ip, ip_, port))throw Error(SDLNet_GetError());
 	if (!(sd = SDLNet_TCP_Open(&ip)))throw Error(SDLNet_GetError());
 
+}
+
+void Socket::sendToServer(char* text, int len){
+	if (SDLNet_TCP_Send(sd, (void *)text, len) < len)throw Error(SDLNet_GetError());
+}
+
+list<Socket::Client>& Socket::getClients(){
+	return clients;
 }
 
 void Socket::disconncet(){
