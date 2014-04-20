@@ -248,6 +248,7 @@ const char* Game::getRawText(bool& ret){
 
 void Game::endTyping(bool reset){
 	if(reset)memset(utf8text, 0, strlen(utf8text));
+	ret_text = false;
 	SDL_StopTextInput();
 }
 
@@ -337,9 +338,11 @@ void Socket::startServer(int players, int port){
 
 int Socket::gatherPlayers(){
 	if ((csd = SDLNet_TCP_Accept(sd))){
-		if ((numused = SDLNet_TCP_AddSocket(socketset, csd))==-1)throw Error(SDLNet_GetError());
-		return numused;
+		int i;
+		if ((i = SDLNet_TCP_AddSocket(socketset, csd)) == -1)throw Error(SDLNet_GetError());
+		else ++numused;
 	}
+	return numused;
 }
 
 void Socket::ConnectToServer(int port, const char* ip_) {
