@@ -331,7 +331,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 			if (server){
 				if (!started){
-					startServer(1, 1337);
+					startServer(2, 1337);
 					started = true;
 				}
 				if (gatherPlayers() != 1){

@@ -93,7 +93,6 @@ private:
 public:
 	class Client{
 		friend class Socket;
-	protected:
 		TCPsocket sock;
 		const int bf = 10240;
 		Client(TCPsocket s): sock(s){
@@ -102,6 +101,10 @@ public:
 		}
 		char buf[10240];
 		int len;
+	public:
+		~Client(){
+			SDLNet_TCP_Close(sock);
+		}
 	};
 	enum Commands{ KEYBOARD };
 	Socket();

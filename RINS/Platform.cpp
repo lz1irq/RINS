@@ -377,13 +377,14 @@ void Socket::updateClients(){
 				if ((len = SDLNet_TCP_Recv((*i).sock, &(*i).buf[(*i).len], (*i).bf - (*i).len)) > 0){
 					(*i).len += len;
 				}
-				else if (len == 0){
-					SDLNet_TCP_Close((*i).sock);
+				else {
+					if ((active=SDLNet_TCP_DelSocket(socketset, (*i).sock)) == -1)throw Error(SDLNet_GetError());
+					else cout << active << endl;
 					i = clients.erase(i);
 					--numused;
+					system("pause");
 					return;
 				}
-				else throw Error(SDLNet_GetError());
 			}
 		}
 	}
