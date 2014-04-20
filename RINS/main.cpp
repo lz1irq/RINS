@@ -308,7 +308,9 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 
 				if (!server && started){
+					cout << "update0" << endl;
 					updateClients();
+					cout << "update1" << endl;
 					list<Socket::Client>& lsc = getClients();
 					for (auto& i : lsc){
 						int len;
@@ -316,9 +318,10 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 						cout << string(c, len) << endl;
 					}
 				}
-
 				if (!server && !started){
-					sendToServer("THE GAME; ", strlen("THE GAME; "));
+					char* c = new char[10];
+					strcpy(c, "123456789 ");
+					sendToServer(c, 10);
 				}
 
 			}
@@ -701,7 +704,7 @@ public:
 
 		Menu& m2 = *new Menu();
 		m2.addField(*new Button("Start server", *new Command([this](MenuControl& mc){ server = true; })))
-			.addField(*new TextBox("Connect to: ", *new Command([this](MenuControl& mc){ if (mc.checked())ConnectToServer(1337, mc.getText().substr(mc.getID(), string::npos).c_str());})))
+			.addField(*new TextBox("Connect to: ", *new Command([this](MenuControl& mc){ if (mc.checked()){ ConnectToServer(1337, mc.getText().substr(mc.getID(), string::npos).c_str()); show_menu = false; }})))
 			.addField(*new Button("Main menu", menu));
 
 		Menu& m3 = *new Menu();
