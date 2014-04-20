@@ -331,7 +331,7 @@ Socket::Socket(){
 	if ((socketset = SDLNet_AllocSocketSet(16)) == nullptr)throw Error(SDLNet_GetError());
 }
 
-void Socket::startServer(int players, int port){
+void Socket::startServer(int port){
 	if (SDLNet_ResolveHost(&ip, NULL, port))throw Error(SDLNet_GetError());
 	if (!(sd = SDLNet_TCP_Open(&ip)))throw Error(SDLNet_GetError());
 }
@@ -368,6 +368,7 @@ char* Socket::getNextCommand(Client& c){
 
 void Socket::updateClients(){
 	int active;
+	if (!numused)return;
 	if ((active = SDLNet_CheckSockets(socketset, 1)) == -1)throw Error(SDLNet_GetError());
 	else if(active > 0){
 		for (auto i = begin(clients); i != end(clients); ++i){
@@ -382,7 +383,6 @@ void Socket::updateClients(){
 					else cout << active << endl;
 					i = clients.erase(i);
 					--numused;
-					system("pause");
 					return;
 				}
 			}
@@ -406,7 +406,10 @@ void Socket::sendCommand(short num, short datasz, const char* data){
 }
 
 void Socket::sendToServer(char* text, int len){
-	if (SDLNet_TCP_Send(sd, (void *)text, len) < len)throw Error(SDLNet_GetError());
+	if (SDLNet_TCP_Send(sd, (void *)text, len) < len){
+		SDLNet_TCP_Close(sd);
+		throw Error(SDLNet_GetError());
+	}
 }
 
 list<Socket::Client>& Socket::getClients(){

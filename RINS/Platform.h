@@ -108,7 +108,7 @@ public:
 	};
 	enum Commands{ KEYBOARD };
 	Socket();
-	void startServer(int players, int port);
+	void startServer(int port);
 	int gatherPlayers();
 	void ConnectToServer(int port, const char* ip);
 	void disconncet();
