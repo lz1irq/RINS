@@ -351,7 +351,7 @@ int Socket::gatherPlayers(){
 
 void Socket::updateClients(){
 	int active;
-	if ((active = SDLNet_CheckSockets(socketset, 1)) == -1)throw Error(SDLNet_GetError());
+	if ((active = SDLNet_CheckSockets(socketset, 1)) == -1)cout << "fail1" << endl;
 	else if(active > 0){
 		for (auto i = begin(clients); i != end(clients); ++i){
 			if (SDLNet_SocketReady((*i).sock)){
@@ -366,7 +366,7 @@ void Socket::updateClients(){
 					--numused;
 					return;
 				}
-				else throw Error(SDLNet_GetError());
+				else cout << "fail2" << endl;
 			}
 		}
 	}
