@@ -12,15 +12,23 @@ public:
 
 class MenuControl{
 protected:
-	wstring name;
+	string name;
 	MenuObject* assoc;
-	MenuControl(wstring& name, MenuObject& assoc) : name(name), assoc(&assoc){}
+	bool set = false;
+	int id = 0;
+	MenuControl(string& name, MenuObject& assoc) : name(name), assoc(&assoc){}
 public:
 	MenuObject& getObject(){
 		return *assoc;
 	}
-	wstring getText(){
+	string& getText(){
 		return name;
+	}
+	bool& checked(){
+		return set;
+	}
+	int& getID(){
+		return id;
 	}
 	virtual ~MenuControl(){};
 };
@@ -28,17 +36,23 @@ public:
 class Button: public MenuControl{
 	MenuObject assoc;//menu; action
 public:
-	Button(wstring name, MenuObject& assoc) : MenuControl(name, assoc){}
-
+	Button(string name, MenuObject& assoc) : MenuControl(name, assoc){}
 };
 
 class Checkbox : public MenuControl{
-	bool set;
 public:
-	Checkbox(wstring name, MenuObject& assoc, bool isSet) : MenuControl(name, assoc), set(isSet){}
-	bool& access(){
-		return set;
+	Checkbox(string name, MenuObject& assoc, bool isSet) : MenuControl(name, assoc){
+		set = isSet;
 	}
+};
+
+class TextBox : public MenuControl{
+public:
+	TextBox(string name, MenuObject& assoc) : MenuControl(name, assoc){ 
+		id = name.size(); 
+		set = false;
+	}
+
 };
 
 class Radio: public MenuControl{
@@ -46,11 +60,14 @@ class Radio: public MenuControl{
 };
 
 class Command: public MenuObject{
-	function<void()> func;
+	function<void(MenuControl&)> func;
 public:
-	Command(function<void()> lambda) : func(lambda){}
-	void exec(){
-		func();
+	Command(function<void(MenuControl&)> lambda) : func(lambda){}
+	void exec(MenuControl& mc){
+		Checkbox* cb = dynamic_cast<Checkbox*>(&mc);
+		if(cb)mc.checked() = !mc.checked();
+
+		func(mc);
 	}
 };
 

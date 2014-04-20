@@ -128,13 +128,76 @@ int Audio::current_songs = 0;
 
 Game::Game() {
 	if (SDL_Init(SDL_INIT_EVERYTHING))throw Error(SDL_GetError());
+	SDL_EventState(SDL_KEYUP, SDL_IGNORE);
+	SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
+	SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_IGNORE);
+	SDL_EventState(SDL_MOUSEBUTTONUP, SDL_IGNORE);
+
 }
 
 void Game::loop(){
 	SDL_Thread* thread;
+	char curs;
+	int offs;
+	char tmp[1024] = { 0 };
 	if( (thread = SDL_CreateThread(secondaryLoop, "secondaryThread", (void *)this)) == NULL) throw Error( SDL_GetError() );
 	while (!quit) {
 		//has_event = SDL_PollEvent(&event);
+		if (SDL_PollEvent(&event)){
+			switch (event.type){
+			case SDL_KEYDOWN:
+				switch (event.key.keysym.sym){
+				case SDLK_BACKSPACE:
+					if (cursor == 0)break;
+					offs = strlen(utf8text) - 1 - cursor;
+					memset(tmp, 0, strlen(tmp));
+					memcpy(tmp, &utf8text[cursor], strlen(&utf8text[cursor]));
+					utf8text[cursor+offs] = 0;
+					--cursor;
+					while (((unsigned char)utf8text[cursor] >> 6) == 2){
+						utf8text[cursor+offs] = 0;
+						--cursor;
+					}
+					memcpy(&utf8text[cursor], tmp, strlen(tmp));
+					break;
+				case SDLK_RETURN:
+					ret_text = true;
+					break;
+				case SDLK_LEFT:
+					if (cursor == 0)break;
+					curs = utf8text[cursor];
+					--cursor;
+					while (((unsigned char)utf8text[cursor] >> 6) == 2){
+						utf8text[cursor + 1] = utf8text[cursor];
+						--cursor;
+					}
+					utf8text[cursor + 1] = utf8text[cursor];
+					utf8text[cursor] = curs;
+					break;
+				case SDLK_RIGHT:
+					if (cursor == strlen(utf8text)-1)break;
+					curs = utf8text[cursor];
+					++cursor;
+					utf8text[cursor - 1] = utf8text[cursor];
+					while (((unsigned char)utf8text[cursor + 1] >> 6) == 2){
+						++cursor;
+						utf8text[cursor - 1] = utf8text[cursor];
+					}
+					utf8text[cursor] = curs;
+					break;
+				}
+				break;
+			case SDL_TEXTINPUT:
+				if (strlen(utf8text) + strlen(event.text.text) > maxtext)break;
+				memset(tmp, 0, strlen(tmp));
+				memcpy(tmp, &utf8text[cursor], strlen(&utf8text[cursor]));
+				utf8text[cursor] = 0;
+				strcat(utf8text, event.text.text);
+				strcat(utf8text, tmp);
+				cursor += strlen(event.text.text);
+				break;
+			}
+		}
 		buttons = SDL_GetMouseState(&mousex, &mousey);
 		if (SDL_QuitRequested()) quit = true;
 		mainLoop();
@@ -158,19 +221,36 @@ unsigned int Game::getTicks() {
 	return SDL_GetTicks();
 }
 
-//char Game::getKey(bool pressed){
-//	if (!has_event)return 0;
-//	switch (event.type) {
-//		case SDL_KEYDOWN:
-//			if (pressed) return event.key.keysym.sym;
-//		break;
-//		case SDL_KEYUP:
-//			if (!pressed) return event.key.keysym.sym;
-//		break;
-//		default:
-//			return 0;
-//	}
-//}
+void Game::startTyping(const char* initial){
+	//if (maxlen > 1023)maxlen = 1023;
+	maxtext = 1023;
+	SDL_StartTextInput();
+	memset(utf8text, 0, 1024);
+	strcat(utf8text, initial);
+	cursor = strlen(utf8text);
+	utf8text[cursor] = '|';
+	ret_text = false;
+}
+
+const char* Game::getText(){
+	return utf8text;
+}
+
+
+const char* Game::getRawText(bool& ret){
+	ret = ret_text;
+	char tmp[1024] = { 0 };
+	memcpy(tmp, &utf8text[cursor], strlen(&utf8text[cursor]));
+	memset(raw, 0, strlen(raw));
+	memcpy(raw, utf8text, cursor);
+	strcat(raw, &tmp[1]);
+}
+
+void Game::endTyping(bool reset){
+	if(reset)memset(utf8text, 0, strlen(utf8text));
+	SDL_StopTextInput();
+}
+
 bool Game::isPressed(const char* key){
 	const Uint8 *state = SDL_GetKeyboardState(NULL);
 	return state[SDL_GetScancodeFromName(key)];
