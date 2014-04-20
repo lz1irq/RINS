@@ -311,18 +311,14 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					updateClients();
 					list<Socket::Client>& lsc = getClients();
 					for (auto& i : lsc){
-						int len;
-						char* c = i.getBuf(len);
-						cout << string(c, len) << endl;
+						processCommand(getNextCommand(i));
 					}
 				}
 				if (!server && !started){
 					char* c = new char[4];
-					c[0] = ((char*)dir)[0];
-					c[1] = ((char*)dir)[1];
-					c[2] = ((char*)dir)[2];
-					c[3] = ((char*)dir)[3];
+					memcpy(c, &dir, 4);
 					sendCommand(KEYBOARD, 4, c);
+					delete c;
 				}
 
 			}
@@ -355,18 +351,17 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		}
 	}
 
-	enum Commands{KEYBOARD};
-
-	void sendCommand(short num, short datasz, const char* data){
-		datasz += 4;
-		char *buf = new char[datasz];
-		buf[0] = ((char*)num)[0];
-		buf[1] = ((char*)num)[1];
-		buf[2] = ((char*)datasz)[0];
-		buf[3] = ((char*)datasz)[1];
-		strcpy(&buf[4], data);
-		sendToServer(buf, 10);
-		delete buf;
+	void processCommand(char* c){
+		short cmd;
+		short data;
+		memcpy(&cmd, &c, 2);
+		memcpy(&data, &c[2], 2);
+		switch (cmd){
+		case KEYBOARD:
+			if (data != 4)throw Error("Nope!");
+			memcpy(&dir, &c[4], data);
+			break;
+		}
 	}
 
 	wstring utf8_to_utf16(const string& utf8){

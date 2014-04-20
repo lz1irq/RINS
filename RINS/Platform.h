@@ -89,6 +89,7 @@ private:
 	SDLNet_SocketSet socketset;
 	int numused = 0;
 	list<Client> clients;
+	char command[10240] = { 0 };
 public:
 	class Client{
 		friend class Socket;
@@ -101,12 +102,8 @@ public:
 		}
 		char buf[10240];
 		int len;
-	public:
-		char* getBuf(int& len){
-			len = this->len;
-			return buf;
-		}
 	};
+	enum Commands{ KEYBOARD };
 	Socket();
 	void startServer(int players, int port);
 	int gatherPlayers();
@@ -116,6 +113,8 @@ public:
 	//void sendToClient()using client
 	void sendToServer(char* text, int len);
 	list<Client>& getClients();
+	void sendCommand(short num, short datasz, const char* data);
+	char* getNextCommand(Client& c);
 	~Socket();
 };
 

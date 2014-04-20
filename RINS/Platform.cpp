@@ -349,6 +349,18 @@ int Socket::gatherPlayers(){
 	return numused;
 }
 
+char* Socket::getNextCommand(Client& c){
+	//command = (char*)&c.buf;
+	short extract;
+	memcpy(&extract, &c.buf[2], 2);
+	extract += 4;
+	if (extract > c.len)throw Error("Bad buffer!");
+	c.len -= extract;
+	memcpy(command, c.buf, extract);
+	memmove(c.buf, &c.buf[extract], c.len);
+
+}
+
 void Socket::updateClients(){
 	int active;
 	if ((active = SDLNet_CheckSockets(socketset, 1)) == -1)throw Error(SDLNet_GetError());
@@ -376,6 +388,15 @@ void Socket::ConnectToServer(int port, const char* ip_) {
 	if (SDLNet_ResolveHost(&ip, ip_, port))throw Error(SDLNet_GetError());
 	if (!(sd = SDLNet_TCP_Open(&ip)))throw Error(SDLNet_GetError());
 
+}
+
+void Socket::sendCommand(short num, short datasz, const char* data){
+	char *buf = new char[datasz + 4];
+	memcpy(&buf[0], &num, 2);
+	memcpy(&buf[2], &datasz, 2);
+	strcpy(&buf[4], data);
+	sendToServer(buf, 10);
+	delete buf;
 }
 
 void Socket::sendToServer(char* text, int len){
