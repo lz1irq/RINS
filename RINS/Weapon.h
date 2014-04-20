@@ -21,7 +21,8 @@ class Projectile {
 	int det_t;
 	double dir;
 	double x,y;
-	Being* shooter;
+	Being* shooter;//unsafe!!!
+	const type_info& sh;
 public:
 	Projectile(unsigned int ptype, int pdamage, int pfly_t, int pdet_t, double angle, double px, double py, Being* shooter, Hitbox& h);
 	bool update(const vector<vector<char>>& map_index, list<unique_ptr<Being>>& targets, list<unique_ptr<Being>>& players);

@@ -101,7 +101,7 @@ IDs::IDs() {
 	ids[1] = 0;
 }
 
-map<const char*, IDs> BeingResources::textures;
+map<const type_info*, IDs> BeingResources::textures;
 
 void Being::move(int dir, bool reverse) {
 	int newdir = dir & 15;
@@ -112,7 +112,8 @@ void Being::move(int dir, bool reverse) {
 	if (dir & RIGHT) x += move_x;
 	if (dir & UP) y -= move_y;
 	if (dir & DOWN) y += move_y;
-	if (newdir)walk = !walk;
+	HAJA++;
+	if (newdir && !(HAJA%4))walk = !walk;
 }
 
 int Being::getHealth() {
@@ -369,18 +370,18 @@ bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& pro
 	
 }
 
-const int BeingResources::getTextureID(const char* ti) {
+const int BeingResources::getTextureID(const type_info* ti) {
 	return textures.at(ti).ids[0];
 }
 
-void BeingResources::addTextureID(int newID, const char* ti) {
+void BeingResources::addTextureID(int newID, const type_info* ti) {
 	textures[ti].ids[0] = newID;
 }
 
-const int BeingResources::getSoundID(const char* si) {
+const int BeingResources::getSoundID(const type_info* si) {
 	return textures.at(si).ids[1];
 }
 
-void BeingResources::addSoundID(int newID, const char* si) {
+void BeingResources::addSoundID(int newID, const type_info* si) {
 	textures[si].ids[1] = newID;
 }

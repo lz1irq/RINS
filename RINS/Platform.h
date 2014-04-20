@@ -3,6 +3,7 @@
 #include "SDL_ttf.h"
 #include "SDL_mixer.h"
 #include "SDL_net.h"
+#include <string.h>
 #include<iostream>
 using namespace std;
 #ifndef _GLIBCXX_PLATFORM_H
@@ -99,6 +100,11 @@ class Game{
 	bool has_event;
 	int mousex, mousey;
 	Uint32 buttons;
+	char utf8text[1024] = { 0 };
+	char raw[1024];
+	int maxtext = 1024;
+	int cursor = 0;
+	bool ret_text = false;
 public:
 	virtual void mainLoop() = 0;
 	virtual void graphicsLoop() = 0;
@@ -109,6 +115,10 @@ public:
 	double getMouseY();
 	bool getLeftClick();
 	bool getRightClick();
+	void startTyping(const char* initial);
+	const char* getText();
+	const char* getRawText(bool &ret);
+	void endTyping(bool reset);
 	Game();
 	void loop();
 	~Game();

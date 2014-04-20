@@ -6,6 +6,7 @@
 #include <random>
 #include <array>
 #include <typeinfo>
+#include <algorithm>
 using namespace std;
 
 struct IDs {
@@ -15,12 +16,12 @@ struct IDs {
 
 
 class BeingResources {
-	static map<const char*, IDs> textures;
+	static map<const type_info*, IDs> textures;
 public:
-	static const int getTextureID(const char* ti);
-	static void addTextureID(int newID, const char* ti);
-	static const int getSoundID(const char* si);
-	static void addSoundID(int newID, const char* si);
+	static const int getTextureID(const type_info* ti);
+	static void addTextureID(int newID, const type_info*);
+	static const int getSoundID(const type_info* si);
+	static void addSoundID(int newID, const type_info* si);
 };
 
 enum Monsters{ ZOMBIE = 0, MAXSIZE };
@@ -61,6 +62,7 @@ protected:
 	bool walk = false;
 	virtual void setRange() = 0;
 	Projectile& shootWeapon(double deg, Hitbox& h);
+	int HAJA = 0;
 
 public:
 	Being(double x, double y);
@@ -77,7 +79,6 @@ public:
 	void equipItem(Item& item);
 	void unequipItem(Item& item);
 	static Hitbox* box;
-
 	virtual ~Being();
 };
 

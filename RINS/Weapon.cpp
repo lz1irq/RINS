@@ -14,7 +14,7 @@ double rad_to_deg(double rad){
 using namespace std;
 Projectile::Projectile(unsigned int ptype, int pdmg, int pfly_t, int pdet_t, double angle, double px, double py, Being* shooter, Hitbox& h) :
 type(ptype), dmg(pdmg), box(h),
-fly_t(pfly_t), det_t(pdet_t),
+fly_t(pfly_t), det_t(pdet_t), sh(typeid(*shooter)),
 dir(angle), x(px), y(py), shooter(shooter)
 {}
 
@@ -45,7 +45,7 @@ bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<B
 		int px = (box.getX() + (*m)->getStepX()*1.5) / box.getStepX();
 		int py = (box.getY() + (*m)->getStepY()*1.5) / box.getStepY();
 		if ((px - mx) <= 1 && (px - mx) >= 0 && (py - my) <= 1 && (py - my) >= 0){
-			if (&*(*m) != shooter){
+			if (typeid(*(*m)) != sh){
 				(*m)->takeProjectile(*this);
 				return false;//explode!
 			}
@@ -57,7 +57,7 @@ bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<B
 		int px = (box.getX() + (*m)->getStepX()*1.5) / box.getStepX();
 		int py = (box.getY() + (*m)->getStepY()*1.5) / box.getStepY();
 		if ((px - mx) <= 1 && (px - mx) >= 0 && (py - my) <= 1 && (py - my) >= 0){
-			if (&*(*m) != shooter){
+			if (typeid(*(*m)) != sh){
 				(*m)->takeProjectile(*this);
 				return false;//explode!
 			}
