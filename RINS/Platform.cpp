@@ -351,13 +351,13 @@ int Socket::gatherPlayers(){
 
 void Socket::updateClients(){
 	int active;
-	if ((active = SDLNet_CheckSockets(socketset, 1)) == -1)cout << "fail1" << endl;
+	if ((active = SDLNet_CheckSockets(socketset, 1)) == -1)throw Error(SDLNet_GetError());
 	else if(active > 0){
 		for (auto i = begin(clients); i != end(clients); ++i){
 			if (SDLNet_SocketReady((*i).sock)){
 				int len;
 				if ((*i).len == (*i).bf)continue;
-				if ((len = SDLNet_TCP_Recv((*i).sock, &(*i).buf[len], (*i).bf - (*i).len)) > 0){
+				if ((len = SDLNet_TCP_Recv((*i).sock, &(*i).buf[(*i).len], (*i).bf - (*i).len)) > 0){
 					(*i).len += len;
 				}
 				else if (len == 0){
@@ -366,7 +366,7 @@ void Socket::updateClients(){
 					--numused;
 					return;
 				}
-				else cout << "fail2" << endl;
+				else throw Error(SDLNet_GetError());
 			}
 		}
 	}

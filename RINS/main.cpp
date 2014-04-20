@@ -308,9 +308,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 
 				if (!server && started){
-					cout << "update0" << endl;
 					updateClients();
-					cout << "update1" << endl;
 					list<Socket::Client>& lsc = getClients();
 					for (auto& i : lsc){
 						int len;
