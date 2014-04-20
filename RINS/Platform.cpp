@@ -350,14 +350,19 @@ int Socket::gatherPlayers(){
 }
 
 char* Socket::getNextCommand(Client& c){
-	//command = (char*)&c.buf;
-	short extract;
+	if (c.len < 4){
+		return nullptr;
+	}
+	unsigned short extract;
 	memcpy(&extract, &c.buf[2], 2);
 	extract += 4;
-	if (extract > c.len)throw Error("Bad buffer!");
+	if (extract > c.len){
+		return nullptr;
+	}
 	c.len -= extract;
 	memcpy(command, c.buf, extract);
 	memmove(c.buf, &c.buf[extract], c.len);
+	return command;
 
 }
 
@@ -394,8 +399,8 @@ void Socket::sendCommand(short num, short datasz, const char* data){
 	char *buf = new char[datasz + 4];
 	memcpy(&buf[0], &num, 2);
 	memcpy(&buf[2], &datasz, 2);
-	strcpy(&buf[4], data);
-	sendToServer(buf, 10);
+	memcpy(&buf[4], data, datasz);
+	sendToServer(buf, datasz+4);
 	delete buf;
 }
 

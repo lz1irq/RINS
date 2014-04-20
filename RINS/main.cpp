@@ -352,15 +352,18 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	}
 
 	void processCommand(char* c){
+		if (c == nullptr)return;
 		short cmd;
 		short data;
-		memcpy(&cmd, &c, 2);
+		memcpy(&cmd, &c[0], 2);
 		memcpy(&data, &c[2], 2);
 		switch (cmd){
 		case KEYBOARD:
 			if (data != 4)throw Error("Nope!");
 			memcpy(&dir, &c[4], data);
 			break;
+		default:
+			throw Error("Nope!");
 		}
 	}
 
