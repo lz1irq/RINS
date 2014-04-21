@@ -65,6 +65,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	bool MP_noplayers = false;
 	time_t seed;
 	int MP_numplayers = 0;
+	int remote_class;
 
 	int song1;
 	map<pair<int, int>, Machine> machines;
@@ -363,7 +364,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				for (auto& i : lsc){
 					processCommand(getNextCommand(i));
 				}
-				if (MP_numplayers == 1)MP_noplayers = false;
+				//if (MP_numplayers == 1)MP_noplayers = false;
 			}
 			if (!show_menu && !SP_init && !MP_server_init && !MP_noplayers){
 
@@ -414,7 +415,13 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		}
 	}
 
-	void processCommand(char* c){
+	struct server_info{
+		int n_players;
+		bool gathering;
+		bool game_end;
+	};
+
+	void processCommand(char* c, Client& cl){
 		if (c == nullptr)return;
 		short cmd;
 		short data;
@@ -424,6 +431,16 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		case KEYBOARD:
 			if (data != 4)throw Error("Nope!");
 			memcpy(&dir, &c[4], data);
+			break;
+		case GETINFO:
+			if (data != 4)throw Error("Nope!");
+			memcpy(&remote_class, &c[4], data);
+			server_info i;
+			i.n_players = MP_numplayers;
+			i.gathering = MP_noplayers;
+			i.game_end = false;
+			char* c = (char*)&i;
+			commandToClient(cl, SERVERINFO, sizeof(i), c);
 			break;
 		default:
 			throw Error("Nope!");

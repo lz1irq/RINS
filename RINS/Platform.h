@@ -105,19 +105,22 @@ public:
 		~Client(){
 			SDLNet_TCP_Close(sock);
 		}
+		bool operator==(Client& cl){
+			return cl.sock == sock;
+		}
 	};
-	enum Commands{ KEYBOARD };
+	enum Commands{ KEYBOARD, GETINFO, SERVERINFO };
 	Socket();
 	void startServer(int port);
 	int gatherPlayers();
 	void ConnectToServer(int port, const char* ip);
 	void disconncet();
 	void updateClients();
-	//void sendToClient()using client
 	void sendToServer(char* text, int len);
 	list<Client>& getClients();
 	void sendCommand(short num, short datasz, const char* data);
 	char* getNextCommand(Client& c);
+	bool commandToClient(Client& cl, short num, short datasz, const char* data);
 	~Socket();
 };
 
