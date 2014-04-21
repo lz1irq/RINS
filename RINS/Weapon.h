@@ -52,13 +52,16 @@ protected:
 	int ammo_per_mag;
 	bool picked_up;
 	Being* assoc_class;
+	unsigned int count, speed;
 public:
-	WeaponBase(int wtype, int wskill, int wbase_dmg,  int ammo_mag);
+	WeaponBase(int wtype, int wskill, int wbase_dmg,  int ammo_mag, int speed);
 	void updateSkillPoints(int uskill);
 	int getDamage() const;
 	int getAmmoPerMag() const;
 	bool isPickedUp() const;
 	void pickUp();
+	unsigned int& getCount();
+	unsigned int& getSpeed();
 	virtual Projectile& shoot(double angle, double px, double py, Hitbox& h) = 0;
 };
 

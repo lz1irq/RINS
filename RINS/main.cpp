@@ -131,49 +131,60 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		}
 	}
 
+	void displayPlayer(){
+		int offset = 0;
+		if (player->getWalk())offset = 2;
+		renderPart(4, 2, offset + ((int)log2(player->getOrientation()) >> 1), 1 - ((int)log2(player->getOrientation()) % 2));
+
+		applyTexture(BeingResources::getTextureID(&typeid(*player)), alterBeingPosX(player->getX()), alterBeingPosY(player->getY()), 1.0 / xsize, 1.0 / ysize);
+	}
+	void displayMonsters(){
+		for (auto &i : monsters) {
+			if (i->getWalk())renderPart(4, 2, 2 + ((int)log2(i->getOrientation()) >> 1), 1 - ((int)log2(i->getOrientation()) % 2));
+			else renderPart(4, 2, ((int)log2(i->getOrientation()) >> 1), 1 - ((int)log2(i->getOrientation()) % 2));
+			applyTexture(BeingResources::getTextureID(&typeid(*i)), i->getX() - deltax, i->getY() - deltay, 1.0 / xsize, 1.0 / ysize);
+		}
+	}
+	void displayProjectiles(){
+		renderPart(0, 0, 0, 0);
+		for (auto &i : projectiles){
+			setRotationAngle(i.getAngleInDeg());
+			applyTexture(WeaponResources::getTexture(i.getType()), i.getX() - deltax + 1.5*box.getStepX(), i.getY() - deltay + 1.5*box.getStepY(), box.getStepX(), box.getStepY());
+			setRotationAngle(0);
+		}
+	}
+	void displayHUD(){
+		applyTexture(side[getMapType()][0], -1, 0, 1, 1);
+		applyTexture(side[getMapType()][1], 1, 0, 1, 1);
+		renderHUD();
+	}
 
 	void graphicsLoop() final {
 		try{
-
-			lock1.lock();
-			renderMap();
-			lock1.unlock();
-			int offset = 0;
-			if (player->getWalk())offset = 2;
-			renderPart(4, 2, offset + ((int)log2(player->getOrientation()) >> 1), 1 - ((int)log2(player->getOrientation()) % 2));
-
-			applyTexture(BeingResources::getTextureID(&typeid(*player)), alterBeingPosX(player->getX()), alterBeingPosY(player->getY()), 1.0 / xsize, 1.0 / ysize);
-
-			monster.lock();//lock the monster!
-			for (auto &i : monsters) {
-				if (i->getWalk())renderPart(4, 2, 2 + ((int)log2(i->getOrientation()) >> 1), 1 - ((int)log2(i->getOrientation()) % 2));
-				else renderPart(4, 2, ((int)log2(i->getOrientation()) >> 1), 1 - ((int)log2(i->getOrientation()) % 2));
-				applyTexture(BeingResources::getTextureID(&typeid(*i)), i->getX() - deltax, i->getY() - deltay, 1.0 / xsize, 1.0 / ysize);
+			if (!show_menu){
+				lock1.lock();
+				renderMap();
+				lock1.unlock();
+				displayPlayer();
+				monster.lock();
+				displayMonsters();
+				monster.unlock();
+				projectile.lock();
+				displayProjectiles();
+				projectile.unlock();
+				lock1.lock();
+				displayHUD();
+				lock1.unlock();
+				if (render_machine) renderVendingMachine();
 			}
-			monster.unlock();
-			renderPart(0, 0, 0, 0);
-			projectile.lock();
-			for (auto &i : projectiles){
-				setRotationAngle(i.getAngleInDeg());
-				applyTexture(WeaponResources::getTexture(i.getType()), i.getX() - deltax + 1.5*player->getStepX(), i.getY() - deltay + 1.5*player->getStepY(), player->getStepX(), player->getStepY());
-				setRotationAngle(0);
-			}
-			projectile.unlock();
-
-			applyTexture(side[getMapType()][0], -1, 0, 1, 1);
-			applyTexture(side[getMapType()][1], 1, 0, 1, 1);
-
-			if (show_menu){
+			else{
+				renderPart(0, 0, 0, 0);
 				menux.lock();
 				renderMenu();
 				menux.unlock();
 			}
 
-			if(render_machine) renderVendingMachine();
 
-			lock1.lock();
-			renderHUD();
-			lock1.unlock();
 			renderScene();
 		}
 		catch (Error e){
@@ -181,168 +192,178 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		}
 	}
 
+	void moveAndColide(){
+		player->action(getMapIndex(), projectiles, targets, getTicks());
+		tmpdir2 = dir;
+		getdir();
+		lastxpos = player->getX();
+		lastypos = player->getY();
+		bool b = player->move(dir, false);
+		if (b){
+			if (lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
+			else{
+				int event = player->checkCollisions(lastxpos, lastypos, getMapIndex());
+				switch (event){
+				case OUT_OF_BOUNDS:
+					if (!completed)break;
+					lock1.lock();
+					if (tryRoomChange(player->getTileX(), player->getTileY())){
+						c = getMapEntry();
+						player->setX(c.x);
+						player->setY(c.y);
+						if (getLastExploredRoom() > lastroom){
+							completed = false;
+							spawned = 0;
+							machines.clear();
+						}
+					}
+					lock1.unlock();
+					break;
+				case X_COLLIDE:
+				case Y_COLLIDE:
+				case XY_COLLIDE:
+					if (lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
+					break;
+				case TRIGGER:
+					if (getMapIndex()[player->getTileX()][player->getTileY()] == VENDING || getMapIndex()[player->getTileX()][player->getTileY()] == DROP){//dropped items are free and can contain money?
+						pair<int, int> p = make_pair(player->getTileX(), player->getTileY());
+						if (machines.find(p) == machines.end()){
+							machines[p] = *new Machine();
+							int items = pattern() % 10;
+							for (int i = 0; i < 10; ++i){
+								int item = pattern() % MAXITEMS;
+								machines[p].addItem(*item_types[item]());
+							}
+						}
+						else{
+							;
+							curr_machine = &machines.at(make_pair(player->getTileX(), player->getTileY()));
+							;
+						}
+					}
+					break;
+				}
+			}
+		}
+	}
+
+	void playerShoot(){
+		if (dir & 16){
+			Projectile* p;
+			int event = player->tryToShoot(curr_target, &p);
+			switch (event){
+			case BANG:
+				projectiles.push_back(*p);
+				break;
+			case CASTING:
+				int* percent;
+				percent = (int*)p;
+				cout << *percent << endl;
+				delete percent;
+				break;
+			}
+		}
+		else player->resetFire();
+	}
+
+	void tryToSpawn(){
+		bool mustspawn = pattern() % getSpawnRate() == false;
+		int spawntype = pattern() % monster_types.size();
+		int x = pattern() % getMapIndex().size();
+		int y = pattern() % getMapIndex()[x].size();
+		if (mustspawn && !getMapIndex()[x][y]){
+			if (spawned == getMaxMonsters()){
+				if (monsters.size() == 0){
+					completed = true;
+					lastroom = getLastExploredRoom();
+				}
+			}
+			else{
+				monster.lock();
+				monsters.push_back(unique_ptr<Being>(monster_types[spawntype]((double)x / xsize, (double)y / ysize)));
+				++spawned;
+				monster.unlock();
+			}
+		}
+	}
+
+	void updateProjectiles(){
+		for (auto p = begin(projectiles); p != end(projectiles); ++p){
+			bool res = p->update(getMapIndex(), monsters, targets);
+			if (!res){
+				projectile.lock();
+				p = projectiles.erase(p);
+				projectile.unlock();
+			}
+		}
+	}
+
+	void updateMonsters(){
+		monster.lock();
+		for (auto m = begin(monsters); m != end(monsters); ++m){
+			bool res = (*m)->action(getMapIndex(), projectiles, targets, getTicks());
+			if (!res){
+				addLoot((*m)->getTileX(), (*m)->getTileY());
+				Being* ptr = &**m;
+				cout << ptr << endl;
+				m = monsters.erase(m);
+				lock1.lock();
+				++highscore;
+				lock1.unlock();
+				curr_target = nullptr;
+			}
+			else{
+				if (mouseOverTarget((*m)->getX(), (*m)->getY()) && pressed){
+					curr_target = &**m;
+				}
+			}
+		}
+		monster.unlock();
+	}
+
 	void mainLoop() final {
 		try {
 			if (!show_menu){
-				tmpdir2 = dir;
-				getdir();
-				lastxpos = player->getX();
-				lastypos = player->getY();
 
 				if (updateInternalMapState()) dir = 0;
-
-				if (getTicks() - last_tick > 33){
-					player->move(dir, false);
-					last_tick = getTicks();
-					if (lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
-					else{
-						int event = player->checkCollisions(lastxpos, lastypos, getMapIndex());
-						switch (event){
-						case OUT_OF_BOUNDS:
-							if (!completed)break;
-							lock1.lock();
-							if (tryRoomChange(player->getTileX(), player->getTileY())){
-								c = getMapEntry();
-								player->setX(c.x);
-								player->setY(c.y);
-								if (getLastExploredRoom() > lastroom){
-									completed = false;
-									spawned = 0;
-									machines.clear();
-								}
-							}
-							lock1.unlock();
-							break;
-						case X_COLLIDE:
-						case Y_COLLIDE:
-						case XY_COLLIDE:
-							if (lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
-							break;
-						case TRIGGER:
-							if (getMapIndex()[player->getTileX()][player->getTileY()] == VENDING || getMapIndex()[player->getTileX()][player->getTileY()] == DROP){//dropped items are free and can contain money?
-								pair<int, int> p = make_pair(player->getTileX(), player->getTileY());
-								if (machines.find(p) == machines.end()){
-									machines[p] = *new Machine();
-									int items = pattern() % 10;
-									for (int i = 0; i < 10; ++i){
-										int item = pattern() % MAXITEMS;
-										machines[p].addItem(*item_types[item]());
-									}
-								}
-								else{
-									;
-									curr_machine = &machines.at(make_pair(player->getTileX(), player->getTileY()));
-									;
-								}
-							}
-							break;
-						}
-					}
-				}
-				if (dir & 16){
-					if (getTicks() - projectile_tick > 15){
-						Projectile* p;
-						int event = player->tryToShoot(curr_target, &p);
-						switch (event){
-						case BANG:
-							//projectile.lock();
-							projectiles.push_back(*p);
-							//projectile.unlock();
-						}
-						projectile_tick = getTicks();
-					}
-				}
-				else projectile_tick = getTicks();
-				for (auto p = begin(projectiles); p != end(projectiles); ++p){
-					bool res = p->update(getMapIndex(), monsters, targets);
-					if (!res){
-						projectile.lock();
-						p = projectiles.erase(p);
-						projectile.unlock();
-					}
-				}
-
-				bool mustspawn = pattern() % getSpawnRate() == false;
-				int spawntype = pattern() % monster_types.size();
-				int x = pattern() % getMapIndex().size();
-				int y = pattern() % getMapIndex()[x].size();
-				if (mustspawn && !getMapIndex()[x][y]){
-					if (spawned == getMaxMonsters()){
-						if (monsters.size() == 0){
-							completed = true;
-							lastroom = getLastExploredRoom();
-						}
-					}
-					else{
-						monster.lock();
-						monsters.push_back(unique_ptr<Being>(monster_types[spawntype]((double)x / xsize, (double)y / ysize)));
-						++spawned;
-						monster.unlock();
-					}
-				}
-
+				moveAndColide();
+				playerShoot();
+				updateProjectiles();
+				tryToSpawn();
 				if (curr_machine)checkVendingMachines(player->getTileX(), player->getTileY());
-
-				int tar = 0;
-				monster.lock();
-				for (auto m = begin(monsters); m != end(monsters); ++m, ++tar){
-					bool res = (*m)->action(getMapIndex(), projectiles, targets, getTicks());
-					if (!res){
-						addLoot((*m)->getTileX(), (*m)->getTileY());
-						Being* ptr = &**m;
-						cout << ptr << endl;
-						m = monsters.erase(m);
-						lock1.lock();
-						++highscore;
-						lock1.unlock();
-						curr_target = nullptr;
-					}
-					else{
-						if (mouseOverTarget((*m)->getX(), (*m)->getY()) && pressed){
-							curr_target = &**m;
-						}
-					}
-				}
-				monster.unlock();
-
-
-
-				if (!server && started){
-					updateClients();
-					list<Socket::Client>& lsc = getClients();
-					for (auto& i : lsc){
-						processCommand(getNextCommand(i));
-					}
-				}
-				if (!server && !started){
-					char* c = new char[4];
-					memcpy(c, &dir, 4);
-					sendCommand(KEYBOARD, 4, c);
-					delete c;
-				}
-
+				updateMonsters();
+				//if (!server && started){
+				//	updateClients();
+				//	list<Socket::Client>& lsc = getClients();
+				//	for (auto& i : lsc){
+				//		processCommand(getNextCommand(i));
+				//	}
+				//}
+				//if (!server && !started){
+				//	char* c = new char[4];
+				//	memcpy(c, &dir, 4);
+				//	sendCommand(KEYBOARD, 4, c);
+				//	delete c;
+				//}
 			}
-
-			if (show_menu){
+			else{
 				menux.lock();
 				checkMenu();
 				menux.unlock();
 			}
-
-			if (server){
-				if (!started){
-					startServer(1337);
-					started = true;
-				}
-				if (gatherPlayers() != 1){
-					//CIKLQ
-				}
-				else{
-					show_menu = false;
-					server = false;
-				}
-			}
-
+			//if (server){
+			//	if (!started){
+			//		startServer(1337);
+			//		started = true;
+			//	}
+			//	if (gatherPlayers() != 1){
+			//		//CIKLQ
+			//	}
+			//	else{
+			//		show_menu = false;
+			//		server = false;
+			//	}
+			//}
 			updatePress();
 			SDL_Delay(10);
 		}

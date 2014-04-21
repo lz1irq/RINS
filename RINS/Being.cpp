@@ -88,9 +88,9 @@ int Hitbox::checkCollisions(double comp_to_x, double comp_to_y, const vector<vec
 	}
 }
 
-Being::Being(double x, double y) : Hitbox(*box),
+Being::Being(double x, double y, int speed) : Hitbox(*box),
 	orientation(UP), level(1), prim_stats(Primary()), 
-	der_stats(prim_stats, level), curr_weapon(0) {
+	der_stats(prim_stats, level), curr_weapon(0), speed(speed) {
 		this->x = x;
 		this->y = y;
 		rnd.seed(time(0));
@@ -103,17 +103,22 @@ IDs::IDs() {
 
 map<const type_info*, IDs> BeingResources::textures;
 
-void Being::move(int dir, bool reverse) {
-	int newdir = dir & 15;
-	if(newdir)orientation = newdir;
-	double move_x = reverse ? -move_step_x : move_step_x;
-	double move_y = reverse ? -move_step_y : move_step_y;
-	if (dir & LEFT) x-= move_x;
-	if (dir & RIGHT) x += move_x;
-	if (dir & UP) y -= move_y;
-	if (dir & DOWN) y += move_y;
-	HAJA++;
-	if (newdir && !(HAJA%4))walk = !walk;
+bool Being::move(int dir, bool reverse) {
+	if ((count + speed) < start_time) {
+		int newdir = dir & 15;
+		if (newdir)orientation = newdir;
+		double move_x = reverse ? -move_step_x : move_step_x;
+		double move_y = reverse ? -move_step_y : move_step_y;
+		if (dir & LEFT) x -= move_x;
+		if (dir & RIGHT) x += move_x;
+		if (dir & UP) y -= move_y;
+		if (dir & DOWN) y += move_y;
+		HAJA++;
+		if (newdir && !(HAJA % 4))walk = !walk;
+		count = start_time;
+		return true;
+	}
+	return false;
 }
 
 int Being::getHealth() {
@@ -141,12 +146,27 @@ int Being::tryToShoot(Being* target, Projectile** p){
 		else if (di2 & UP)ty = 1;
 		else if (di2 & DOWN)ty = -1;
 		if (dx*tx >= 0 && dy*ty >= 0){
-			*p = &(shootWeapon(deg, *new Hitbox(tiles_x, tiles_y, tile_granularity)));
-			return BANG;
-
+			if ((weapons.at(curr_weapon)->getCount() + weapons.at(curr_weapon)->getSpeed()) < start_time){
+				resetFire();
+				*p = &(shootWeapon(deg, *new Hitbox(tiles_x, tiles_y, tile_granularity)));
+				return BANG;
+			}
+			else{
+				int* percent = new int(((start_time - weapons.at(curr_weapon)->getCount()) * 100) / weapons.at(curr_weapon)->getSpeed());
+				*p = (Projectile*)percent;
+				return CASTING;
+			}
 		}
-		else return NOT_IN_FOV;
+		else{
+			resetFire();
+			return NOT_IN_FOV;
+		}
 	}
+	else resetFire();
+}
+
+void Being::resetFire(){
+	weapons.at(curr_weapon)->getCount() = start_time;
 }
 
 void Being::equipItem(Item& item) {
@@ -219,7 +239,7 @@ Being::~Being() {
 }
 
 Marine::Marine(double sx, double yx): 
-	Being(sx,yx), small_guns_bonus(0), 
+	Being(sx,yx, 33), small_guns_bonus(0), 
 	big_guns_bonus(0), energy_weapons_bonus(0)	{
 	small_guns = 2 + prim_stats.agility<<1 + prim_stats.luck>>1;
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
@@ -233,15 +253,16 @@ void Marine::setRange(){
 }
 
 bool Marine::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
+	this->start_time = start_time;
 	if (der_stats.health == 0){
-		cout << "MARINE DEAD" << endl;
+		//cout << "MARINE DEAD" << endl;
 		return false;
 	}
 	return true;
 }
 
 Pyro::Pyro(double sx, double yx): 
-	Being(sx,yx), explosives_bonus(0),
+	Being(sx,yx, 33), explosives_bonus(0),
 	big_guns_bonus(0), fire_bonus(0)	{
 	explosives = 2 + prim_stats.perception<<1 + prim_stats.luck>>1;
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
@@ -255,11 +276,12 @@ void Pyro::setRange(){
 }
 
 bool Pyro::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
+	this->start_time = start_time;
 	return true;
 }
 
 Psychokinetic::Psychokinetic(double sx, double yx): 
-	Being(sx,yx), mind_infiltration_bonus(0), 
+	Being(sx,yx, 33), mind_infiltration_bonus(0), 
 	mental_power_bonus(0), fire_bonus(0)	{
 	mind_infiltration = 2 + prim_stats.intelligence<<1 + prim_stats.luck>>1;
 	mental_power = 2 + prim_stats.endurance + prim_stats.intelligence + prim_stats.luck>>1;
@@ -273,11 +295,12 @@ void Psychokinetic ::setRange(){
 }
 
 bool Psychokinetic::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
+	this->start_time = start_time;
 	return true;
 }
 
 Android::Android(double sx, double yx): 
-	Being(sx,yx), punch_bonus(0), 
+	Being(sx,yx, 33), punch_bonus(0), 
 	big_guns_bonus(0), energy_weapons_bonus(0)	{
 	punch = 2 + prim_stats.strength/2 + prim_stats.luck>>1;
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
@@ -291,6 +314,7 @@ void Android::setRange(){
 }
 
 bool Android::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
+	this->start_time = start_time;
 	if (der_stats.health == 0){
 		cout << "DROID DEAD" << endl;
 		return false;
@@ -299,7 +323,7 @@ bool Android::action(const vector<vector<char>>& map_index, list<Projectile>& pr
 }
 
 Zombie::Zombie(double sx, double yx): 
-	Being(sx,yx), target(nullptr) {
+	Being(sx,yx, 50), target(nullptr) {
 	biting = 2 + prim_stats.strength<<1 + prim_stats.luck>>1;
 
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Bite(biting, this)));
@@ -310,7 +334,7 @@ void Zombie::setRange(){
 }
 
 bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
-
+	this->start_time = start_time;
 	if(der_stats.health == 0) {
 		cout << "ZOMBIE DEAD" << endl;
 		return false;
@@ -352,19 +376,18 @@ bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& pro
 	double curr_x = getX();
 	double curr_y = getY();
 	int colpos = rnd() % 16;
-	if((count + speed) < start_time) {
-		move(colpos, false);
-		count = start_time;
-	}
-	int state = checkCollisions(curr_x, curr_y, map_index);
-	if (state == OUT_OF_BOUNDS){
-		x = curr_x;
-		y = curr_y;
-	}
-	//	orientation = LEFT;
-	double deg = rnd() % 360;
+	bool b = move(colpos, false);
+	if (b){
+		int state = checkCollisions(curr_x, curr_y, map_index);
+		if (state == OUT_OF_BOUNDS){
+			x = curr_x;
+			y = curr_y;
+		}
+		//	orientation = LEFT;
+		double deg = rnd() % 360;
 
-	projectiles.push_back(shootWeapon(deg_to_rad(deg), *new Hitbox(tiles_x, tiles_y, tile_granularity)));
+		projectiles.push_back(shootWeapon(deg_to_rad(deg), *new Hitbox(tiles_x, tiles_y, tile_granularity)));
+	}
 	//}
 	return true;
 	

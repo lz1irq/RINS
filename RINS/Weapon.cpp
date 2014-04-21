@@ -78,8 +78,8 @@ int Projectile::getDamage() const {
 	return dmg;
 }
 
-WeaponBase::WeaponBase(int wtype, int wskill, int wbase_dmg,  int ammo_mag): 
-type(wtype), skill_points(wskill),
+WeaponBase::WeaponBase(int wtype, int wskill, int wbase_dmg, int ammo_mag, int speed) :
+type(wtype), skill_points(wskill), speed(speed), count(0),
 base_dmg(wbase_dmg), ammo_per_mag(ammo_mag) {
 	dmg = skill_points + base_dmg;
 }
@@ -91,6 +91,13 @@ void WeaponBase::updateSkillPoints(int uskill) {
 
 int WeaponBase::getDamage() const {
 	return dmg;
+}
+
+unsigned int& WeaponBase::getCount(){
+	return count;
+}
+unsigned int& WeaponBase::getSpeed(){
+	return speed;
 }
 
 int WeaponBase::getAmmoPerMag() const {
@@ -105,7 +112,7 @@ void WeaponBase::pickUp() {
 	picked_up = true;
 }
 
-AssaultRifle::AssaultRifle(int wskill, Being* assoc_class) : WeaponBase(BULLET, wskill, 15, 30) {
+AssaultRifle::AssaultRifle(int wskill, Being* assoc_class) : WeaponBase(BULLET, wskill, 15, 30, 500) {
 	this->assoc_class = assoc_class;
 }
 
@@ -113,7 +120,7 @@ Projectile& AssaultRifle::shoot(double angle, double px, double py, Hitbox& h) {
 	return *new Projectile(type, dmg, 80, 100, angle, px, py, assoc_class, h);
 }
 
-Pyrokinesis::Pyrokinesis(int wskill, Being* assoc_class) : WeaponBase(FIRE, wskill, 15, 30) {
+Pyrokinesis::Pyrokinesis(int wskill, Being* assoc_class) : WeaponBase(FIRE, wskill, 15, 30, 300) {
 	this->assoc_class = assoc_class;
 }
 
@@ -121,7 +128,7 @@ Projectile& Pyrokinesis::shoot(double angle, double px, double py, Hitbox& h) {
 	return *new Projectile(type, dmg, 80, 100, angle, px, py, assoc_class, h);
 }
 
-Molotov::Molotov(int wskill, Being* assoc_class) : WeaponBase(FIRE, wskill, 15, 30) {
+Molotov::Molotov(int wskill, Being* assoc_class) : WeaponBase(FIRE, wskill, 15, 30, 500) {
 	this->assoc_class = assoc_class;
 }
 
@@ -129,7 +136,7 @@ Projectile& Molotov::shoot(double angle, double px, double py, Hitbox& h) {
 	return *new Projectile(type, dmg, 80, 100, angle, px, py, assoc_class, h);
 }
 
-Punch::Punch(int wskill, Being* assoc_class) : WeaponBase(BULLET, wskill, 15, 30) {
+Punch::Punch(int wskill, Being* assoc_class) : WeaponBase(BULLET, wskill, 15, 30, 40) {
 	this->assoc_class = assoc_class;
 }
 
@@ -137,12 +144,12 @@ Projectile& Punch::shoot(double angle, double px, double py, Hitbox& h) {
 	return *new Projectile(type, dmg, 80, 100, angle, px, py, assoc_class, h);
 }
 
-Bite::Bite(int wskill, Being* assoc_class) : WeaponBase(BULLET, wskill, 40, 30) {
+Bite::Bite(int wskill, Being* assoc_class) : WeaponBase(BULLET, wskill, 40, 30, 60) {
 	this->assoc_class = assoc_class;
 }
 
 Projectile& Bite::shoot(double angle, double px, double py, Hitbox& h) {
-	return *new Projectile(type, dmg, 100, 100, angle, px, py, assoc_class, h);
+	return *new Projectile(type, dmg, 5, 5, angle, px, py, assoc_class, h);
 }
 
 

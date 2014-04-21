@@ -26,7 +26,7 @@ public:
 
 enum Monsters{ ZOMBIE = 0, MAXSIZE };
 enum Collisions{ STATUS_OK, OUT_OF_BOUNDS, TRIGGER, X_COLLIDE, Y_COLLIDE, XY_COLLIDE };
-enum Shoot{BANG, NOT_IN_FOV};
+enum Shoot{BANG, NOT_IN_FOV, CASTING};
 
 class Hitbox{
 protected:
@@ -63,13 +63,15 @@ protected:
 	virtual void setRange() = 0;
 	Projectile& shootWeapon(double deg, Hitbox& h);
 	int HAJA = 0;
+	unsigned int speed, count = 0;
+	unsigned int start_time;
 
 public:
-	Being(double x, double y);
+	Being(double x, double y, int speed);
 	int getHealth();
 	virtual bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) = 0;
 	void addWeapon(WeaponBase* wpn);
-	void move(int dir, bool reverse);
+	bool move(int dir, bool reverse);
 	int getLevel();
 	bool getWalk();
 	void resetWalk();
@@ -78,6 +80,7 @@ public:
 	int tryToShoot(Being* target, Projectile** p);
 	void equipItem(Item& item);
 	void unequipItem(Item& item);
+	void resetFire();
 	static Hitbox* box;
 	virtual ~Being();
 };
@@ -119,8 +122,6 @@ public:
 
 class Zombie: public Being, BeingResources {
 private:
-	int speed = 20;
-	int count = 0;
 	int biting;
 	Being* target;
 public:
