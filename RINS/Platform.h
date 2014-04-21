@@ -89,6 +89,7 @@ private:
 	SDLNet_SocketSet socketset;
 	int numused = 0;
 	list<Client> clients;
+	int lenz = 0;
 	char command[10240] = { 0 };
 public:
 	class Client{
@@ -119,6 +120,7 @@ public:
 	void sendToServer(char* text, int len);
 	list<Client>& getClients();
 	void sendCommand(short num, short datasz, const char* data);
+	char* receiveCommand();
 	char* getNextCommand(Client& c);
 	bool commandToClient(list<Client>::iterator&, short num, short datasz, const char* data);
 	~Socket();

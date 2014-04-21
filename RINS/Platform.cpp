@@ -390,6 +390,23 @@ void Socket::updateClients(){
 	}
 }
 
+char* Socket::receiveCommand(){
+	int len;
+	bool bad = false;
+	if ((len = SDLNet_TCP_Recv(sd, &command[lenz], 4)) > 0){
+		lenz += len;
+		unsigned short extract;
+		memcpy(&extract, &command[2], 2);
+		if ((len = SDLNet_TCP_Recv(sd, &command[lenz], extract)) > 0){
+			lenz = 0;
+			return command;
+		}
+		else bad = true;
+	}
+	else bad = true;
+	if (bad)throw Error(SDLNet_GetError());
+}
+
 void Socket::ConnectToServer(int port, const char* ip_) {
 	if (SDLNet_ResolveHost(&ip, ip_, port))throw Error(SDLNet_GetError());
 	if (!(sd = SDLNet_TCP_Open(&ip)))throw Error(SDLNet_GetError());

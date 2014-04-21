@@ -66,6 +66,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	time_t seed;
 	int MP_numplayers = 0;
 	int remote_class;
+	bool MP_init = false;
 
 	int song1;
 	map<pair<int, int>, Machine> machines;
@@ -168,7 +169,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 	void graphicsLoop() final {
 		try{
-			if (!show_menu && !SP_init && !MP_server_init && !MP_noplayers){
+			if (!show_menu && !SP_init && !MP_server_init && !MP_noplayers && !MP_init){
 				lock1.lock();
 				renderMap();
 				lock1.unlock();
@@ -331,6 +332,28 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	void mainLoop() final {
 		try {
 			if (SP_init){
+				if (MP_init){
+					server_info si;
+					char* c = (char*)&SP_class;
+					sendCommand(GETINFO, 4, c);
+					c = receiveCommand();
+					short cmd;
+					short data;
+					memcpy(&cmd, &c[0], 2);
+					memcpy(&data, &c[2], 2);
+					switch (cmd){
+					case SERVERINFO:
+						if (data != sizeof(si))throw Error("Nope!");
+						memcpy(&si, &c[4], sizeof(si));
+						seed = si.seed;
+						MP_numplayers = si.n_players;
+						MP_noplayers = si.gathering;
+						//must insert si.game_end!
+						break;
+					default: throw Error("Nope!");
+					}
+				}
+				if (has_MP_server)MP_noplayers = true;
 				loadMap(seed);
 				c = getMapEntry();
 				switch (SP_class){
@@ -347,17 +370,43 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					targets.push_back(unique_ptr<Being>(new Android(c.x, c.y))); player = &**targets.begin();
 					break;
 				}
-				//if (!has_MP_server)show_menu = false;
-				if (has_MP_server)MP_noplayers = true;
-				show_menu = false;
+				if (!MP_noplayers){
+					MP_init = false;
+					show_menu = false;
+				}
 				SP_init = false;
+			}
+			if (MP_init){
+				server_info si;
+				char* c = (char*)&SP_class;
+				sendCommand(GETINFO, 4, c);
+				c = receiveCommand();
+				short cmd;
+				short data;
+				memcpy(&cmd, &c[0], 2);
+				memcpy(&data, &c[2], 2);
+				switch (cmd){
+				case SERVERINFO:
+					if (data != sizeof(si))throw Error("Nope!");
+					memcpy(&si, &c[4], sizeof(si));
+					seed = si.seed;
+					MP_numplayers = si.n_players;
+					MP_noplayers = si.gathering;
+					//must insert si.game_end!
+					break;
+				default: throw Error("Nope!");
+				}
+				if (!MP_noplayers){
+					MP_init = false;
+					show_menu = false;
+				}
 			}
 			if (MP_server_init){
 				startServer(1337);
 				MP_server_init = false;
 				cout << "Server init -> success!" << endl;
 			}
-			if (MP_noplayers){
+			if (MP_noplayers && has_MP_server){
 				MP_numplayers = gatherPlayers();
 				updateClients();
 				list<Socket::Client>& lsc = getClients();
@@ -366,7 +415,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				}
 				//if (MP_numplayers == 1)MP_noplayers = false;
 			}
-			if (!show_menu && !SP_init && !MP_server_init && !MP_noplayers){
+			if (!show_menu && !SP_init && !MP_server_init && !MP_noplayers && !MP_init){
 
 				if (updateInternalMapState()) dir = 0;
 				moveAndColide();
@@ -419,6 +468,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		int n_players;
 		bool gathering;
 		bool game_end;
+		time_t seed;
 	};
 
 	void processCommand(char* c, list<Client>::iterator& cl){
@@ -440,6 +490,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			i.n_players = MP_numplayers;
 			i.gathering = MP_noplayers;
 			i.game_end = false;
+			i.seed = seed;
 			cd = (char*)&i;
 			commandToClient(cl, SERVERINFO, sizeof(i), cd);
 			break;
@@ -791,7 +842,7 @@ public:
 
 		Menu& m2 = *new Menu();
 		m2.addField(*new Button("Start server", *new Command([this](MenuControl& mc){ if (has_MP_server)return; MP_server_init = true; has_MP_server = true;  })))
-			.addField(*new TextBox("Connect to: ", *new Command([this](MenuControl& mc){ if (mc.checked()){ ConnectToServer(1337, mc.getText().substr(mc.getID(), string::npos).c_str()); show_menu = false; }})))
+			.addField(*new TextBox("Connect to: ", *new Command([this](MenuControl& mc){ if (mc.checked()){ ConnectToServer(1337, mc.getText().substr(mc.getID(), string::npos).c_str()); MP_init = true; }})))
 			.addField(*new Button("Main menu", menu));
 
 		Menu& m3 = *new Menu();
