@@ -352,6 +352,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 						break;
 					default: throw Error("Nope!");
 					}
+					if (!MP_noplayers)MP_init = false;
 				}
 				if (has_MP_server)MP_noplayers = true;
 				loadMap(seed);
@@ -370,10 +371,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					targets.push_back(unique_ptr<Being>(new Android(c.x, c.y))); player = &**targets.begin();
 					break;
 				}
-				if (!MP_noplayers){
-					MP_init = false;
-					show_menu = false;
-				}
+				show_menu = false;
 				SP_init = false;
 			}
 			if (MP_init){
@@ -396,10 +394,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					break;
 				default: throw Error("Nope!");
 				}
-				if (!MP_noplayers){
-					MP_init = false;
-					show_menu = false;
-				}
+				if (!MP_noplayers)MP_init = false;
 			}
 			if (MP_server_init){
 				startServer(1337);
@@ -413,7 +408,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				for (auto i = begin(lsc); i != end(lsc); ++i){
 					processCommand(getNextCommand(*i), i);
 				}
-				//if (MP_numplayers == 1)MP_noplayers = false;
+				if (MP_numplayers == 1)MP_noplayers = false;
 			}
 			if (!show_menu && !SP_init && !MP_server_init && !MP_noplayers && !MP_init){
 
