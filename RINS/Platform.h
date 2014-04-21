@@ -105,7 +105,7 @@ public:
 		~Client(){
 			SDLNet_TCP_Close(sock);
 		}
-		bool operator==(Client& cl){
+		bool operator==(const Client& cl) const{
 			return cl.sock == sock;
 		}
 	};
@@ -120,7 +120,7 @@ public:
 	list<Client>& getClients();
 	void sendCommand(short num, short datasz, const char* data);
 	char* getNextCommand(Client& c);
-	bool commandToClient(Client& cl, short num, short datasz, const char* data);
+	bool commandToClient(list<Client>::iterator&, short num, short datasz, const char* data);
 	~Socket();
 };
 

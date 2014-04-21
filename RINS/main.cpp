@@ -361,8 +361,8 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				MP_numplayers = gatherPlayers();
 				updateClients();
 				list<Socket::Client>& lsc = getClients();
-				for (auto& i : lsc){
-					processCommand(getNextCommand(i));
+				for (auto i = begin(lsc); i != end(lsc); ++i){
+					processCommand(getNextCommand(*i), i);
 				}
 				//if (MP_numplayers == 1)MP_noplayers = false;
 			}
@@ -421,12 +421,14 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		bool game_end;
 	};
 
-	void processCommand(char* c, Client& cl){
+	void processCommand(char* c, list<Client>::iterator& cl){
 		if (c == nullptr)return;
 		short cmd;
 		short data;
 		memcpy(&cmd, &c[0], 2);
 		memcpy(&data, &c[2], 2);
+		server_info i;
+		char* cd;
 		switch (cmd){
 		case KEYBOARD:
 			if (data != 4)throw Error("Nope!");
@@ -435,12 +437,11 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		case GETINFO:
 			if (data != 4)throw Error("Nope!");
 			memcpy(&remote_class, &c[4], data);
-			server_info i;
 			i.n_players = MP_numplayers;
 			i.gathering = MP_noplayers;
 			i.game_end = false;
-			char* c = (char*)&i;
-			commandToClient(cl, SERVERINFO, sizeof(i), c);
+			cd = (char*)&i;
+			commandToClient(cl, SERVERINFO, sizeof(i), cd);
 			break;
 		default:
 			throw Error("Nope!");

@@ -405,15 +405,15 @@ void Socket::sendCommand(short num, short datasz, const char* data){
 	delete buf;
 }
 
-bool Socket::commandToClient(Client& cl, short num, short datasz, const char* data){
+bool Socket::commandToClient(list<Client>::iterator& cl, short num, short datasz, const char* data){
 	char *buf = new char[datasz + 4];
 	memcpy(&buf[0], &num, 2);
 	memcpy(&buf[2], &datasz, 2);
 	memcpy(&buf[4], data, datasz);
-	if (SDLNet_TCP_Send(cl.sock, (void *)buf, datasz+4) < datasz+4){
+	if (SDLNet_TCP_Send((*cl).sock, (void *)buf, datasz+4) < datasz+4){
 		int active;
-		if ((active = SDLNet_TCP_DelSocket(socketset, cl.sock)) == -1)throw Error(SDLNet_GetError());
-		clients.erase(find(clients.begin(), clients.end(), cl));
+		if ((active = SDLNet_TCP_DelSocket(socketset, (*cl).sock)) == -1)throw Error(SDLNet_GetError());
+		cl = clients.erase(cl);
 		--numused;
 		return false;
 	}
