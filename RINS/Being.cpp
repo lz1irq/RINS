@@ -146,6 +146,9 @@ int Being::tryToShoot(Being* target, Projectile** p){
 		else if (di2 & UP)ty = 1;
 		else if (di2 & DOWN)ty = -1;
 		if (dx*tx >= 0 && dy*ty >= 0){
+			double range = sqrt(pow(target->x - x, 2) + pow(target->y - y, 2));
+			double roundstep = (move_step_x + move_step_y) / 2.0;
+			if (range > weapons.at(curr_weapon)->getFlyT()*roundstep)return OUT_OF_RANGE;
 			if ((weapons.at(curr_weapon)->getCount() + weapons.at(curr_weapon)->getSpeed()) < start_time){
 				resetFire();
 				*p = &(shootWeapon(deg, *new Hitbox(tiles_x, tiles_y, tile_granularity)));

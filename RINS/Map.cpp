@@ -25,12 +25,12 @@ double Map::alterBeingPosY(double absoluteY){
 	return 0.5;
 }
 
-void Map::loadMap(string seed){
-	seed_seq Seed(seed.begin(), seed.end());
-	uint32_t seeds[1];
-	Seed.generate(&seeds[0], &seeds[1]);
-	curr_seed = seeds[0];
-	curr_seed = system_clock::to_time_t(system_clock::now()); //SHOULD BE FIXED
+void Map::loadMap(time_t seed){
+	//seed_seq Seed(seed.begin(), seed.end());
+	//uint32_t seeds[1];
+	//Seed.generate(&seeds[0], &seeds[1]);
+	//curr_seed = seeds[0];
+	curr_seed = seed;
 	generateRoom(curr_seed, true);
 }
 

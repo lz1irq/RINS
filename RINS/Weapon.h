@@ -9,6 +9,7 @@
 using namespace std;
 enum {BULLET, FIRE, PSYCHO, ENERGY};
 enum {LEFT=1,RIGHT=2,UP=4,DOWN=8};
+enum Detonations{WAIT_WITHOUT_INTERACT, WAIT_WITH_INTERACT, NOWAIT };
 #define M_PI    3.14159265358979323846264338327950288   /* pi */
 class Hitbox;
 class Being;
@@ -21,10 +22,13 @@ class Projectile {
 	int det_t;
 	double dir;
 	double x,y;
+	int wait_on_det;
+	int range, det_duration;
 	Being* shooter;//unsafe!!!
 	const type_info& sh;
+	bool trigger = false;
 public:
-	Projectile(unsigned int ptype, int pdamage, int pfly_t, int pdet_t, double angle, double px, double py, Being* shooter, Hitbox& h);
+	Projectile(unsigned int ptype, int pdamage, int pfly_t, int pdet_t, double angle, double px, double py, Being* shooter, Hitbox& h, int  wait_on_det, int range, int det_duration);
 	bool update(const vector<vector<char>>& map_index, list<unique_ptr<Being>>& targets, list<unique_ptr<Being>>& players);
 	double getX();
 	double getY();
@@ -53,8 +57,9 @@ protected:
 	bool picked_up;
 	Being* assoc_class;
 	unsigned int count, speed;
+	int fly_t_init, det_t_init;
 public:
-	WeaponBase(int wtype, int wskill, int wbase_dmg,  int ammo_mag, int speed);
+	WeaponBase(int wtype, int wskill, int wbase_dmg,  int ammo_mag, int speed, int fly_t_init, int det_t_init);
 	void updateSkillPoints(int uskill);
 	int getDamage() const;
 	int getAmmoPerMag() const;
@@ -62,6 +67,7 @@ public:
 	void pickUp();
 	unsigned int& getCount();
 	unsigned int& getSpeed();
+	int getFlyT();
 	virtual Projectile& shoot(double angle, double px, double py, Hitbox& h) = 0;
 };
 

@@ -26,7 +26,7 @@ public:
 
 enum Monsters{ ZOMBIE = 0, MAXSIZE };
 enum Collisions{ STATUS_OK, OUT_OF_BOUNDS, TRIGGER, X_COLLIDE, Y_COLLIDE, XY_COLLIDE };
-enum Shoot{BANG, NOT_IN_FOV, CASTING};
+enum Shoot{BANG, NOT_IN_FOV, CASTING, OUT_OF_RANGE};
 
 class Hitbox{
 protected:

@@ -30,7 +30,7 @@ public:
 	Map();
 	double alterBeingPosX(double absoluteX);
 	double alterBeingPosY(double absoluteY);
-	void loadMap(string seed);
+	void loadMap(time_t seed);
 	const vector<Coord>& getMapObjects() const;
 	const vector<vector<char>>& getMapIndex() const;
 	Coord getMapEntry();

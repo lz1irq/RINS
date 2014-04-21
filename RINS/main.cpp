@@ -54,11 +54,17 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	bool typing = false, muststop = false;
 	bool show_menu = true;
 	bool enable_music = false;
-	bool server = false;
-	bool started = false;
 	Machine* curr_machine = nullptr;
 	bool over_machine = false;
 	bool render_machine = false;
+
+	bool SP_init = false;
+	bool MP_server_init = false;
+	bool has_MP_server = false;
+	int SP_class;
+	bool MP_noplayers = false;
+	time_t seed;
+	int MP_numplayers = 0;
 
 	int song1;
 	map<pair<int, int>, Machine> machines;
@@ -149,7 +155,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		renderPart(0, 0, 0, 0);
 		for (auto &i : projectiles){
 			setRotationAngle(i.getAngleInDeg());
-			applyTexture(WeaponResources::getTexture(i.getType()), i.getX() - deltax + 1.5*box.getStepX(), i.getY() - deltay + 1.5*box.getStepY(), box.getStepX(), box.getStepY());
+			applyTexture(WeaponResources::getTexture(i.getType()), i.getX() - deltax + 1.5*box.getStepX(), i.getY() - deltay + 1.5*box.getStepY(), box.getStepX()*2, box.getStepY()*2);
 			setRotationAngle(0);
 		}
 	}
@@ -161,7 +167,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 	void graphicsLoop() final {
 		try{
-			if (!show_menu){
+			if (!show_menu && !SP_init && !MP_server_init && !MP_noplayers){
 				lock1.lock();
 				renderMap();
 				lock1.unlock();
@@ -177,12 +183,13 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				lock1.unlock();
 				if (render_machine) renderVendingMachine();
 			}
-			else{
+			else if (show_menu){
 				renderPart(0, 0, 0, 0);
 				menux.lock();
 				renderMenu();
 				menux.unlock();
 			}
+			else if (MP_noplayers)displayText(main_font, (Uint16*)(L"Waiting for players to begin..."+to_wstring(MP_numplayers)).c_str(), RGBA(100, 255, 150, 0), 0.0, 0.0, 0, 0.1);
 
 
 			renderScene();
@@ -258,7 +265,6 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			case CASTING:
 				int* percent;
 				percent = (int*)p;
-				cout << *percent << endl;
 				delete percent;
 				break;
 			}
@@ -323,7 +329,43 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 	void mainLoop() final {
 		try {
-			if (!show_menu){
+			if (SP_init){
+				loadMap(seed);
+				c = getMapEntry();
+				switch (SP_class){
+				case 0:
+					targets.push_back(unique_ptr<Being>(new Marine(c.x, c.y))); player = &**targets.begin();
+					break;
+				case 1:
+					targets.push_back(unique_ptr<Being>(new Pyro(c.x, c.y))); player = &**targets.begin();
+					break;
+				case 2:
+					targets.push_back(unique_ptr<Being>(new Psychokinetic(c.x, c.y))); player = &**targets.begin();
+					break;
+				case 3:
+					targets.push_back(unique_ptr<Being>(new Android(c.x, c.y))); player = &**targets.begin();
+					break;
+				}
+				//if (!has_MP_server)show_menu = false;
+				if (has_MP_server)MP_noplayers = true;
+				show_menu = false;
+				SP_init = false;
+			}
+			if (MP_server_init){
+				startServer(1337);
+				MP_server_init = false;
+				cout << "Server init -> success!" << endl;
+			}
+			if (MP_noplayers){
+				MP_numplayers = gatherPlayers();
+				updateClients();
+				list<Socket::Client>& lsc = getClients();
+				for (auto& i : lsc){
+					processCommand(getNextCommand(i));
+				}
+				if (MP_numplayers == 1)MP_noplayers = false;
+			}
+			if (!show_menu && !SP_init && !MP_server_init && !MP_noplayers){
 
 				if (updateInternalMapState()) dir = 0;
 				moveAndColide();
@@ -346,7 +388,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				//	delete c;
 				//}
 			}
-			else{
+			else if(show_menu){
 				menux.lock();
 				checkMenu();
 				menux.unlock();
@@ -670,17 +712,7 @@ public:
 		Renderer(640, 480, "RINS"), dir(0), c(0, 0, 0) {
 		//Projectile::box = &box;
 		Being::box = &box;
-		loadMap("do u even seed, bro?");
-		c = getMapEntry();
-		int pclass;
-		cout << "Chose class: " << endl << "0. Marine " << endl << "1. Pyro " << endl << "2. Psychokinetic" << endl << "3. Android" << endl;
-		//cin >> pclass;
-		pclass = pclass%3;
-		if (pclass == 0)targets.push_back(unique_ptr<Being>(new Marine(c.x, c.y)));
-		else if (pclass == 1)targets.push_back(unique_ptr<Being>(new Pyro(c.x, c.y)));
-		else if (pclass == 2)targets.push_back(unique_ptr<Being>(new Psychokinetic(c.x, c.y)));
-		else if (pclass == 3)targets.push_back(unique_ptr<Being>(new Android(c.x, c.y)));
-		player = &**targets.begin();
+		seed = system_clock::to_time_t(system_clock::now());
 
 		BeingResources::addTextureID(loadTexture("Textures/devil2.png"), &typeid(Marine));
 		BeingResources::addTextureID(loadTexture("Textures/devil2.png"), &typeid(Pyro));
@@ -707,8 +739,11 @@ public:
 		side[2][0] = loadTexture("Textures/forest_1.png");
 		side[2][1] = loadTexture("Textures/forest_2.png");
 
+		//enum {BULLET, FIRE, PSYCHO, ENERGY};
 		WeaponResources::addTexture(loadTexture("Textures/bullet.png"), BULLET);
-		WeaponResources::addTexture(loadTexture("Textures/bullet2.png"), FIRE);
+		WeaponResources::addTexture(loadTexture("Textures/bullet4.png"), FIRE);
+		WeaponResources::addTexture(loadTexture("Textures/bullet3.png"), PSYCHO);
+		WeaponResources::addTexture(loadTexture("Textures/bullet2.png"), ENERGY);
 
 		entrytex = loadTexture("Textures/entry.png");
 		exittex = loadTexture("Textures/exit.png");
@@ -737,7 +772,7 @@ public:
 		setModulateBlending(overlay);
 
 		Menu& m2 = *new Menu();
-		m2.addField(*new Button("Start server", *new Command([this](MenuControl& mc){ server = true; })))
+		m2.addField(*new Button("Start server", *new Command([this](MenuControl& mc){ if (has_MP_server)return; MP_server_init = true; has_MP_server = true;  })))
 			.addField(*new TextBox("Connect to: ", *new Command([this](MenuControl& mc){ if (mc.checked()){ ConnectToServer(1337, mc.getText().substr(mc.getID(), string::npos).c_str()); show_menu = false; }})))
 			.addField(*new Button("Main menu", menu));
 
@@ -745,7 +780,14 @@ public:
 		m3.addField(*new Checkbox("Enabled", *new Command([this](MenuControl& mc){ enable_music = mc.checked(); if (enable_music)playSong(song1); else stopMusic();}), false))
 			.addField(*new Button("Main menu", menu));
 
-		menu.addField(*new Button("Singleplayer", *new Command([this](MenuControl& mc){ show_menu = false; })))
+		Menu& m4 = *new Menu();
+		m4.addField(*new Button("Marine", *new Command([this](MenuControl& mc){ SP_class = 0; SP_init = true; })))
+			.addField(*new Button("Pyro", *new Command([this](MenuControl& mc){ SP_class = 1; SP_init = true; })))
+			.addField(*new Button("Psychokinetic", *new Command([this](MenuControl& mc){ SP_class = 2; SP_init = true; })))
+			.addField(*new Button("Android", *new Command([this](MenuControl& mc){ SP_class = 3; SP_init = true; })))
+			.addField(*new Button("Main menu", menu));
+
+		menu.addField(*new Button("Singleplayer", m4))
 			.addField(*new Button("Multiplayer", m2))
 			.addField(*new Button("Sound", m3));
 
