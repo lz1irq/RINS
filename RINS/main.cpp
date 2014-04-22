@@ -67,6 +67,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	time_t seed;
 	int MP_numplayers = 0;
 	bool MP_init = false;
+	bool MP_mode = false;
 
 	struct player_info{
 		int keyboard;
@@ -147,10 +148,14 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 	void displayPlayer(){
 		int offset = 0;
-		if (player->getWalk())offset = 2;
-		renderPart(4, 2, offset + ((int)log2(player->getOrientation()) >> 1), 1 - ((int)log2(player->getOrientation()) % 2));
-
-		applyTexture(BeingResources::getTextureID(&typeid(*player)), alterBeingPosX(player->getX()), alterBeingPosY(player->getY()), 1.0 / xsize, 1.0 / ysize);
+		bool pla = true;
+		for (auto &i : targets){
+			if ((*i).getWalk())offset = 2;
+			renderPart(4, 2, offset + ((int)log2((*i).getOrientation()) >> 1), 1 - ((int)log2((*i).getOrientation()) % 2));
+			if (pla)applyTexture(BeingResources::getTextureID(&typeid((*i))), alterBeingPosX((*i).getX()), alterBeingPosY((*i).getY()), 1.0 / xsize, 1.0 / ysize);
+			else applyTexture(BeingResources::getTextureID(&typeid(*i)), i->getX() - deltax, i->getY() - deltay, 1.0 / xsize, 1.0 / ysize);
+			pla = false;
+		}
 	}
 	void displayMonsters(){
 		for (auto &i : monsters) {
@@ -208,9 +213,6 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	}
 
 	void moveAndColide(){
-		player->action(getMapIndex(), projectiles, targets, getTicks());
-		tmpdir2 = dir;
-		getdir();
 		lastxpos = player->getX();
 		lastypos = player->getY();
 		bool b = player->move(dir, false);
@@ -367,7 +369,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				show_menu = false;
 				SP_init = false;
 			}
-			if (MP_init){
+			if (MP_init && !show_menu){
 				server_info si;
 				char* c = (char*)&SP_class;
 				sendCommand(GETINFO, 4, c);
@@ -387,7 +389,10 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					break;
 				default: throw Error("Nope!");
 				}
-				if (!MP_noplayers)MP_init = false;
+				if (!MP_noplayers){
+					MP_init = false;
+					MP_mode = true;
+				}
 			}
 			if (MP_server_init){
 				startServer(1337);
@@ -402,6 +407,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				list<player_info> lpi;
 				for (auto i = begin(lsc); i != end(lsc); ++i){
 					player_info pi;
+					pi.last_command = -1;
 					if (!processCommand(getNextCommand(*i), i, pi)){
 						good = false;
 						break;
@@ -420,26 +426,41 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				}
 			}
 			if (!show_menu && !SP_init && !MP_server_init && !MP_noplayers && !MP_init){
-
+				player->action(getMapIndex(), projectiles, targets, getTicks());
+				getdir();
 				if (updateInternalMapState()) dir = 0;
 				moveAndColide();
 				playerShoot();
 				updateProjectiles();
-				tryToSpawn();
 				if (curr_machine)checkVendingMachines(player->getTileX(), player->getTileY());
-				updateMonsters();
-				updateClients();
+				if (!MP_mode){
+					tryToSpawn();
+					updateMonsters();
+				}
+				else{
+					server_info si;
+					char* c = (char*)&dir;
+					sendCommand(KEYBOARD, 4, c);
+				}
 				if (has_MP_server){
 					if (!updateClients()){
 						cout << "end game!" << endl;
 						exit(0);
 					}
 					list<Socket::Client>& lsc = getClients();
-					for (auto i = begin(lsc); i != end(lsc); ++i){
+					list<unique_ptr<Being>>::iterator it2 = targets.begin();
+					for (auto i = begin(lsc); i != end(lsc); ++i, ++it2){
 						player_info pi;
 						if (!processCommand(getNextCommand(*i), i, pi)){
 							cout << "end game!" << endl;
 							exit(0);
+						}
+						if (pi.last_command == KEYBOARD){
+							dir = pi.keyboard;
+							player = &**it2;
+							moveAndColide();
+							playerShoot();
+							player = &**targets.begin();
 						}
 					}
 				}
@@ -449,19 +470,6 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				checkMenu();
 				menux.unlock();
 			}
-			//if (server){
-			//	if (!started){
-			//		startServer(1337);
-			//		started = true;
-			//	}
-			//	if (gatherPlayers() != 1){
-			//		//CIKLQ
-			//	}
-			//	else{
-			//		show_menu = false;
-			//		server = false;
-			//	}
-			//}
 			updatePress();
 			SDL_Delay(10);
 		}
@@ -478,7 +486,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	};
 
 	bool processCommand(char* c, list<Client>::iterator& cl, player_info& pi){
-		if (c == nullptr)return false;
+		if (c == nullptr)return true;
 		short cmd;
 		short data;
 		memcpy(&cmd, &c[0], 2);
@@ -493,6 +501,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			break;
 		case GETINFO:
 			if (data != 4)throw Error("Nope!");
+			cout << (int)c[4] << endl;
 			memcpy(&pi.class_, &c[4], data);
 			i.n_players = MP_numplayers;
 			i.gathering = MP_noplayers;
