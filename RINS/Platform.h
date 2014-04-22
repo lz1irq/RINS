@@ -116,7 +116,7 @@ public:
 	int gatherPlayers();
 	void ConnectToServer(int port, const char* ip);
 	void disconncet();
-	void updateClients();
+	bool updateClients();
 	void sendToServer(char* text, int len);
 	list<Client>& getClients();
 	void sendCommand(short num, short datasz, const char* data);

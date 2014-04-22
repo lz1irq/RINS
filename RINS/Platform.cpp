@@ -366,9 +366,9 @@ char* Socket::getNextCommand(Client& c){
 
 }
 
-void Socket::updateClients(){
+bool Socket::updateClients(){
 	int active;
-	if (!numused)return;
+	if (!numused)return true;
 	if ((active = SDLNet_CheckSockets(socketset, 1)) == -1)throw Error(SDLNet_GetError());
 	else if(active > 0){
 		for (auto i = begin(clients); i != end(clients); ++i){
@@ -383,11 +383,12 @@ void Socket::updateClients(){
 					else cout << active << endl;
 					i = clients.erase(i);
 					--numused;
-					return;
+					return false;
 				}
 			}
 		}
 	}
+	return true;
 }
 
 char* Socket::receiveCommand(){

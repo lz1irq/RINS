@@ -39,6 +39,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 	Being* curr_target = nullptr;
 	array<Being*(*)(double, double), MAXSIZE> monster_types;
+	array<Being*(*)(double, double), PLAYEND> player_types;
 	array<Item*(*)(), MAXITEMS> item_types;
 	list<Projectile> projectiles;
 
@@ -65,8 +66,13 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	bool MP_noplayers = false;
 	time_t seed;
 	int MP_numplayers = 0;
-	int remote_class;
 	bool MP_init = false;
+
+	struct player_info{
+		int keyboard;
+		int class_;
+		short last_command;
+	};
 
 	int song1;
 	map<pair<int, int>, Machine> machines;
@@ -357,20 +363,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				if (has_MP_server)MP_noplayers = true;
 				loadMap(seed);
 				c = getMapEntry();
-				switch (SP_class){
-				case 0:
-					targets.push_back(unique_ptr<Being>(new Marine(c.x, c.y))); player = &**targets.begin();
-					break;
-				case 1:
-					targets.push_back(unique_ptr<Being>(new Pyro(c.x, c.y))); player = &**targets.begin();
-					break;
-				case 2:
-					targets.push_back(unique_ptr<Being>(new Psychokinetic(c.x, c.y))); player = &**targets.begin();
-					break;
-				case 3:
-					targets.push_back(unique_ptr<Being>(new Android(c.x, c.y))); player = &**targets.begin();
-					break;
-				}
+				targets.push_back(unique_ptr<Being>(player_types[SP_class](c.x, c.y))); player = &**targets.begin();
 				show_menu = false;
 				SP_init = false;
 			}
@@ -403,12 +396,28 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			}
 			if (MP_noplayers && has_MP_server){
 				MP_numplayers = gatherPlayers();
-				updateClients();
+				bool good = true;
+				if (!updateClients())good = false;
 				list<Socket::Client>& lsc = getClients();
+				list<player_info> lpi;
 				for (auto i = begin(lsc); i != end(lsc); ++i){
-					processCommand(getNextCommand(*i), i);
+					player_info pi;
+					if (!processCommand(getNextCommand(*i), i, pi)){
+						good = false;
+						break;
+					}
+					if (pi.last_command != GETINFO){
+						good = false;
+						break;
+					}
+					lpi.push_back(pi);
 				}
-				if (MP_numplayers == 1)MP_noplayers = false;
+				if (MP_numplayers == 1 && good == true){
+					for (auto& i : lpi){
+						targets.push_back(unique_ptr<Being>(player_types[i.class_](c.x, c.y)));
+					}
+					MP_noplayers = false;
+				}
 			}
 			if (!show_menu && !SP_init && !MP_server_init && !MP_noplayers && !MP_init){
 
@@ -419,19 +428,21 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				tryToSpawn();
 				if (curr_machine)checkVendingMachines(player->getTileX(), player->getTileY());
 				updateMonsters();
-				//if (!server && started){
-				//	updateClients();
-				//	list<Socket::Client>& lsc = getClients();
-				//	for (auto& i : lsc){
-				//		processCommand(getNextCommand(i));
-				//	}
-				//}
-				//if (!server && !started){
-				//	char* c = new char[4];
-				//	memcpy(c, &dir, 4);
-				//	sendCommand(KEYBOARD, 4, c);
-				//	delete c;
-				//}
+				updateClients();
+				if (has_MP_server){
+					if (!updateClients()){
+						cout << "end game!" << endl;
+						exit(0);
+					}
+					list<Socket::Client>& lsc = getClients();
+					for (auto i = begin(lsc); i != end(lsc); ++i){
+						player_info pi;
+						if (!processCommand(getNextCommand(*i), i, pi)){
+							cout << "end game!" << endl;
+							exit(0);
+						}
+					}
+				}
 			}
 			else if(show_menu){
 				menux.lock();
@@ -466,32 +477,34 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		time_t seed;
 	};
 
-	void processCommand(char* c, list<Client>::iterator& cl){
-		if (c == nullptr)return;
+	bool processCommand(char* c, list<Client>::iterator& cl, player_info& pi){
+		if (c == nullptr)return false;
 		short cmd;
 		short data;
 		memcpy(&cmd, &c[0], 2);
 		memcpy(&data, &c[2], 2);
 		server_info i;
 		char* cd;
+		pi.last_command = cmd;
 		switch (cmd){
 		case KEYBOARD:
 			if (data != 4)throw Error("Nope!");
-			memcpy(&dir, &c[4], data);
+			memcpy(&pi.keyboard, &c[4], data);
 			break;
 		case GETINFO:
 			if (data != 4)throw Error("Nope!");
-			memcpy(&remote_class, &c[4], data);
+			memcpy(&pi.class_, &c[4], data);
 			i.n_players = MP_numplayers;
 			i.gathering = MP_noplayers;
 			i.game_end = false;
 			i.seed = seed;
 			cd = (char*)&i;
-			commandToClient(cl, SERVERINFO, sizeof(i), cd);
+			return commandToClient(cl, SERVERINFO, sizeof(i), cd);
 			break;
 		default:
 			throw Error("Nope!");
 		}
+		return true;
 	}
 
 	wstring utf8_to_utf16(const string& utf8){
@@ -822,6 +835,11 @@ public:
 		item_types[BODYARMOR] = &createItem<BodyArmour>;
 		item_types[SCOPE] = &createItem<Scope>;
 		item_types[PSYCHOAMP] = &createItem<PsychoAmp>;
+		player_types[MARINE] = &createInstance<Marine>;
+		player_types[PYRO] = &createInstance<Pyro>;
+		player_types[PSYCHOKINETIC] = &createInstance<Psychokinetic>;
+		player_types[ANDROID] = &createInstance<Android>;
+
 
 		setMusicVolume(MAX_VOL/8);
 		song1 = loadSong("Sounds/level1.mid");
