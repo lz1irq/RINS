@@ -172,6 +172,48 @@ void Being::resetFire(){
 	weapons.at(curr_weapon)->getCount() = start_time;
 }
 
+Item& Being::getNextItem() {
+	++it;
+	if(it == items.end()) it = items.begin();
+	return *(*it);
+}
+
+int Being::itemCount() {
+	return items.size();
+}
+Item& Being::getItem(int item) {
+	return *(items.at(item));
+}
+
+bool Being::buyItem(Item& item) {
+	if(money < item.getPrice()) return false;
+	else {
+		money -= item.getPrice();
+		items.push_back(&item);
+		it = items.end();
+		--it;
+	}
+	return true;
+}
+
+Item& Being::sellItem(int item) {
+	Item& tosell = *(items.at(item));
+	money += tosell.getPrice();
+	items.erase(items.begin() + item);
+	cout << "Sold " << tosell.getName() << endl;
+	it = items.end();
+	--it;
+	return tosell;
+}
+void Being::addItem(Item& i){
+		items.push_back(&i);
+		it = items.end();
+}
+
+int Being::getMoney() {
+	return money;
+}
+
 void Being::equipItem(Item& item) {
 	if( item.checkClass(&typeid(*this))) {
 		Primary prim = item.getPrimaryBonuses();
@@ -189,7 +231,11 @@ void Being::equipItem(Item& item) {
 		der_stats.dmg_res_bonus += der.dmg_res_bonus;
 		der_stats.fire_res_bonus += der.fire_res_bonus;
 		der_stats.melee_dmg_bonus += der.melee_dmg_bonus;
+
+		item.setEquipped(true);
 	}
+	else cout << "Can't equip this item" << endl;
+
 }
 
 void Being::unequipItem(Item& item) {
@@ -208,6 +254,8 @@ void Being::unequipItem(Item& item) {
 	der_stats.dmg_res_bonus -= der.dmg_res_bonus;
 	der_stats.fire_res_bonus -= der.fire_res_bonus;
 	der_stats.melee_dmg_bonus -= der.melee_dmg_bonus;
+
+	item.setEquipped(false);
 }
 
 void Being::takeProjectile(Projectile& bullet) {
@@ -235,8 +283,20 @@ void Being::resetWalk(){
 }
 
 mt19937 Being::rnd;
+void Being::addExperience(int xp) {
+	experience += xp;
+}
+void Being::levelup() {
+	++level;
+	experience = 0;
+	der_stats.health = 90 + prim_stats.endurance*2 + 10*level;
+	der_stats.dmg_res =  prim_stats.agility*1.5 + level/2;
+	cout << "You are now level " << level << endl;
+}
 
-
+int Being::getExperience() {
+	return experience;
+}
 Being::~Being() {
 	weapons.clear();
 }
@@ -247,7 +307,7 @@ Marine::Marine(double sx, double yx):
 	small_guns = 2 + prim_stats.agility<<1 + prim_stats.luck>>1;
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
 	energy_weapons = 2 + prim_stats.perception* + prim_stats.luck>>1;
-
+	money = 1000;
 	weapons.push_back(std::unique_ptr<WeaponBase>(new AssaultRifle(small_guns, this)));
 }
 
@@ -257,6 +317,7 @@ void Marine::setRange(){
 
 bool Marine::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
 	this->start_time = start_time;
+	if(experience == (level+1)*100 )levelup();
 	if (der_stats.health == 0){
 		//cout << "MARINE DEAD" << endl;
 		return false;
@@ -270,7 +331,7 @@ Pyro::Pyro(double sx, double yx):
 	explosives = 2 + prim_stats.perception<<1 + prim_stats.luck>>1;
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
 	fire = 2 + prim_stats.agility* + prim_stats.luck>>1;
-
+	money = 1000;
 	weapons.push_back(std::unique_ptr<Molotov>(new Molotov(explosives, this)));
 }
 
@@ -280,6 +341,7 @@ void Pyro::setRange(){
 
 bool Pyro::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
 	this->start_time = start_time;
+	if(experience == (level+1)*100 )levelup();
 	return true;
 }
 
@@ -289,7 +351,7 @@ Psychokinetic::Psychokinetic(double sx, double yx):
 	mind_infiltration = 2 + prim_stats.intelligence<<1 + prim_stats.luck>>1;
 	mental_power = 2 + prim_stats.endurance + prim_stats.intelligence + prim_stats.luck>>1;
 	fire = 2 + prim_stats.agility* + prim_stats.luck>>1;
-
+	money = 1000;
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Pyrokinesis(fire, this)));
 }
 
@@ -299,6 +361,7 @@ void Psychokinetic ::setRange(){
 
 bool Psychokinetic::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
 	this->start_time = start_time;
+	if(experience == (level+1)*100 )levelup();
 	return true;
 }
 
@@ -308,7 +371,7 @@ Android::Android(double sx, double yx):
 	punch = 2 + prim_stats.strength/2 + prim_stats.luck>>1;
 	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
 	energy_weapons = 2 + prim_stats.perception* + prim_stats.luck>>1;
-
+	money = 1000;
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Punch(punch, this)));
 }
 
@@ -318,6 +381,7 @@ void Android::setRange(){
 
 bool Android::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
 	this->start_time = start_time;
+	if(experience == (level+1)*100 )levelup();
 	if (der_stats.health == 0){
 		cout << "DROID DEAD" << endl;
 		return false;

@@ -55,13 +55,18 @@ protected:
 	Specific spec;
 	vector<const type_info*> classes;
 	string name;
+	unsigned int price;
+	bool equipped;
 public:
-	Item(string iname);
+	Item(string iname, int iprice);
 	Primary& getPrimaryBonuses();
 	Derived& getDerivedBonuses();
 	Specific& getSpecificBonuses();
 	bool checkClass(const type_info* cl);
 	string getName();
+	int getPrice();
+	bool isEquipped();
+	void setEquipped(bool eq);
 	virtual ~Item() {};
 };
 

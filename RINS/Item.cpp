@@ -32,7 +32,14 @@ int ItemResources::getTextureID(const type_info* item) {
 	return textures.at(item);
 }
 
-Item::Item(string iname): prim(Primary()), der(Derived(prim, 0)), spec(Specific()), name(iname) {}
+Item::Item(string iname, int iprice): prim(Primary()), der(Derived(prim, 0)), spec(Specific()), name(iname), price(iprice), equipped(false) {}
+
+bool Item::isEquipped() {
+	return equipped;
+}
+void Item::setEquipped(bool eq) {
+	equipped = eq;
+}
 
 string Item::getName() {
 	return name;
@@ -57,7 +64,11 @@ bool Item::checkClass(const type_info* cl) {
 	return false;
 }
 
-BodyArmour::BodyArmour(): Item("Body Armour") {
+int Item::getPrice() {
+	return price;
+}
+
+BodyArmour::BodyArmour(): Item("Body Armour", 200) {
 	classes.push_back(&typeid(Marine));
 	classes.push_back(&typeid(Pyro));
 	classes.push_back(&typeid(Android));
@@ -65,14 +76,14 @@ BodyArmour::BodyArmour(): Item("Body Armour") {
 	der.dmg_res_bonus = 5;
 }
 
-Scope::Scope(): Item("Scope") {
+Scope::Scope(): Item("Scope", 450) {
 	classes.push_back(&typeid(Marine));
 	classes.push_back(&typeid(Pyro));
 	classes.push_back(&typeid(Android));
 	prim.perception_bonus = 4;
 }
 
-PsychoAmp::PsychoAmp(): Item("Psycho Amp") {
+PsychoAmp::PsychoAmp(): Item("Psycho Amp", 600) {
 	classes.push_back(&typeid(Psychokinetic));
 	spec.mental_power = 4;
 }

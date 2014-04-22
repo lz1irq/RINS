@@ -27,8 +27,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 	int last_tick = 0, timer2 = 0, projectile_tick = 0;
 
-	mutex lock1, monster, projectile, menux, machine;
-
+	mutex lock1, monster, projectile, menux, machine, inv;
 	int highscore = 0, spawned = 0, lastroom = 0;
 	int main_font;
 	bool completed = false;
@@ -69,6 +68,11 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	bool MP_init = false;
 	bool MP_mode = false;
 
+	int iframe, iframesel;
+	bool render_inv = false;
+	int itemsel = -1, itemseli = -1;
+	int itemover = -1;
+
 	struct player_info{
 		int keyboard;
 		int class_;
@@ -85,6 +89,102 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		if(box.getTileX() == tx && box.getTileY() == ty)return true;
 		return false;
 	}
+
+	 void controlVendingMachine() {
+		 double ystart = 0.01;
+		 double xstart = 0.01;
+		 double itemx = 0.145;
+		 double itemy = 0.145;
+		 double framesp = 0.01;
+		 int rows = -1;
+		 int itemc = curr_machine->itemCount();
+		 machine.lock();
+		 for(int i=0;i<itemc;++i) {
+			 if(i%3 == 0) ++rows;
+			 Item& it = curr_machine->getNextItem();
+			 double xp = 0.024+(i%3)*itemx+framesp;
+			 double yp = rows*itemy + 5*framesp;
+
+			 double nextx = 0.024+((i+1)%3)*itemx+framesp;
+			 if((i+1)%3 == 0 && i>0) nextx+=3*itemx;
+			 double nexty = (rows+1)*itemy+5*framesp;
+			 double mx = getMouseX();
+			 double my = getMouseY();
+
+			 if(itemsel == -1) {
+				 if(mx>xp && mx<nextx && my>yp && my<nexty && pressed) {
+					 itemsel = i;
+				 }
+			 }
+			 if(itemsel == i) {
+				 if(cangetpress){
+					 if(mx>xp && mx<nextx && my>yp && my<nexty) {
+						 if(player->buyItem(it)) cout << "Player bought " << it.getName() << endl;
+						 else cout << "Not enough money to buy " << it.getName() << endl;
+						 itemsel = -1;
+					 }
+					 else itemsel = -1;
+				 }
+			 }
+
+		 }
+		 machine.unlock();
+	 }
+
+	 void controlInventory() {
+		 double ystart = 0.01;
+		 double xstart = 0.51;
+		 double itemx = 0.145;
+		 double itemy = 0.145;
+		 double framesp = 0.01;
+		 int rows = -1;
+
+		 int itemc = player->itemCount();
+		 for(int i=0;i<itemc;++i) {
+			 if(i%3 == 0) ++rows;
+			 Item& it = player->getNextItem();
+			 double xp = xstart+0.027+(i%3)*itemx+framesp;
+			 double yp = rows*itemy + 5*framesp;
+
+			 double nextx = xstart+0.01+((i+1)%3)*itemx+framesp;
+			 if((i+1)%3 == 0 && i>0) nextx+=3*itemx;
+			 double nexty = (rows+1)*itemy+5*framesp;
+			 double mx = getMouseX();
+			 double my = getMouseY();
+
+
+
+
+
+			 if(itemseli == -1) {
+				 if(mx>xp && mx<nextx && my>yp && my<nexty && pressed) {
+					 itemseli = i;
+				 }
+			 }
+			 if(itemseli == i) {
+				 if(cangetpress){
+					 if(mx>xp && mx<nextx && my>yp && my<nexty) {
+						 itemseli = -1;
+						 inv.lock();
+						 if(render_machine) player->sellItem(i);
+						 else { //(un)equip the item
+							 if(it.isEquipped()) {
+								 player->unequipItem(it);
+								 cout << "Player unequipped " << it.getName() << endl;
+							 }
+							 else {
+								 player->equipItem(it);
+								 cout << "Player equipped " << it.getName() << endl;
+							 }
+						 }
+						 inv.unlock();
+					 }
+					 else itemseli = -1;
+				 }
+			 }
+
+		 }
+	 }
 
 	void renderHUD() {
 		RGBA mecol(255, 255, 0, 0);
@@ -114,23 +214,96 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	void renderVendingMachine() {
 		double ystart = 0.01;
 		double xstart = 0.01;
-		double itemx = 0.16;
-		double itemy = 0.16;
-		int rows = 0;
+		double itemx = 0.145;
+		double itemy = 0.145;
+		double framesp = 0.01;
+		int rows = -1;
 		applyTexture(menu_bg, xstart, ystart, 0.48,0.85);
-		applyTexture(menu_bg, xstart+0.5,ystart, 0.48,0.85);
 		int itemc = curr_machine->itemCount();
-		cout << itemc << endl;
+		machine.lock();
 		for(int i=0;i<itemc;++i) {
+			if(i%3 == 0) ++rows;
+
 			Item& it = curr_machine->getNextItem();
 			int tid = ItemResources::getTextureID(&typeid(it));
-			double xp = 0.003+(i%3)*itemx;
-			double yp = 0.04+rows*itemy;
-			if(i%3 == 0) ++rows;
+
+			double xp = 0.027+(i%3)*itemx+framesp;
+			double yp = rows*itemy + 5*framesp;
+
+			double nextx = xstart+0.027+((i+1)%3)*itemx+framesp;
+			if((i+1)%3 == 0 && i>0) nextx+=3*itemx;
+			double nexty = (rows+1)*itemy+5*framesp;
+			double mx = getMouseX();
+			double my = getMouseY();
+
 			applyTexture(tid, xp, yp, itemx, itemy);
-			
+			if(itemsel == i) applyTexture(iframesel, xp, yp, itemx, itemy);
+			else applyTexture(iframe, xp, yp, itemx, itemy);
 		}
+		machine.unlock();
 	}
+
+	void renderInventory() {
+		double ystart = 0.01;
+		double xstart = 0.51;
+		double itemx = 0.145;
+		double itemy = 0.145;
+		double framesp = 0.01;
+		int rows = -1;
+		applyTexture(menu_bg, xstart, ystart, 0.48,0.85);
+
+		double w,h;
+		RGBA mecol(255, 255, 0, 0);
+		getTextWH(main_font, (Uint16*)L"$", w, h);
+		w *= 0.06/h;
+		h = 0.06;
+		displayText(main_font, (Uint16*)L"$",mecol, 0.75, 0.76,w,h);
+
+		getTextWH(main_font, (Uint16*)to_wstring(player->getMoney()).c_str(), w, h);
+		w *= 0.06/h;
+		h = 0.06;
+		displayText(main_font, (Uint16*)to_wstring(player->getMoney()).c_str(),mecol, 0.77, 0.76,w,h);
+
+
+		int itemc = player->itemCount();
+		for(int i=0;i<itemc;++i) {
+
+			if(i%3 == 0) ++rows;
+			inv.lock();
+			Item& it = player->getNextItem();
+			int tid = ItemResources::getTextureID(&typeid(it));
+			inv.unlock();
+
+			double xp = xstart+0.027+(i%3)*itemx+framesp;
+			double yp = rows*itemy + 5*framesp;
+
+			double nextx = xstart+0.01+((i+1)%3)*itemx+framesp;
+			if((i+1)%3 == 0 && i>0) nextx+=3*itemx;
+			double nexty = (rows+1)*itemy+5*framesp;
+			double mx = getMouseX();
+			double my = getMouseY();
+
+			applyTexture(tid, xp, yp, itemx, itemy);
+			if(itemseli == i) applyTexture(iframesel, xp, yp, itemx, itemy);
+			else applyTexture(iframe, xp, yp, itemx, itemy);
+
+			if(mx>xp && mx<nextx && my>yp && my<nexty) itemover = i;
+			else itemover = -1;
+
+			double overx = 0.145, overy = 0.145;
+
+			cout << i << " " << itemover << endl;
+			// Hover window with item data.
+			//if(itemover == i) {
+			//Derived& der = it.getDerivedBonuses();
+			//if(1.0-nextx > overx)applyTexture(menu_bg, nextx, nexty, overx, overy);
+			//else applyTexture(menu_bg, xp, nexty, overx, overy);
+
+			//}
+		}
+
+	}
+
 		
 	void checkVendingMachines(int x, int y) {
 		if(!over_machine) {
@@ -191,10 +364,14 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				projectile.lock();
 				displayProjectiles();
 				projectile.unlock();
+				if(render_machine) {
+					renderVendingMachine();
+					renderInventory();
+				}
+				else if(render_inv) renderInventory();
 				lock1.lock();
 				displayHUD();
 				lock1.unlock();
-				if (render_machine) renderVendingMachine();
 			}
 			else if (show_menu){
 				renderPart(0, 0, 0, 0);
@@ -219,6 +396,8 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		if (b){
 			if (lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
 			else{
+				render_inv = false;
+				render_machine = false;
 				int event = player->checkCollisions(lastxpos, lastypos, getMapIndex());
 				switch (event){
 				case OUT_OF_BOUNDS:
@@ -325,6 +504,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				m = monsters.erase(m);
 				lock1.lock();
 				++highscore;
+				player->addExperience(50);
 				lock1.unlock();
 				curr_target = nullptr;
 			}
@@ -433,6 +613,12 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				playerShoot();
 				updateProjectiles();
 				if (curr_machine)checkVendingMachines(player->getTileX(), player->getTileY());
+				if(isPressed("P")) render_inv = !render_inv;
+				if(render_machine) {
+					controlInventory();
+					controlVendingMachine();
+				}
+				else if(render_inv) controlInventory();
 				if (!MP_mode){
 					tryToSpawn();
 					updateMonsters();
@@ -801,15 +987,15 @@ public:
 		Being::box = &box;
 		seed = system_clock::to_time_t(system_clock::now());
 
-		BeingResources::addTextureID(loadTexture("Textures/devil2.png"), &typeid(Marine));
+		BeingResources::addTextureID(loadTexture("Textures/hitler.png"), &typeid(Marine));
 		BeingResources::addTextureID(loadTexture("Textures/devil2.png"), &typeid(Pyro));
 		BeingResources::addTextureID(loadTexture("Textures/devil2.png"), &typeid(Psychokinetic));
 		BeingResources::addTextureID(loadTexture("Textures/devil2.png"), &typeid(Android));
 		BeingResources::addTextureID(loadTexture("Textures/gangsta2.png"), &typeid(Zombie));
 
 		ItemResources::addTextureID(loadTexture("Textures/scope.png"), &typeid(Scope));
-		ItemResources::addTextureID(loadTexture("Textures/armour.jpeg"), &typeid(BodyArmour));
-		ItemResources::addTextureID(loadTexture("Textures/amp.jpg"), &typeid(PsychoAmp));
+		ItemResources::addTextureID(loadTexture("Textures/armour.png"), &typeid(BodyArmour));
+		ItemResources::addTextureID(loadTexture("Textures/amp.png"), &typeid(PsychoAmp));
 
 		bg[0] = loadTexture("Textures/floor1.jpg");
 		bg[1] = loadTexture("Textures/cement.jpg");
@@ -825,6 +1011,9 @@ public:
 		side[1][1] = loadTexture("Textures/hospital_2.png");
 		side[2][0] = loadTexture("Textures/forest_1.png");
 		side[2][1] = loadTexture("Textures/forest_2.png");
+
+		iframe = loadTexture("Textures/itemframe.png");
+		iframesel = loadTexture("Textures/itemframesel.png");
 
 		//enum {BULLET, FIRE, PSYCHO, ENERGY};
 		WeaponResources::addTexture(loadTexture("Textures/bullet.png"), BULLET);

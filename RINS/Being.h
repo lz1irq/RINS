@@ -55,17 +55,24 @@ protected:
 	int level;
 	int orientation;
 	int range;
+	int money = 0;
 	Primary prim_stats;
 	Derived der_stats;
 	int curr_weapon;
-	std::vector<std::unique_ptr<WeaponBase>> weapons;
+	vector<std::unique_ptr<WeaponBase>> weapons;
 	static mt19937 rnd;
 	bool walk = false;
 	virtual void setRange() = 0;
 	Projectile& shootWeapon(double deg, Hitbox& h);
 	int HAJA = 0;
+
+	vector<Item*> items;
+	vector<Item*>::iterator it = items.end();
+	int experience = 0; 
+
 	unsigned int speed, count = 0;
 	unsigned int start_time;
+
 
 public:
 	Being(double x, double y, int speed);
@@ -81,6 +88,18 @@ public:
 	int tryToShoot(Being* target, Projectile** p);
 	void equipItem(Item& item);
 	void unequipItem(Item& item);
+	void levelup();
+	void addExperience(int xp);
+	int getExperience();
+
+	Item& getNextItem();
+	int itemCount();
+	Item& getItem(int item);
+	bool buyItem(Item& item);
+	Item& sellItem(int item);
+	int getMoney();
+	void addItem(Item& i);
+
 	void resetFire();
 	static Hitbox* box;
 	virtual ~Being();
