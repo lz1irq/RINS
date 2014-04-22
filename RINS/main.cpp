@@ -438,7 +438,6 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					updateMonsters();
 				}
 				else{
-					server_info si;
 					char* c = (char*)&dir;
 					sendCommand(KEYBOARD, 4, c);
 				}
@@ -449,6 +448,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					}
 					list<Socket::Client>& lsc = getClients();
 					list<unique_ptr<Being>>::iterator it2 = targets.begin();
+					if (it2 != targets.end())++it2;
 					for (auto i = begin(lsc); i != end(lsc); ++i, ++it2){
 						player_info pi;
 						if (!processCommand(getNextCommand(*i), i, pi)){
@@ -461,6 +461,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 							moveAndColide();
 							playerShoot();
 							player = &**targets.begin();
+							getdir();
 						}
 					}
 				}
