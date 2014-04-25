@@ -982,9 +982,9 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	}
 public:
 	RINS() try : box(xsize, ysize, 4),
-		Renderer(640, 480, "RINS"), dir(0), c(0, 0, 0) {
+		Renderer(640, 640, "RINS"), dir(0), c(0, 0, 0) {
 		//Projectile::box = &box;
-		Being::box = &box;
+		Being::bx = &box;
 		seed = system_clock::to_time_t(system_clock::now());
 
 		BeingResources::addTextureID(loadTexture("Textures/hitler.png"), &typeid(Marine));

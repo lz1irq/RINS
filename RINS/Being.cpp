@@ -5,7 +5,7 @@ using namespace std;
 #include <iostream>
 #include <typeinfo>
 
-Hitbox* Being::box;
+Hitbox* Being::bx;
 
 Hitbox::Hitbox(int tiles_x, int tiles_y, int tile_granularity) : tile_granularity(tile_granularity),
 	tiles_x(tiles_x), tiles_y(tiles_y), move_step_x(1.0 / (tile_granularity * tiles_x)),
@@ -88,7 +88,7 @@ int Hitbox::checkCollisions(double comp_to_x, double comp_to_y, const vector<vec
 	}
 }
 
-Being::Being(double x, double y, int speed) : Hitbox(*box),
+Being::Being(double x, double y, int speed) :Hitbox(*bx),
 	orientation(UP), level(1), prim_stats(Primary()), 
 	der_stats(prim_stats, level), curr_weapon(0), speed(speed) {
 		this->x = x;

@@ -48,6 +48,7 @@ public:
 	double getStepX() const;
 	double getStepY() const;
 	int checkCollisions(double comp_to_x, double comp_to_y, const vector<vector<char>>& index);
+	//friend class Being;
 };
 
 class Being: public Hitbox{
@@ -101,7 +102,7 @@ public:
 	void addItem(Item& i);
 
 	void resetFire();
-	static Hitbox* box;
+	static Hitbox* bx;
 	virtual ~Being();
 };
 
