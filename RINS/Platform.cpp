@@ -425,10 +425,12 @@ void Socket::sendCommand(short num, short datasz, const char* data){
 }
 
 bool Socket::commandToClient(list<Client>::iterator& cl, short num, short datasz, const char* data){
+	cout << "begin" << endl;
 	char *buf = new char[datasz + 4];
 	memcpy(&buf[0], &num, 2);
 	memcpy(&buf[2], &datasz, 2);
 	memcpy(&buf[4], data, datasz);
+	cout << "middle" << endl;
 	if (SDLNet_TCP_Send((*cl).sock, (void *)buf, datasz+4) < datasz+4){
 		int active;
 		if ((active = SDLNet_TCP_DelSocket(socketset, (*cl).sock)) == -1)throw Error(SDLNet_GetError());
@@ -437,6 +439,7 @@ bool Socket::commandToClient(list<Client>::iterator& cl, short num, short datasz
 		return false;
 	}
 	delete buf;
+	cout << "end" << endl;
 	return true;
 }
 

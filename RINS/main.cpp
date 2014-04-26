@@ -635,8 +635,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 						case SELF:
 							if (data != sizeof(Being))throw Error("Nope!");
 							playerm.lock();
-							loop = false;
-							//memcpy(player, &c[4], sizeof(Being));
+							memcpy(player, &c[4], sizeof(Being));
 							playerm.unlock();
 							break;
 						case ENDBIT:
@@ -679,11 +678,19 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 							player->action(getMapIndex(), projectiles, targets, getTicks());
 							moveAndColide();
 							playerShoot();
-							commandToClient(i, SELF, sizeof(Being), (char*)player);
-							for (auto& j : projectiles){
-								commandToClient(i, BULLET, sizeof(Projectile), (char*)&j);
+							playerm.lock();
+							if (!commandToClient(i, SELF, sizeof(Being), (char*)player)){
+								cout << "end game!" << endl;
+								exit(0);
 							}
-							commandToClient(i, ENDBIT, 0, NULL);
+							playerm.unlock();
+							//for (auto& j : projectiles){
+								//commandToClient(i, BULLET, sizeof(Projectile), (char*)&j);
+							//}
+							if(!commandToClient(i, ENDBIT, 0, NULL)){
+								cout << "end game!" << endl;
+								exit(0);
+							}
 							player = &**targets.begin();
 						}
 					}
