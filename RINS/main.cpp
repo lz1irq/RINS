@@ -27,7 +27,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 	int last_tick = 0, timer2 = 0, projectile_tick = 0;
 
-	mutex lock1, monster, projectile, menux, machine, inv;
+	mutex lock1, monster, projectile, menux, machine, inv, playerm;
 	int highscore = 0, spawned = 0, lastroom = 0;
 	int main_font;
 	bool completed = false;
@@ -357,7 +357,9 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				lock1.lock();
 				renderMap();
 				lock1.unlock();
+				playerm.lock();
 				displayPlayer();
+				playerm.unlock();
 				monster.lock();
 				displayMonsters();
 				monster.unlock();
@@ -613,37 +615,42 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					playerShoot();
 					tryToSpawn();
 					updateMonsters();
+					updateProjectiles();
 				}
 				else{
 					char* c = (char*)&dir;
 					sendCommand(KEYBOARD, 4, c);
+					cout << "sending" << endl;
+					projectile.lock();
 					projectiles.clear();//mutex here?!?
+					projectile.unlock();
 					short cmd;
 					short data;
 					Projectile* p;
-					for (bool loop = true;loop;){
-						cout << "loop" << endl;
+					for (bool loop = true; loop;){
 						c = receiveCommand();
 						memcpy(&cmd, &c[0], 2);
 						memcpy(&data, &c[2], 2);
 						switch (cmd){
 						case SELF:
 							if (data != sizeof(Being))throw Error("Nope!");
-							memcpy(player, &c[4], sizeof(Being));//mutex here?!?
+							playerm.lock();
+							loop = false;
+							//memcpy(player, &c[4], sizeof(Being));
+							playerm.unlock();
 							break;
 						case ENDBIT:
-							cout << "bzzz" << endl;
 							loop = false;
 							break;
 						case BULLET:
+							if (data != sizeof(Projectile))throw Error("Nope!");
 							p = (Projectile*)&c[4];
-							projectiles.push_back(*p);//mutex here?!?
+							//projectiles.push_back(*p);//mutex here?!?
 							break;
 						default: throw Error("Nope!");
 						}
 					}
 				}
-				updateProjectiles();
 				if (curr_machine)checkVendingMachines(player->getTileX(), player->getTileY());
 				if (isPressed("P")) render_inv = !render_inv;
 				if (render_machine) {

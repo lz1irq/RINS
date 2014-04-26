@@ -398,6 +398,7 @@ char* Socket::receiveCommand(){
 		lenz += len;
 		unsigned short extract;
 		memcpy(&extract, &command[2], 2);
+		if (!extract)return command;
 		if ((len = SDLNet_TCP_Recv(sd, &command[lenz], extract)) > 0){
 			lenz = 0;
 			return command;
