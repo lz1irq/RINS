@@ -617,6 +617,18 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				else{
 					char* c = (char*)&dir;
 					sendCommand(KEYBOARD, 4, c);
+					c = receiveCommand();
+					short cmd;
+					short data;
+					memcpy(&cmd, &c[0], 2);
+					memcpy(&data, &c[2], 2);
+					switch (cmd){
+					case SELF:
+						if (data != sizeof(Being))throw Error("Nope!");
+						memcpy(player, &c[4], sizeof(Being));//mutex here?!?
+						break;
+					default: throw Error("Nope!");
+					}
 				}
 				updateProjectiles();
 				if (curr_machine)checkVendingMachines(player->getTileX(), player->getTileY());
@@ -647,6 +659,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 							player->action(getMapIndex(), projectiles, targets, getTicks());
 							moveAndColide();
 							playerShoot();
+							commandToClient(i, SELF, sizeof(Being), (char*)player);
 							player = &**targets.begin();
 						}
 					}

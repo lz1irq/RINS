@@ -110,7 +110,7 @@ public:
 			return cl.sock == sock;
 		}
 	};
-	enum Commands{ KEYBOARD, GETINFO, SERVERINFO };
+	enum Commands{ KEYBOARD, GETINFO, SERVERINFO, SELF };
 	Socket();
 	void startServer(int port);
 	int gatherPlayers();
