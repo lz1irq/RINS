@@ -622,6 +622,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					short data;
 					Projectile* p;
 					for (bool loop = true;loop;){
+						cout << "loop" << endl;
 						c = receiveCommand();
 						memcpy(&cmd, &c[0], 2);
 						memcpy(&data, &c[2], 2);
@@ -631,6 +632,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 							memcpy(player, &c[4], sizeof(Being));//mutex here?!?
 							break;
 						case ENDBIT:
+							cout << "bzzz" << endl;
 							loop = false;
 							break;
 						case BULLET:
