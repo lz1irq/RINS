@@ -617,17 +617,28 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				else{
 					char* c = (char*)&dir;
 					sendCommand(KEYBOARD, 4, c);
-					c = receiveCommand();
+					projectiles.clear();//mutex here?!?
 					short cmd;
 					short data;
-					memcpy(&cmd, &c[0], 2);
-					memcpy(&data, &c[2], 2);
-					switch (cmd){
-					case SELF:
-						if (data != sizeof(Being))throw Error("Nope!");
-						memcpy(player, &c[4], sizeof(Being));//mutex here?!?
-						break;
-					default: throw Error("Nope!");
+					Projectile* p;
+					for (bool loop = true;loop;){
+						c = receiveCommand();
+						memcpy(&cmd, &c[0], 2);
+						memcpy(&data, &c[2], 2);
+						switch (cmd){
+						case SELF:
+							if (data != sizeof(Being))throw Error("Nope!");
+							memcpy(player, &c[4], sizeof(Being));//mutex here?!?
+							break;
+						case ENDBIT:
+							loop = false;
+							break;
+						case BULLET:
+							p = (Projectile*)&c[4];
+							projectiles.push_back(*p);//mutex here?!?
+							break;
+						default: throw Error("Nope!");
+						}
 					}
 				}
 				updateProjectiles();
@@ -660,6 +671,10 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 							moveAndColide();
 							playerShoot();
 							commandToClient(i, SELF, sizeof(Being), (char*)player);
+							for (auto& j : projectiles){
+								commandToClient(i, BULLET, sizeof(Projectile), (char*)&j);
+							}
+							commandToClient(i, ENDBIT, 0, NULL);
 							player = &**targets.begin();
 						}
 					}
