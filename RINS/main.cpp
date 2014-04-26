@@ -606,20 +606,11 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				}
 			}
 			if (!show_menu && !SP_init && !MP_server_init && !MP_noplayers && !MP_init){
-				player->action(getMapIndex(), projectiles, targets, getTicks());
-				getdir();
 				if (updateInternalMapState()) dir = 0;
-				moveAndColide();
-				playerShoot();
-				updateProjectiles();
-				if (curr_machine)checkVendingMachines(player->getTileX(), player->getTileY());
-				if(isPressed("P")) render_inv = !render_inv;
-				if(render_machine) {
-					controlInventory();
-					controlVendingMachine();
-				}
-				else if(render_inv) controlInventory();
 				if (!MP_mode){
+					player->action(getMapIndex(), projectiles, targets, getTicks());
+					moveAndColide();
+					playerShoot();
 					tryToSpawn();
 					updateMonsters();
 				}
@@ -627,6 +618,14 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					char* c = (char*)&dir;
 					sendCommand(KEYBOARD, 4, c);
 				}
+				updateProjectiles();
+				if (curr_machine)checkVendingMachines(player->getTileX(), player->getTileY());
+				if (isPressed("P")) render_inv = !render_inv;
+				if (render_machine) {
+					controlInventory();
+					controlVendingMachine();
+				}
+				else if (render_inv) controlInventory();
 				if (has_MP_server){
 					if (!updateClients()){
 						cout << "end game!" << endl;
@@ -642,15 +641,17 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 							exit(0);
 						}
 						if (pi.last_command == KEYBOARD){
+							cout << pi.keyboard << endl;
 							dir = pi.keyboard;
 							player = &**it2;
+							player->action(getMapIndex(), projectiles, targets, getTicks());
 							moveAndColide();
 							playerShoot();
 							player = &**targets.begin();
-							getdir();
 						}
 					}
 				}
+				getdir();
 			}
 			else if(show_menu){
 				menux.lock();
@@ -673,7 +674,10 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	};
 
 	bool processCommand(char* c, list<Client>::iterator& cl, player_info& pi){
-		if (c == nullptr)return true;
+		if (c == nullptr){
+			pi.last_command = -1;
+			return true;
+		}
 		short cmd;
 		short data;
 		memcpy(&cmd, &c[0], 2);
