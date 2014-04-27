@@ -620,13 +620,16 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				else{
 					char* c = (char*)&dir;
 					sendCommand(KEYBOARD, 4, c);
-					cout << "sending" << endl;
 					projectile.lock();
-					projectiles.clear();//mutex here?!?
+					projectiles.clear();
 					projectile.unlock();
+					monster.lock();
+					monsters.clear();
+					monster.unlock();
 					short cmd;
 					short data;
 					Projectile* p;
+					Being* b = (Being*)malloc(sizeof(Being));
 					for (bool loop = true; loop;){
 						c = receiveCommand();
 						memcpy(&cmd, &c[0], 2);
@@ -644,7 +647,12 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 						case BULLET:
 							if (data != sizeof(Projectile))throw Error("Nope!");
 							p = (Projectile*)&c[4];
-							//projectiles.push_back(*p);//mutex here?!?
+							projectiles.push_back(*p);
+							break;
+						case MONSTER:
+							if (data != sizeof(Being))throw Error("Nope!");
+							memcpy(b, &c[4], sizeof(Being));
+							monsters.push_back(unique_ptr<Being>(b));
 							break;
 						default: throw Error("Nope!");
 						}
@@ -672,21 +680,25 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 							exit(0);
 						}
 						if (pi.last_command == KEYBOARD){
-							cout << pi.keyboard << endl;
+							//cout << pi.keyboard << endl;
 							dir = pi.keyboard;
 							player = &**it2;
 							player->action(getMapIndex(), projectiles, targets, getTicks());
 							moveAndColide();
 							playerShoot();
 							playerm.lock();
+							//cout << typeid(*player).name() << endl;
 							if (!commandToClient(i, SELF, sizeof(Being), (char*)player)){
 								cout << "end game!" << endl;
 								exit(0);
 							}
 							playerm.unlock();
-							//for (auto& j : projectiles){
-								//commandToClient(i, BULLET, sizeof(Projectile), (char*)&j);
-							//}
+							for (auto& j : projectiles){
+								commandToClient(i, BULLET, sizeof(Projectile), (char*)&j);
+							}
+							for (auto& j : monsters){
+								commandToClient(i, MONSTER, sizeof(Being), (char*)&j);
+							}
 							if(!commandToClient(i, ENDBIT, 0, NULL)){
 								cout << "end game!" << endl;
 								exit(0);
