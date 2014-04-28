@@ -107,6 +107,7 @@ public:
 };
 
 template<typename T> Being * createInstance(double x, double y) { return new T(x, y); }
+template<class T> Being* copyInstance(T& copy){ return new T(copy); }
 
 class Marine: public Being, BeingResources {
 private:

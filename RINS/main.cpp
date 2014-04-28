@@ -629,32 +629,49 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					short cmd;
 					short data;
 					Projectile* p;
-					Being* b = (Being*)malloc(sizeof(Being));
+					Being* b;
+					Marine* m;
 					for (bool loop = true; loop;){
 						c = receiveCommand();
 						memcpy(&cmd, &c[0], 2);
 						memcpy(&data, &c[2], 2);
 						switch (cmd){
 						case SELF:
-							if (data != sizeof(Being))throw Error("Nope!");
+							if (data != sizeof(Marine))throw Error("Nope!1");
 							playerm.lock();
-							memcpy(player, &c[4], sizeof(Being));
+							targets.clear();
+							m = new Marine(0, 0);
+							//swap(*(Marine*)b, *(Marine*)&c[4]);
+							//*b = &(Marine*)&c[4];
+						    //b = &Marine(*(Marine*)&c[4]);
+							//memcpy(b, &c[4], sizeof(Being));
+							system("pause");
+							memcpy(m, &c[4], sizeof(Marine));
+							b = m;
+							system("pause");
+							cout << sizeof(Being) << " " << sizeof(Marine) << endl;
+							system("pause");
+							cout << typeid(*b).name();
+							system("pause");
+							//targets.push_back(unique_ptr<Being>(b));
+							player = &**targets.begin();
 							playerm.unlock();
 							break;
 						case ENDBIT:
 							loop = false;
 							break;
-						case BULLET:
-							if (data != sizeof(Projectile))throw Error("Nope!");
+						case BULLETZ:
+							if (data != sizeof(Projectile))throw Error("Nope!2");
 							p = (Projectile*)&c[4];
 							projectiles.push_back(*p);
 							break;
 						case MONSTER:
-							if (data != sizeof(Being))throw Error("Nope!");
-							memcpy(b, &c[4], sizeof(Being));
-							monsters.push_back(unique_ptr<Being>(b));
+							if (data != sizeof(Being))throw Error("Nope!3");
+							//b = (Being*)malloc(sizeof(Being));
+							//memcpy(b, &c[4], sizeof(Being));
+							//monsters.push_back(unique_ptr<Being>(b));
 							break;
-						default: throw Error("Nope!");
+						default: throw Error("Nope!4");
 						}
 					}
 				}
@@ -694,7 +711,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 							}
 							playerm.unlock();
 							for (auto& j : projectiles){
-								commandToClient(i, BULLET, sizeof(Projectile), (char*)&j);
+								commandToClient(i, BULLETZ, sizeof(Projectile), (char*)&j);
 							}
 							for (auto& j : monsters){
 								commandToClient(i, MONSTER, sizeof(Being), (char*)&j);
