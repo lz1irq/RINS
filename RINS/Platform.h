@@ -52,8 +52,8 @@ public:
 	void renderScene();
 	void renderPart(int xparts, int yparts, int xpartnum, int ypartnum);
 	int loadFont(const char* font, int size);
-	void displayText(int font, const Uint16* text, RGBA color, double x, double y, double w, double h);
-	void getTextWH(int font, const Uint16* text, double& w, double& h);
+	void displayText(int font, const char* text, RGBA color, double x, double y, double w, double h);
+	void getTextWH(int font, const char* text, double& w, double& h);
 	void setRotationAngle(double deg);
 	void setModulateBlending(int texture_ID);
 	~Renderer();

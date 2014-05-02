@@ -90,19 +90,19 @@ int Renderer::loadFont(const char* font, int size){
 	return current_fonts++;
 }
 
-void Renderer::displayText(int font, const Uint16* text, RGBA color, double x, double y, double w, double h){
+void Renderer::displayText(int font, const char* text, RGBA color, double x, double y, double w, double h){
 	SDL_Surface *surf;
 	SDL_Texture *texture;
-	if ((surf = TTF_RenderUNICODE_Blended(fonts[font], text, color.col)) == nullptr)throw Error(TTF_GetError());
+	if ((surf = TTF_RenderUTF8_Blended(fonts[font], text, color.col)) == nullptr)throw Error(TTF_GetError());
 	if ((texture = SDL_CreateTextureFromSurface(ren, surf)) == 0)throw Error(SDL_GetError());
 	SDL_FreeSurface(surf);
 	applyTexture(texture, x, y, w, h);
 	SDL_DestroyTexture(texture);
 }
 
-void Renderer::getTextWH(int font, const Uint16* text, double& w, double& h){
+void Renderer::getTextWH(int font, const char* text, double& w, double& h){
 	int wi, hi;
-	if (TTF_SizeUNICODE(fonts[font], text, &wi, &hi))throw Error(TTF_GetError());
+	if (TTF_SizeUTF8(fonts[font], text, &wi, &hi))throw Error(TTF_GetError());
 
 	w = wi / (double)H;
 	h = hi / (double)H;

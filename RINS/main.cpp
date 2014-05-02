@@ -1,7 +1,6 @@
-﻿#include "Platform.h"
+﻿#include "Menu.h"
 #include "Being.h"
 #include "Map.h"
-#include "Menu.h"
 #include "Machine.h"
 #include <math.h>
 #include <bitset>
@@ -42,15 +41,15 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	array<Item*(*)(), MAXITEMS> item_types;
 	list<Projectile> projectiles;
 
-	int menu_bg, button, overlay, b2, b3, tbox;
-	Menu menu;
+	//int menu_bg, button, overlay, b2, b3, tbox;
+	//Menu menu;
 	Menu* curr_m;
-	int  menu_select = -1, lastm = -1;
-	double optionysize = 0.05;
-	double optionspacing = 0.01;
-	double optionxsize = 0.5;
-	double hsize = 0.8*optionysize;
-	double yoffset;
+	//int  menu_select = -1, lastm = -1;
+	//double optionysize = 0.05;
+	//double optionspacing = 0.01;
+	//double optionxsize = 0.5;
+	//double hsize = 0.8*optionysize;
+	//double yoffset;
 	bool typing = false, muststop = false;
 	bool show_menu = true;
 	bool enable_music = false;
@@ -190,25 +189,25 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		RGBA mecol(255, 255, 0, 0);
 		double w,h;
 
-		getTextWH(main_font, (Uint16*)L"HEALTH:", w, h);
+		getTextWH(main_font, "HEALTH:", w, h);
 		w *= 0.06/h;
 		h = 0.06;
-		displayText(main_font, (Uint16*)L"HEALTH:",mecol, 0.0, 0.9,w,h);
+		displayText(main_font, "HEALTH:",mecol, 0.0, 0.9,w,h);
 
-		getTextWH(main_font, (Uint16*)to_wstring(player->getHealth()).c_str(), w, h);
+		getTextWH(main_font, to_string(player->getHealth()).c_str(), w, h);
 		w *= 0.06/h;
 		h = 0.06;
-		displayText(main_font, (Uint16*)to_wstring(player->getHealth()).c_str(),mecol, 0.005, 0.94,w,h);
+		displayText(main_font, to_string(player->getHealth()).c_str(),mecol, 0.005, 0.94,w,h);
 		
-		getTextWH(main_font, (Uint16*)L"SCORE:", w, h);
+		getTextWH(main_font, "SCORE:", w, h);
 		w *= 0.06/h;
 		h = 0.06;
-		displayText(main_font, (Uint16*)L"SCORE:",mecol, 1 - w, 0.9,w,h);
+		displayText(main_font, "SCORE:",mecol, 1 - w, 0.9,w,h);
 				
-		getTextWH(main_font, (Uint16*)to_wstring(highscore).c_str(), w, h);
+		getTextWH(main_font, to_string(highscore).c_str(), w, h);
 		w *= 0.06/h;
 		h = 0.06;
-		displayText(main_font, (Uint16*)to_wstring(highscore).c_str(),mecol, 1-w, 0.94,w,h);
+		displayText(main_font, to_string(highscore).c_str(),mecol, 1-w, 0.94,w,h);
 	}
 
 	void renderVendingMachine() {
@@ -218,7 +217,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		double itemy = 0.145;
 		double framesp = 0.01;
 		int rows = -1;
-		applyTexture(menu_bg, xstart, ystart, 0.48,0.85);
+		applyTexture(MenuResources::background, xstart, ystart, 0.48,0.85);
 		int itemc = curr_machine->itemCount();
 		machine.lock();
 		for(int i=0;i<itemc;++i) {
@@ -250,19 +249,19 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		double itemy = 0.145;
 		double framesp = 0.01;
 		int rows = -1;
-		applyTexture(menu_bg, xstart, ystart, 0.48,0.85);
+		applyTexture(MenuResources::background, xstart, ystart, 0.48,0.85);
 
 		double w,h;
 		RGBA mecol(255, 255, 0, 0);
-		getTextWH(main_font, (Uint16*)L"$", w, h);
+		getTextWH(main_font, "$", w, h);
 		w *= 0.06/h;
 		h = 0.06;
-		displayText(main_font, (Uint16*)L"$",mecol, 0.75, 0.76,w,h);
+		displayText(main_font, "$",mecol, 0.75, 0.76,w,h);
 
-		getTextWH(main_font, (Uint16*)to_wstring(player->getMoney()).c_str(), w, h);
+		getTextWH(main_font, to_string(player->getMoney()).c_str(), w, h);
 		w *= 0.06/h;
 		h = 0.06;
-		displayText(main_font, (Uint16*)to_wstring(player->getMoney()).c_str(),mecol, 0.77, 0.76,w,h);
+		displayText(main_font, to_string(player->getMoney()).c_str(),mecol, 0.77, 0.76,w,h);
 
 
 		int itemc = player->itemCount();
@@ -378,10 +377,11 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			else if (show_menu){
 				renderPart(0, 0, 0, 0);
 				menux.lock();
-				renderMenu();
+				curr_m->Render(*this, main_font);
+				//renderMenu();
 				menux.unlock();
 			}
-			else if (MP_noplayers)displayText(main_font, (Uint16*)(L"Waiting for players to begin..."+to_wstring(MP_numplayers)).c_str(), RGBA(100, 255, 150, 0), 0.0, 0.0, 0, 0.1);
+			else if (MP_noplayers)displayText(main_font, ("Waiting for players to begin..."+to_string(MP_numplayers)).c_str(), RGBA(100, 255, 150, 0), 0.0, 0.0, 0, 0.1);
 
 
 			renderScene();
@@ -728,7 +728,8 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			}
 			else if(show_menu){
 				menux.lock();
-				checkMenu();
+				//checkMenu();
+				curr_m = curr_m->Check(getMouseX(), getMouseY(), pressed, cangetpress);
 				menux.unlock();
 			}
 			updatePress();
@@ -780,173 +781,120 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		return true;
 	}
 
-	wstring utf8_to_utf16(const string& utf8){
-		Uint16* unicode = new Uint16[utf8.size()]();
-		int count = 0;
-		size_t i = 0;
-		while (i < utf8.size()){
-			Uint16 uni;
-			size_t todo;
-			bool error = false;
-			unsigned char ch = utf8[i++];
-			if (ch <= 0x7F){
-				uni = ch;
-				todo = 0;
-			}
-			else if (ch <= 0xBF)throw Error("not a UTF-8 string");
-			else if (ch <= 0xDF){
-				uni = ch & 0x1F;
-				todo = 1;
-			}
-			else if (ch <= 0xEF){
-				uni = ch & 0x0F;
-				todo = 2;
-			}
-			else if (ch <= 0xF7){
-				uni = ch & 0x07;
-				todo = 3;
-			}
-			else throw Error("not a UTF-8 string");
-			for (size_t j = 0; j < todo; ++j){
-				if (i == utf8.size())throw Error("not a UTF-8 string");
-				unsigned char ch = utf8[i++];
-				if (ch < 0x80 || ch > 0xBF)throw Error("not a UTF-8 string");
-				uni <<= 6;
-				uni += ch & 0x3F;
-			}
-			if (uni >= 0xD800 && uni <= 0xDFFF) throw Error("not a UTF-8 string");
-			if (uni > 0x10FFFF) throw Error("not a UTF-8 string");
-			unicode[count] = uni;
-			++count;
-		}
-		wstring utf16;
-		for (size_t i = 0; i < count; ++i){
-			Uint16 uni = unicode[i];
-			if (uni <= 0xFFFF) utf16 += (wchar_t)uni;
-			else{
-				uni -= 0x10000;
-				utf16 += (wchar_t)((uni >> 10) + 0xD800);
-				utf16 += (wchar_t)((uni & 0x3FF) + 0xDC00);
-			}
-		}
-		return utf16;
-	}
+	//void renderMenu(){
+	//	applyTexture(menu_bg, 0, 0, 1, 1);
+	//	yoffset = (curr_m->getNumOptions() - 1)*(optionysize + optionspacing) / 2.0;
+	//	double w, h;
+	//	RGBA mecol(255, 100, 255, 0);
+	//	for (int i = 0; i < curr_m->getNumOptions(); ++i){
+	//		Button* bb = dynamic_cast<Button*>(&curr_m->selectOption(i));
+	//		Checkbox* cc = dynamic_cast<Checkbox*>(&curr_m->selectOption(i));
+	//		TextBox* tt = dynamic_cast<TextBox*>(&curr_m->selectOption(i));
+	//		string text = curr_m->selectOption(i).getText();
+	//		if (curr_m->getHitbox().at(i))mecol.setR(255);
+	//		else mecol.setR(0);
+	//		if (bb || cc || tt){
+	//			int tex;
+	//			if (tt){
+	//				tex = tbox;
+	//				if(!tt->checked())text = tt->getText().substr(0, tt->getID()) + getText();
+	//				else text = tt->getText();
+	//			}
+	//			if (bb)tex = button;
+	//			if (cc){
+	//				if (cc->checked()){
+	//					tex = b2;
+	//					text += ": ДА";
+	//				}
+	//				else{
+	//					tex = b3;
+	//					text += ": НЕ";
+	//				}
+	//			}
+	//			applyTexture(tex, 0.5 - optionxsize / 2.0, 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset, optionxsize, optionysize);
+	//			getTextWH(main_font, (Uint16*)utf8_to_utf16(text).c_str(), w, h);
+	//			if (curr_m->getHitbox().at(i)){
+	//				applyTexture(overlay, 0.5 - optionxsize / 2.0, 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset, optionxsize, optionysize);
+	//			}
+	//			w *= hsize / h;
+	//			h = hsize;
+	//			if (tt){
+	//				if (w > optionxsize - 0.06 && typing)muststop = true;
+	//			}
+	//			displayText(main_font, (Uint16*)utf8_to_utf16(text).c_str(),
+	//				mecol, 0.5 -w/2 , 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset, w, h);
+	//		}
+	//	}
+	//}
 
-
-	void renderMenu(){
-		applyTexture(menu_bg, 0, 0, 1, 1);
-		yoffset = (curr_m->getNumOptions() - 1)*(optionysize + optionspacing) / 2.0;
-		double w, h;
-		RGBA mecol(255, 100, 255, 0);
-		for (int i = 0; i < curr_m->getNumOptions(); ++i){
-			Button* bb = dynamic_cast<Button*>(&curr_m->selectOption(i));
-			Checkbox* cc = dynamic_cast<Checkbox*>(&curr_m->selectOption(i));
-			TextBox* tt = dynamic_cast<TextBox*>(&curr_m->selectOption(i));
-			string text = curr_m->selectOption(i).getText();
-			if (curr_m->getHitbox().at(i))mecol.setR(255);
-			else mecol.setR(0);
-			if (bb || cc || tt){
-				int tex;
-				if (tt){
-					tex = tbox;
-					if(!tt->checked())text = tt->getText().substr(0, tt->getID()) + getText();
-					else text = tt->getText();
-				}
-				if (bb)tex = button;
-				if (cc){
-					if (cc->checked()){
-						tex = b2;
-						text += ": ДА";
-					}
-					else{
-						tex = b3;
-						text += ": НЕ";
-					}
-				}
-				applyTexture(tex, 0.5 - optionxsize / 2.0, 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset, optionxsize, optionysize);
-				getTextWH(main_font, (Uint16*)utf8_to_utf16(text).c_str(), w, h);
-				if (curr_m->getHitbox().at(i)){
-					applyTexture(overlay, 0.5 - optionxsize / 2.0, 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset, optionxsize, optionysize);
-				}
-				w *= hsize / h;
-				h = hsize;
-				if (tt){
-					if (w > optionxsize - 0.06 && typing)muststop = true;
-				}
-				displayText(main_font, (Uint16*)utf8_to_utf16(text).c_str(),
-					mecol, 0.5 -w/2 , 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset, w, h);
-			}
-		}
-	}
-
-	void checkMenu(){
-		double w, h;
-		bool hover = false;
-		static string s;
-		for (int i = 0; i < curr_m->getNumOptions(); ++i){
-			Button* bb = dynamic_cast<Button*>(&curr_m->selectOption(i));
-			Checkbox* cz = dynamic_cast<Checkbox*>(&curr_m->selectOption(i));
-			TextBox* tt = dynamic_cast<TextBox*>(&curr_m->selectOption(i));
-			if (bb || cz || tt){
-				if (lastm == i && tt){
-					bool enter;
-					if (muststop){
-						endTyping(false);
-						muststop = false;
-						startTyping(s.c_str());
-					}
-					s = getRawText(enter);
-					if (enter){
-						tt->getText() = tt->getText().substr(0, tt->getID()) + s;
-						endTyping(true);
-						typing = false;
-						tt->checked() = true;
-						Command* cc = dynamic_cast<Command*>(&tt->getObject());
-						if (cc)cc->exec(curr_m->selectOption(i));
-					}
-				}
-				curr_m->getHitbox().at(i) = false;
-				if (getMouseX() > 0.5 - optionxsize / 2.0 && getMouseX() < 0.5 + optionxsize / 2.0){
-					if (getMouseY() > 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset && getMouseY() < 0.5 +
-						(optionysize + optionspacing)*i + (optionysize + optionspacing) / 2.0 - yoffset - optionspacing){
-						curr_m->getHitbox().at(i) = true;
-						if (pressed){
-							menu_select = i;
-							lastm = i;
-						}
-						if (pressed && !tt){
-							endTyping(true);
-							typing = false;
-						}
-						Command* cc = dynamic_cast<Command*>(&curr_m->selectOption(i).getObject());
-						Menu* mm = dynamic_cast<Menu*>(&curr_m->selectOption(i).getObject());
-						if (menu_select == i && cangetpress){
-							if (cc){
-								if (tt){
-									startTyping(tt->getText().substr(tt->getID(), string::npos).c_str());
-									typing = true;
-									tt->checked() = false;
-								}
-								cc->exec(curr_m->selectOption(i));
-							}
-							if (mm){
-								curr_m = mm;
-								lastm = -1;
-							}
-							menu_select = -1;
-						}
-						hover = true;
-					}
-				}
-			}
-		}
-		if (cangetpress)menu_select = -1;
-		if (pressed && !hover){
-			endTyping(true);
-			typing = false;
-			lastm = -1;
-		}
-	}
+	//void checkMenu(){
+	//	double w, h;
+	//	bool hover = false;
+	//	static string s;
+	//	for (int i = 0; i < curr_m->getNumOptions(); ++i){
+	//		Button* bb = dynamic_cast<Button*>(&curr_m->selectOption(i));
+	//		Checkbox* cz = dynamic_cast<Checkbox*>(&curr_m->selectOption(i));
+	//		TextBox* tt = dynamic_cast<TextBox*>(&curr_m->selectOption(i));
+	//		if (bb || cz || tt){
+	//			if (lastm == i && tt){
+	//				bool enter;
+	//				if (muststop){
+	//					endTyping(false);
+	//					muststop = false;
+	//					startTyping(s.c_str());
+	//				}
+	//				s = getRawText(enter);
+	//				if (enter){
+	//					tt->getText() = tt->getText().substr(0, tt->getID()) + s;
+	//					endTyping(true);
+	//					typing = false;
+	//					tt->checked() = true;
+	//					Command* cc = dynamic_cast<Command*>(&tt->getObject());
+	//					if (cc)cc->exec(curr_m->selectOption(i));
+	//				}
+	//			}
+	//			curr_m->getHitbox().at(i) = false;
+	//			if (getMouseX() > 0.5 - optionxsize / 2.0 && getMouseX() < 0.5 + optionxsize / 2.0){
+	//				if (getMouseY() > 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset && getMouseY() < 0.5 +
+	//					(optionysize + optionspacing)*i + (optionysize + optionspacing) / 2.0 - yoffset - optionspacing){
+	//					curr_m->getHitbox().at(i) = true;
+	//					if (pressed){
+	//						menu_select = i;
+	//						lastm = i;
+	//					}
+	//					if (pressed && !tt){
+	//						endTyping(true);
+	//						typing = false;
+	//					}
+	//					Command* cc = dynamic_cast<Command*>(&curr_m->selectOption(i).getObject());
+	//					Menu* mm = dynamic_cast<Menu*>(&curr_m->selectOption(i).getObject());
+	//					if (menu_select == i && cangetpress){
+	//						if (cc){
+	//							if (tt){
+	//								startTyping(tt->getText().substr(tt->getID(), string::npos).c_str());
+	//								typing = true;
+	//								tt->checked() = false;
+	//							}
+	//							cc->exec(curr_m->selectOption(i));
+	//						}
+	//						if (mm){
+	//							curr_m = mm;
+	//							lastm = -1;
+	//						}
+	//						menu_select = -1;
+	//					}
+	//					hover = true;
+	//				}
+	//			}
+	//		}
+	//	}
+	//	if (cangetpress)menu_select = -1;
+	//	if (pressed && !hover){
+	//		endTyping(true);
+	//		typing = false;
+	//		lastm = -1;
+	//	}
+	//}
 
 	void getdir(){
 		if (isPressed("A"))dir |= 1 << 0;
@@ -1121,41 +1069,65 @@ public:
 		song1 = loadSong("Sounds/level1.mid");
 		//playSong(song1);
 
-		menu_bg = loadTexture("Textures/background1.png");
-		button = loadTexture("Textures/button1.png");
-		b2 = loadTexture("Textures/button2.png");
-		b3 = loadTexture("Textures/button3.png");
-		tbox = loadTexture("Textures/button4.png");
-		overlay = loadTexture("Textures/overlay1.png");
-		setModulateBlending(overlay);
+		//menu_bg = loadTexture("Textures/background1.png");
+		//button = loadTexture("Textures/button1.png");
+		//b2 = loadTexture("Textures/button2.png");
+		//b3 = loadTexture("Textures/button3.png");
+		//tbox = loadTexture("Textures/button4.png");
+		//overlay = loadTexture("Textures/overlay1.png");
+		//setModulateBlending(overlay);
 
-		Menu& m2 = *new Menu();
-		m2.addField(*new Button("Start server", *new Command([this](MenuControl& mc){ if (has_MP_server)return; MP_server_init = true; has_MP_server = true;  })))
-			.addField(*new TextBox("Connect to: ", *new Command([this](MenuControl& mc){ if (mc.checked()){ ConnectToServer(1337, mc.getText().substr(mc.getID(), string::npos).c_str()); MP_init = true; }})))
-			.addField(*new Button("Main menu", menu));
+		//Menu& m2 = *new Menu();
+		//m2.addField(*new Button("Start server", *new Command([this](MenuControl& mc){ if (has_MP_server)return; MP_server_init = true; has_MP_server = true;  })))
+		//	.addField(*new TextBox("Connect to: ", *new Command([this](MenuControl& mc){ if (mc.checked()){ ConnectToServer(1337, mc.getText().substr(mc.getID(), string::npos).c_str()); MP_init = true; }})))
+		//	.addField(*new Button("Main menu", menu));
 
-		Menu& m3 = *new Menu();
-		m3.addField(*new Checkbox("Enabled", *new Command([this](MenuControl& mc){ enable_music = mc.checked(); if (enable_music)playSong(song1); else stopMusic();}), false))
-			.addField(*new Button("Main menu", menu));
+		//Menu& m3 = *new Menu();
+		//m3.addField(*new Checkbox("Enabled", *new Command([this](MenuControl& mc){ enable_music = mc.checked(); if (enable_music)playSong(song1); else stopMusic();}), false))
+		//	.addField(*new Button("Main menu", menu));
 
-		Menu& m4 = *new Menu();
-		m4.addField(*new Button("Marine", *new Command([this](MenuControl& mc){ SP_class = 0; SP_init = true; })))
-			.addField(*new Button("Pyro", *new Command([this](MenuControl& mc){ SP_class = 1; SP_init = true; })))
-			.addField(*new Button("Psychokinetic", *new Command([this](MenuControl& mc){ SP_class = 2; SP_init = true; })))
-			.addField(*new Button("Android", *new Command([this](MenuControl& mc){ SP_class = 3; SP_init = true; })))
-			.addField(*new Button("Main menu", menu));
+		//Menu& m4 = *new Menu();
+		//m4.addField(*new Button("Marine", *new Command([this](MenuControl& mc){ SP_class = 0; SP_init = true; })))
+		//	.addField(*new Button("Pyro", *new Command([this](MenuControl& mc){ SP_class = 1; SP_init = true; })))
+		//	.addField(*new Button("Psychokinetic", *new Command([this](MenuControl& mc){ SP_class = 2; SP_init = true; })))
+		//	.addField(*new Button("Android", *new Command([this](MenuControl& mc){ SP_class = 3; SP_init = true; })))
+		//	.addField(*new Button("Main menu", menu));
 
-		menu.addField(*new Button("Singleplayer", m4))
-			.addField(*new Button("Multiplayer", m2))
-			.addField(*new Button("Sound", m3));
+		//menu.addField(*new Button("Singleplayer", m4))
+		//	.addField(*new Button("Multiplayer", m2))
+		//	.addField(*new Button("Sound", m3));
 
-		curr_m = &menu;
+		//curr_m = &menu;
 		
 
 		//::xsize = xsize;
 		//::ysize = ysize;
 
 		//loop();
+		MenuResources::optionysize = 0.05;
+		MenuResources::optionspacing = 0.01;
+		MenuResources::optionxsize = 0.5;
+		MenuResources::hsize = 0.8*MenuResources::optionysize;
+		MenuResources::backxsize = 0.1;
+		MenuResources::backysize = 0.1;
+		MenuResources::background = loadTexture("Textures/background1.png");
+		MenuResources::overlay = loadTexture("Textures/overlay1.png");
+		MenuResources::back = loadTexture("Textures/back.png");
+		setModulateBlending(MenuResources::overlay);
+		MenuResources::textcol[0] = new RGBA(255, 100, 255, 0);
+		MenuResources::textcol[1] = new RGBA(000, 100, 255, 0);
+		MenuResources::addTexture(loadTexture("Textures/button1.png"), &typeid(MenuButton), IS_UNSET);
+		MenuResources::addTexture(loadTexture("Textures/button1.png"), &typeid(MenuButton), IS_SET);
+		MenuResources::addTexture(loadTexture("Textures/buttonc.png"), &typeid(MenuButton), ON_CLICK);
+
+		curr_m = new Menu();
+		Menu* m = new Menu();
+		Menu* t = new Menu();
+
+		t->addField(*new MenuButton(*m, "Link", [this](){cout << "cli-cli" << endl;}));
+
+		curr_m->addField(*new MenuButton(*t, "Das button", [this](){cout << "cli-cli" << endl;}))
+			.addField(*new MenuButton(*m, "B2B", [this](){cout << "cli-cli" << endl;}));
 	}
 	catch (Error e){
 		cout << e.getError() << endl;
