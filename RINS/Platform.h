@@ -129,7 +129,6 @@ public:
 class Game{
 	SDL_Event event;
 	static int secondaryLoop(void* param);
-	bool quit;
 	bool has_event;
 	int mousex, mousey;
 	Uint32 buttons;
@@ -138,6 +137,9 @@ class Game{
 	int maxtext = 1024;
 	int cursor = 0;
 	bool ret_text = false;
+	bool text_change = false;
+protected:
+	bool quit;
 public:
 	virtual void mainLoop() = 0;
 	virtual void graphicsLoop() = 0;
@@ -150,6 +152,7 @@ public:
 	bool getRightClick();
 	void startTyping(const char* initial);
 	const char* getText();
+	bool textChange();
 	const char* getRawText(bool &ret);
 	void endTyping(bool reset);
 	Game();

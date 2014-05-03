@@ -149,6 +149,7 @@ void Game::loop(){
 				switch (event.key.keysym.sym){
 				case SDLK_BACKSPACE:
 					if (cursor == 0)break;
+					text_change = true;
 					offs = strlen(utf8text) - 1 - cursor;
 					memset(tmp, 0, strlen(tmp));
 					memcpy(tmp, &utf8text[cursor], strlen(&utf8text[cursor]));
@@ -162,9 +163,11 @@ void Game::loop(){
 					break;
 				case SDLK_RETURN:
 					ret_text = true;
+					text_change = true;
 					break;
 				case SDLK_LEFT:
 					if (cursor == 0)break;
+					text_change = true;
 					curs = utf8text[cursor];
 					--cursor;
 					while (((unsigned char)utf8text[cursor] >> 6) == 2){
@@ -176,6 +179,7 @@ void Game::loop(){
 					break;
 				case SDLK_RIGHT:
 					if (cursor == strlen(utf8text)-1)break;
+					text_change = true;
 					curs = utf8text[cursor];
 					++cursor;
 					utf8text[cursor - 1] = utf8text[cursor];
@@ -189,6 +193,7 @@ void Game::loop(){
 				break;
 			case SDL_TEXTINPUT:
 				if (strlen(utf8text) + strlen(event.text.text) > maxtext)break;
+				text_change = true;
 				memset(tmp, 0, strlen(tmp));
 				memcpy(tmp, &utf8text[cursor], strlen(&utf8text[cursor]));
 				utf8text[cursor] = 0;
@@ -244,12 +249,19 @@ const char* Game::getRawText(bool& ret){
 	memset(raw, 0, strlen(raw));
 	memcpy(raw, utf8text, cursor);
 	strcat(raw, &tmp[1]);
+	return raw;
 }
 
 void Game::endTyping(bool reset){
 	if(reset)memset(utf8text, 0, strlen(utf8text));
 	ret_text = false;
 	SDL_StopTextInput();
+}
+
+bool Game::textChange(){
+	bool z = false;
+	swap(z, text_change);
+	return z;
 }
 
 bool Game::isPressed(const char* key){

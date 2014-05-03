@@ -7,13 +7,6 @@
 #include <cmath>
 #include "Platform.h"
 using namespace std;
-//
-//class MenuObject{
-//public:
-//	virtual ~MenuObject(){}
-//};
-//
-
 wstring utf8_to_utf16(const string& utf8);
 
 class Menu;
@@ -28,6 +21,7 @@ public:
 	static int background;
 	static int overlay;
 	static int back;
+	static int mframe;
 	static double backxsize;
 	static double backysize;
 	static RGBA* textcol[2];
@@ -42,14 +36,14 @@ public:
 class MenuControl: protected MenuResources{
 protected:
 	string name;
-	function<void()> func;
+	function<void(MenuControl&)> func;
 	virtual void action(Menu& m) = 0;
 public:
 	void exec(Menu& m){
 		action(m);
-		func();
+		func(*this);
 	}
-	MenuControl(string name, function<void()> lambda) : name(name), func(lambda){}
+	MenuControl(string name, function<void(MenuControl&)> lambda) : name(name), func(lambda){}
 	virtual void Render(double x, double y, double w, double h, Renderer& rend, int font, Textures t, bool m_over) = 0;
 	virtual ~MenuControl(){};
 };
@@ -59,20 +53,53 @@ class Menu: private MenuResources{
 	Menu* curr = this;
 	double yoffset;
 	int  menu_select = -1, lastm = -1;
+	bool textflag = false;
+	int textdone = 0;
+	int textfield = -1;
+	const char* text = "";
 	friend class MenuButton;
+	Game* base;
+	string title;
 public:
+	Menu(string title): title(title){}
 	void setCurr(Menu& m){
 		curr = &m;
+	}
+	void getText(const char* text){
+		textflag = true;
+		textfield = lastm;
+		base->startTyping(text);
+		textdone = 0;
+	}
+	const char* textVisual(){
+		return base->getText();
+	}
+	const char* textRes(){
+		return text;
+	}
+	int textDone(){
+		return textdone;
+	}
+	void ResetText(const char* old){
+		base->endTyping(true);
+		base->startTyping(old);
 	}
 	Menu& addField(MenuControl& m){
 		options.push_back(&m);
 		return *this;
 	}
 	void Render(Renderer& rend, int font){
+		double x = 0.5 - optionxsize / 2.0;
 		rend.applyTexture(background, 0, 0, 1, 1);
+		double tw, th;
+		rend.getTextWH(font, title.c_str(), tw, th);
+		tw *= hsize / th;
+		th = hsize;
+		rend.displayText(font, title.c_str(), *textcol[0], x+0.005, 0.5-yoffset-1.2*(optionysize + optionspacing), tw, th);
+		rend.applyTexture(mframe, x, 0.5-yoffset-1.2*(optionysize + optionspacing), optionxsize, 
+		(optionysize + optionspacing)*options.size()+optionysize);
 		for(int i = 0; i < options.size(); ++i){
 			Textures t = MAXT;
-			double x = 0.5 - optionxsize / 2.0;
 			double y = 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset;
 			double w = optionxsize;
 			double h = optionysize;
@@ -88,7 +115,23 @@ public:
 			}
 		}
 	}
-	Menu* Check(double mx, double my, bool pressed, bool canpress){
+	Menu* Check(double mx, double my, bool pressed, bool canpress, Game& base){
+		this->base = &base;
+		if(textflag && base.textChange()){
+			bool ret;
+			text = base.getRawText(ret);
+			if(ret){
+				base.endTyping(true);
+				textflag = false;
+				textdone = 1;
+				options.at(textfield)->exec(*this);
+				textfield = -1;
+			}
+			else{
+				textdone = 0;
+				options.at(textfield)->exec(*this);
+			}
+		}
 		yoffset = (options.size()-1)*(optionysize + optionspacing) / 2.0;
 		bool z = false;
 		for(int i = 0; i < options.size(); ++i){
@@ -113,6 +156,13 @@ public:
 			}
 			menu_select = -1;
 		}
+		if(pressed && lastm != textfield && textfield != -1){
+			base.endTyping(true);
+			textflag = false;
+			textdone = 2;
+			options.at(textfield)->exec(*this);
+			textfield = -1;
+		}
 		Menu* m = curr;
 		curr = this;
 		return m;
@@ -125,7 +175,7 @@ class MenuButton: public MenuControl{
 	}
 public:
 	Menu& assoc;
-	MenuButton(Menu& assoc, string name, function<void()> lambda): MenuControl(name, lambda), assoc(assoc){}
+	MenuButton(Menu& assoc, string name, function<void(MenuControl&)> lambda): MenuControl(name, lambda), assoc(assoc){}
 	void Render(double x, double y, double w, double h, Renderer& rend, int font, Textures t, bool m_over){
 		if(t != ON_CLICK)t = IS_UNSET;
 		rend.applyTexture(getTexture(&typeid(*this), t), x, y, w, h);
@@ -139,86 +189,101 @@ public:
 		rend.displayText(font, name.c_str(), *color, x+w/2.0-tw/2.0, y+h/2.0-th/2.0, tw, th);
 	}
 };
-//class MenuControl{
-//protected:
-//	string name;
-//	MenuObject* assoc;
-//	bool set = false;
-//	int id = 0;
-//	MenuControl(string& name, MenuObject& assoc) : name(name), assoc(&assoc){}
-//public:
-//	MenuObject& getObject(){
-//		return *assoc;
-//	}
-//	string& getText(){
-//		return name;
-//	}
-//	bool& checked(){
-//		return set;
-//	}
-//	int& getID(){
-//		return id;
-//	}
-//	virtual ~MenuControl(){};
-//};
-//
-//class Button: public MenuControl{
-//	MenuObject assoc;//menu; action
-//public:
-//	Button(string name, MenuObject& assoc) : MenuControl(name, assoc){}
-//};
-//
-//class Checkbox : public MenuControl{
-//public:
-//	Checkbox(string name, MenuObject& assoc, bool isSet) : MenuControl(name, assoc){
-//		set = isSet;
-//	}
-//};
-//
-//class TextBox : public MenuControl{
-//public:
-//	TextBox(string name, MenuObject& assoc) : MenuControl(name, assoc){ 
-//		id = name.size(); 
-//		set = false;
-//	}
-//
-//};
-//
-//class Radio: public MenuControl{
-//
-//};
-//
-//class Command: public MenuObject{
-//	function<void(MenuControl&)> func;
-//public:
-//	Command(function<void(MenuControl&)> lambda) : func(lambda){}
-//	void exec(MenuControl& mc){
-//		Checkbox* cb = dynamic_cast<Checkbox*>(&mc);
-//		if(cb)mc.checked() = !mc.checked();
-//
-//		func(mc);
-//	}
-//};
-//
-//class Menu: public MenuObject{
-//	vector<MenuControl*> options;
-//	vector<bool> hitbox;
-//public:
-//	Menu& addField(MenuControl& m){
-//		options.push_back(&m);
-//		hitbox.push_back(false);
-//		return *this;
-//	}
-//	int getNumOptions(){
-//		return options.size();
-//	}
-//	MenuControl& selectOption(int num){
-//		return *options.at(num);
-//	}
-//	vector<bool>& getHitbox(){
-//		return hitbox;
-//	}
-//
-//};
-//
+class TextBox: public MenuControl{
+	bool enable = false;
+	string disp;
+	char old[1024];
+	bool flag = true;
+	void action(Menu& m){
+		if(!enable){
+			done = false;
+			enable = true;
+			m.getText(text.c_str());
+		}
+		int res = m.textDone();
+		if(res){
+			enable = false;
+			text = m.textRes();
+			if(res == 1)done = true;
+		}
+		else{
+			disp = m.textVisual();
+		}
+		if(flag || strlen(old) >= strlen(m.textRes()))strcpy(old,  m.textRes());
+		else {
+			m.ResetText(old);
+			disp = m.textVisual();
+		}
+	}
+public:
+	bool done = false;
+	string text;
+	TextBox(string name, function<void(MenuControl&)> lambda): MenuControl(name, lambda){}
+	void Render(double x, double y, double w, double h, Renderer& rend, int font, Textures t, bool m_over){
+		if(t != ON_CLICK){
+			if(!enable)t = IS_UNSET;
+			else t = IS_SET;
+		}
+		rend.applyTexture(getTexture(&typeid(*this), t), x, y, w, h);
+		double tw, th;
+		string j;
+		if(enable)j = name+disp;
+		else j = name+text;
+		rend.getTextWH(font, j.c_str(), tw, th);
+		tw *= hsize / th;
+		th = hsize;
+		if(tw > w-0.05)flag = false;
+		else flag = true;
+		RGBA* color;
+		if(m_over)color = textcol[0];
+		else color = textcol[1];
+		rend.displayText(font, j.c_str(), *color, x+w/2.0-tw/2.0, y+h/2.0-th/2.0, tw, th);
+	}
+};
+class CheckBox: public MenuControl{
+	void action(Menu& m){
+		is_on = !is_on;
+	}
+public:
+	bool is_on;
+	CheckBox(string name, bool is_on, function<void(MenuControl&)> lambda): MenuControl(name, lambda), is_on(is_on){}
+	void Render(double x, double y, double w, double h, Renderer& rend, int font, Textures t, bool m_over){
+		if(t != ON_CLICK){
+			if(is_on)t = IS_SET;
+			else t = IS_UNSET;
+		}
+		rend.applyTexture(getTexture(&typeid(*this), t), x, y, w, h);
+		double tw, th;
+		string msg;
+		if(is_on) msg = "on";
+		else msg = "off";
+		rend.getTextWH(font, (name+msg).c_str(), tw, th);
+		tw *= hsize / th;
+		th = hsize;
+		RGBA* color;
+		if(m_over)color = textcol[0];
+		else color = textcol[1];
+		rend.displayText(font, (name+msg).c_str(), *color, x+w/2.0-tw/2.0, y+h/2.0-th/2.0, tw, th);
+	}
+};
+class ClickBox: public MenuControl{
+	void action(Menu& m){
+		//stop punching my face!
+	}
+public:
+	ClickBox(string name, function<void(MenuControl&)> lambda): MenuControl(name, lambda){}
+	void Render(double x, double y, double w, double h, Renderer& rend, int font, Textures t, bool m_over){
+		if(t != ON_CLICK)t = IS_SET;
+		rend.applyTexture(getTexture(&typeid(*this), t), x, y, w, h);
+		double tw, th;
+		string msg;
+		rend.getTextWH(font, name.c_str(), tw, th);
+		tw *= hsize / th;
+		th = hsize;
+		RGBA* color;
+		if(m_over)color = textcol[0];
+		else color = textcol[1];
+		rend.displayText(font, name.c_str(), *color, x+w/2.0-tw/2.0, y+h/2.0-th/2.0, tw, th);
+	}
+};
 #endif

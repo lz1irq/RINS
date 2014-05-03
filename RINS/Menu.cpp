@@ -11,6 +11,7 @@ double MenuResources::backysize;
 int MenuResources::background;
 int MenuResources::overlay;
 int MenuResources::back;
+int MenuResources::mframe;
 RGBA* MenuResources::textcol[2];
 
 wstring utf8_to_utf16(const string& utf8){

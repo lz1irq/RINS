@@ -41,15 +41,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	array<Item*(*)(), MAXITEMS> item_types;
 	list<Projectile> projectiles;
 
-	//int menu_bg, button, overlay, b2, b3, tbox;
-	//Menu menu;
 	Menu* curr_m;
-	//int  menu_select = -1, lastm = -1;
-	//double optionysize = 0.05;
-	//double optionspacing = 0.01;
-	//double optionxsize = 0.5;
-	//double hsize = 0.8*optionysize;
-	//double yoffset;
 	bool typing = false, muststop = false;
 	bool show_menu = true;
 	bool enable_music = false;
@@ -729,7 +721,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			else if(show_menu){
 				menux.lock();
 				//checkMenu();
-				curr_m = curr_m->Check(getMouseX(), getMouseY(), pressed, cangetpress);
+				curr_m = curr_m->Check(getMouseX(), getMouseY(), pressed, cangetpress, *this);
 				menux.unlock();
 			}
 			updatePress();
@@ -1053,7 +1045,7 @@ public:
 		red = loadTexture("Textures/red.png");
 		setModulateBlending(red);
 
-		main_font = loadFont("Fonts/ARIALUNI.TTF", 90);
+		main_font = loadFont("Fonts/ARIALUNI.TTF", 42);
 
 		monster_types[ZOMBIE] = &createInstance<Zombie>;
 		item_types[BODYARMOR] = &createItem<BodyArmour>;
@@ -1113,21 +1105,70 @@ public:
 		MenuResources::background = loadTexture("Textures/background1.png");
 		MenuResources::overlay = loadTexture("Textures/overlay1.png");
 		MenuResources::back = loadTexture("Textures/back.png");
+		MenuResources::mframe = loadTexture("Textures/mframe.png");
 		setModulateBlending(MenuResources::overlay);
 		MenuResources::textcol[0] = new RGBA(255, 100, 255, 0);
 		MenuResources::textcol[1] = new RGBA(000, 100, 255, 0);
 		MenuResources::addTexture(loadTexture("Textures/button1.png"), &typeid(MenuButton), IS_UNSET);
 		MenuResources::addTexture(loadTexture("Textures/button1.png"), &typeid(MenuButton), IS_SET);
-		MenuResources::addTexture(loadTexture("Textures/buttonc.png"), &typeid(MenuButton), ON_CLICK);
+		MenuResources::addTexture(loadTexture("Textures/textc.png"), &typeid(MenuButton), ON_CLICK);
+		MenuResources::addTexture(loadTexture("Textures/textn.png"), &typeid(TextBox), IS_UNSET);
+		MenuResources::addTexture(loadTexture("Textures/button4.png"), &typeid(TextBox), IS_SET);
+		MenuResources::addTexture(loadTexture("Textures/textc.png"), &typeid(TextBox), ON_CLICK);
+		MenuResources::addTexture(loadTexture("Textures/button2.png"), &typeid(CheckBox), IS_UNSET);
+		MenuResources::addTexture(loadTexture("Textures/button3.png"), &typeid(CheckBox), IS_SET);
+		MenuResources::addTexture(loadTexture("Textures/textc.png"), &typeid(CheckBox), ON_CLICK);
+		MenuResources::addTexture(loadTexture("Textures/button1.png"), &typeid(ClickBox), IS_UNSET);
+		MenuResources::addTexture(loadTexture("Textures/button1.png"), &typeid(ClickBox), IS_SET);
+		MenuResources::addTexture(loadTexture("Textures/textc.png"), &typeid(ClickBox), ON_CLICK);
 
-		curr_m = new Menu();
-		Menu* m = new Menu();
-		Menu* t = new Menu();
 
-		t->addField(*new MenuButton(*m, "Link", [this](){cout << "cli-cli" << endl;}));
+		//Menu& m2 = *new Menu();
+		//m2.addField(*new Button("Start server", *new Command([this](MenuControl& mc){ if (has_MP_server)return; MP_server_init = true; has_MP_server = true;  })))
+		//	.addField(*new TextBox("Connect to: ", *new Command([this](MenuControl& mc){ if (mc.checked()){ ConnectToServer(1337, mc.getText().substr(mc.getID(), string::npos).c_str()); MP_init = true; }})))
+		//	.addField(*new Button("Main menu", menu));
 
-		curr_m->addField(*new MenuButton(*t, "Das button", [this](){cout << "cli-cli" << endl;}))
-			.addField(*new MenuButton(*m, "B2B", [this](){cout << "cli-cli" << endl;}));
+		//Menu& m3 = *new Menu();
+		//m3.addField(*new Checkbox("Enabled", *new Command([this](MenuControl& mc){ enable_music = mc.checked(); if (enable_music)playSong(song1); else stopMusic();}), false))
+		//	.addField(*new Button("Main menu", menu));
+
+		//Menu& m4 = *new Menu();
+		//m4.addField(*new Button("Marine", *new Command([this](MenuControl& mc){ SP_class = 0; SP_init = true; })))
+		//	.addField(*new Button("Pyro", *new Command([this](MenuControl& mc){ SP_class = 1; SP_init = true; })))
+		//	.addField(*new Button("Psychokinetic", *new Command([this](MenuControl& mc){ SP_class = 2; SP_init = true; })))
+		//	.addField(*new Button("Android", *new Command([this](MenuControl& mc){ SP_class = 3; SP_init = true; })))
+		//	.addField(*new Button("Main menu", menu));
+
+		//menu.addField(*new Button("Singleplayer", m4))
+		//	.addField(*new Button("Multiplayer", m2))
+		//	.addField(*new Button("Sound", m3));
+		Menu& m3 = *new Menu("Sounds like a menu");
+		m3.addField(*new CheckBox("Music: ", false, [this](MenuControl& mc){  
+			enable_music = static_cast<CheckBox&>(mc).is_on; if (enable_music)playSong(song1); else stopMusic(); }));
+		//	.addField(*new Button("Main menu", menu));
+
+		Menu& m4 = *new Menu("Choose wisely!");
+		m4.addField(*new ClickBox("Pyro!", [this](MenuControl& mc){ SP_class = 1; SP_init = true; }))
+			.addField(*new ClickBox("Marine!", [this](MenuControl& mc){ SP_class = 0; SP_init = true; }))
+			.addField(*new ClickBox("Android!", [this](MenuControl& mc){ SP_class = 3; SP_init = true; }))
+			.addField(*new ClickBox("Psychokinetic!", [this](MenuControl& mc){ SP_class = 2; SP_init = true; }));
+
+		Menu& m5 = *new Menu("Are you... Yeah, sure.");
+		m5.addField(*new ClickBox("Yes!", [this](MenuControl& mc){ quit = true; }))
+			.addField(*new ClickBox("Yes!", [this](MenuControl& mc){ quit = true; }));
+
+		curr_m = new Menu("Main");
+		//Menu* m = new Menu();
+		//Menu* t = new Menu();
+
+		//t->addField(*new MenuButton(*m, "Link", [this](MenuControl& mc){cout << "cli-cli" << endl;}));
+		//m->addField(*new TextBox("Type: ", [this](MenuControl& mc){cout << dynamic_cast<TextBox&>(mc).done << endl;}))
+		//	.addField(*new CheckBox("You turn me: ", true, [this](MenuControl& mc){cout << "cli-cli" << endl;}));
+
+		curr_m->addField(*new MenuButton(m4, "Singleplayer...", [this](MenuControl& mc){cout << "c01" << endl;}))
+			.addField(*new MenuButton(m3, "Music...", [this](MenuControl& mc){cout << "c02" << endl;}))
+			.addField(*new MenuButton(m5, "Quit...", [this](MenuControl& mc){cout << "c03" << endl;}));
+		//	.addField(*new MenuButton(*m, "B2B", [this](MenuControl& mc){cout << "cli-cli" << endl;}));
 	}
 	catch (Error e){
 		cout << e.getError() << endl;
