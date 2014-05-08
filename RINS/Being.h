@@ -27,7 +27,7 @@ public:
 enum Monsters{ ZOMBIE = 0, MAXSIZE };
 enum Playable{ MARINE=0, PYRO, PSYCHOKINETIC, ANDROID, PLAYEND};
 enum Collisions{ STATUS_OK, OUT_OF_BOUNDS, TRIGGER, X_COLLIDE, Y_COLLIDE, XY_COLLIDE };
-enum Shoot{BANG, NOT_IN_FOV, CASTING, OUT_OF_RANGE};
+enum Shoot{BANG, NOT_IN_FOV, CASTING, OUT_OF_RANGE, NOT_IN_LOS};
 
 class Hitbox{
 protected:
@@ -41,8 +41,8 @@ public:
 	Hitbox(int tiles_x, int tiles_y, int tile_granularity);
 	void setX(double x);
 	void setY(double y);
-	double getX();
-	double getY();
+	double getX() const;
+	double getY() const;
 	int getTileX();
 	int getTileY();
 	double getStepX() const;
@@ -65,7 +65,18 @@ protected:
 	bool walk = false;
 	virtual void setRange() = 0;
 	Projectile& shootWeapon(double deg, Hitbox& h);
+	void walkAround(const vector<vector<char>>& map_index);
+	bool wallInFront(double target_x, double target_y, double deg, const vector<vector<char>>& map_index);
+	bool isTargetBehindBack(double delta_x, double delta_y);
+	int internalShoot(double target_x, double target_y, double deg, Projectile** p);
+	void updateTarget(const vector<vector<char>>& map_index, const list<unique_ptr<Being>>& targets);
+	
 	int HAJA = 0;
+
+	int move_dist = 0;
+	int move_dir = 0;
+	const Being* curr_target = nullptr;
+	int curr_threat = 0;
 
 	vector<Item*> items;
 	vector<Item*>::iterator it = items.end();
@@ -86,7 +97,7 @@ public:
 	void resetWalk();
 	int getOrientation() const;
 	void takeProjectile(Projectile& bullet);
-	int tryToShoot(Being* target, Projectile** p);
+	int tryToShoot(Being* target, Projectile** p, const vector<vector<char>>& map_index);
 	void equipItem(Item& item);
 	void unequipItem(Item& item);
 	void levelup();

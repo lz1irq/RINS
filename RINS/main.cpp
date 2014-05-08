@@ -440,7 +440,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	void playerShoot(){
 		if (dir & 16){
 			Projectile* p;
-			int event = player->tryToShoot(curr_target, &p);
+			int event = player->tryToShoot(curr_target, &p, getMapIndex());
 			switch (event){
 			case BANG:
 				projectiles.push_back(*p);
@@ -478,7 +478,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 	void updateProjectiles(){
 		for (auto p = begin(projectiles); p != end(projectiles); ++p){
-			bool res = p->update(getMapIndex(), monsters, targets);
+			bool res = p->update(getMapIndex(), monsters, targets, getTicks());
 			if (!res){
 				projectile.lock();
 				p = projectiles.erase(p);
@@ -725,7 +725,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				menux.unlock();
 			}
 			updatePress();
-			SDL_Delay(10);
+			//SDL_Delay(10);
 		}
 		catch (Error e) {
 			cout << e.getError() << endl; 
@@ -772,121 +772,6 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		}
 		return true;
 	}
-
-	//void renderMenu(){
-	//	applyTexture(menu_bg, 0, 0, 1, 1);
-	//	yoffset = (curr_m->getNumOptions() - 1)*(optionysize + optionspacing) / 2.0;
-	//	double w, h;
-	//	RGBA mecol(255, 100, 255, 0);
-	//	for (int i = 0; i < curr_m->getNumOptions(); ++i){
-	//		Button* bb = dynamic_cast<Button*>(&curr_m->selectOption(i));
-	//		Checkbox* cc = dynamic_cast<Checkbox*>(&curr_m->selectOption(i));
-	//		TextBox* tt = dynamic_cast<TextBox*>(&curr_m->selectOption(i));
-	//		string text = curr_m->selectOption(i).getText();
-	//		if (curr_m->getHitbox().at(i))mecol.setR(255);
-	//		else mecol.setR(0);
-	//		if (bb || cc || tt){
-	//			int tex;
-	//			if (tt){
-	//				tex = tbox;
-	//				if(!tt->checked())text = tt->getText().substr(0, tt->getID()) + getText();
-	//				else text = tt->getText();
-	//			}
-	//			if (bb)tex = button;
-	//			if (cc){
-	//				if (cc->checked()){
-	//					tex = b2;
-	//					text += ": ДА";
-	//				}
-	//				else{
-	//					tex = b3;
-	//					text += ": НЕ";
-	//				}
-	//			}
-	//			applyTexture(tex, 0.5 - optionxsize / 2.0, 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset, optionxsize, optionysize);
-	//			getTextWH(main_font, (Uint16*)utf8_to_utf16(text).c_str(), w, h);
-	//			if (curr_m->getHitbox().at(i)){
-	//				applyTexture(overlay, 0.5 - optionxsize / 2.0, 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset, optionxsize, optionysize);
-	//			}
-	//			w *= hsize / h;
-	//			h = hsize;
-	//			if (tt){
-	//				if (w > optionxsize - 0.06 && typing)muststop = true;
-	//			}
-	//			displayText(main_font, (Uint16*)utf8_to_utf16(text).c_str(),
-	//				mecol, 0.5 -w/2 , 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset, w, h);
-	//		}
-	//	}
-	//}
-
-	//void checkMenu(){
-	//	double w, h;
-	//	bool hover = false;
-	//	static string s;
-	//	for (int i = 0; i < curr_m->getNumOptions(); ++i){
-	//		Button* bb = dynamic_cast<Button*>(&curr_m->selectOption(i));
-	//		Checkbox* cz = dynamic_cast<Checkbox*>(&curr_m->selectOption(i));
-	//		TextBox* tt = dynamic_cast<TextBox*>(&curr_m->selectOption(i));
-	//		if (bb || cz || tt){
-	//			if (lastm == i && tt){
-	//				bool enter;
-	//				if (muststop){
-	//					endTyping(false);
-	//					muststop = false;
-	//					startTyping(s.c_str());
-	//				}
-	//				s = getRawText(enter);
-	//				if (enter){
-	//					tt->getText() = tt->getText().substr(0, tt->getID()) + s;
-	//					endTyping(true);
-	//					typing = false;
-	//					tt->checked() = true;
-	//					Command* cc = dynamic_cast<Command*>(&tt->getObject());
-	//					if (cc)cc->exec(curr_m->selectOption(i));
-	//				}
-	//			}
-	//			curr_m->getHitbox().at(i) = false;
-	//			if (getMouseX() > 0.5 - optionxsize / 2.0 && getMouseX() < 0.5 + optionxsize / 2.0){
-	//				if (getMouseY() > 0.5 + (optionysize + optionspacing)*i - (optionysize + optionspacing) / 2.0 - yoffset && getMouseY() < 0.5 +
-	//					(optionysize + optionspacing)*i + (optionysize + optionspacing) / 2.0 - yoffset - optionspacing){
-	//					curr_m->getHitbox().at(i) = true;
-	//					if (pressed){
-	//						menu_select = i;
-	//						lastm = i;
-	//					}
-	//					if (pressed && !tt){
-	//						endTyping(true);
-	//						typing = false;
-	//					}
-	//					Command* cc = dynamic_cast<Command*>(&curr_m->selectOption(i).getObject());
-	//					Menu* mm = dynamic_cast<Menu*>(&curr_m->selectOption(i).getObject());
-	//					if (menu_select == i && cangetpress){
-	//						if (cc){
-	//							if (tt){
-	//								startTyping(tt->getText().substr(tt->getID(), string::npos).c_str());
-	//								typing = true;
-	//								tt->checked() = false;
-	//							}
-	//							cc->exec(curr_m->selectOption(i));
-	//						}
-	//						if (mm){
-	//							curr_m = mm;
-	//							lastm = -1;
-	//						}
-	//						menu_select = -1;
-	//					}
-	//					hover = true;
-	//				}
-	//			}
-	//		}
-	//	}
-	//	if (cangetpress)menu_select = -1;
-	//	if (pressed && !hover){
-	//		endTyping(true);
-	//		typing = false;
-	//		lastm = -1;
-	//	}
-	//}
 
 	void getdir(){
 		if (isPressed("A"))dir |= 1 << 0;
@@ -1059,43 +944,6 @@ public:
 
 		setMusicVolume(MAX_VOL/8);
 		song1 = loadSong("Sounds/level1.mid");
-		//playSong(song1);
-
-		//menu_bg = loadTexture("Textures/background1.png");
-		//button = loadTexture("Textures/button1.png");
-		//b2 = loadTexture("Textures/button2.png");
-		//b3 = loadTexture("Textures/button3.png");
-		//tbox = loadTexture("Textures/button4.png");
-		//overlay = loadTexture("Textures/overlay1.png");
-		//setModulateBlending(overlay);
-
-		//Menu& m2 = *new Menu();
-		//m2.addField(*new Button("Start server", *new Command([this](MenuControl& mc){ if (has_MP_server)return; MP_server_init = true; has_MP_server = true;  })))
-		//	.addField(*new TextBox("Connect to: ", *new Command([this](MenuControl& mc){ if (mc.checked()){ ConnectToServer(1337, mc.getText().substr(mc.getID(), string::npos).c_str()); MP_init = true; }})))
-		//	.addField(*new Button("Main menu", menu));
-
-		//Menu& m3 = *new Menu();
-		//m3.addField(*new Checkbox("Enabled", *new Command([this](MenuControl& mc){ enable_music = mc.checked(); if (enable_music)playSong(song1); else stopMusic();}), false))
-		//	.addField(*new Button("Main menu", menu));
-
-		//Menu& m4 = *new Menu();
-		//m4.addField(*new Button("Marine", *new Command([this](MenuControl& mc){ SP_class = 0; SP_init = true; })))
-		//	.addField(*new Button("Pyro", *new Command([this](MenuControl& mc){ SP_class = 1; SP_init = true; })))
-		//	.addField(*new Button("Psychokinetic", *new Command([this](MenuControl& mc){ SP_class = 2; SP_init = true; })))
-		//	.addField(*new Button("Android", *new Command([this](MenuControl& mc){ SP_class = 3; SP_init = true; })))
-		//	.addField(*new Button("Main menu", menu));
-
-		//menu.addField(*new Button("Singleplayer", m4))
-		//	.addField(*new Button("Multiplayer", m2))
-		//	.addField(*new Button("Sound", m3));
-
-		//curr_m = &menu;
-		
-
-		//::xsize = xsize;
-		//::ysize = ysize;
-
-		//loop();
 		MenuResources::optionysize = 0.05;
 		MenuResources::optionspacing = 0.01;
 		MenuResources::optionxsize = 0.5;

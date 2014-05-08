@@ -141,6 +141,7 @@ void Game::loop(){
 	int offs;
 	char tmp[1024] = { 0 };
 	if( (thread = SDL_CreateThread(secondaryLoop, "secondaryThread", (void *)this)) == NULL) throw Error( SDL_GetError() );
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_LOW);
 	while (!quit) {
 		//has_event = SDL_PollEvent(&event);
 		if (SDL_PollEvent(&event)){
@@ -212,14 +213,11 @@ void Game::loop(){
 
 int Game::secondaryLoop(void* param) {
 	Game* instance = (Game*)param;
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
 	while(!(instance->quit)) {
 		instance->graphicsLoop();
 	}
 	return 0;
-}
-
-void Game::graphicsLoop() {
-
 }
 
 unsigned int Game::getTicks() {

@@ -23,18 +23,21 @@ class Projectile {
 	double dir;
 	double x,y;
 	int wait_on_det;
+	int speed = 1;
+	unsigned int last_time = 0;
 	int range, det_duration;
 	Being* shooter;//unsafe!!!
 	const type_info& sh;
 	bool trigger = false;
 public:
-	Projectile(unsigned int ptype, int pdamage, int pfly_t, int pdet_t, double angle, double px, double py, Being* shooter, Hitbox& h, int  wait_on_det, int range, int det_duration);
-	bool update(const vector<vector<char>>& map_index, list<unique_ptr<Being>>& targets, list<unique_ptr<Being>>& players);
+	Projectile(unsigned int ptype, int pdamage, int pfly_t, int pdet_t, double angle, double px, double py, Being* shooter, Hitbox& h, int  wait_on_det, int range, int det_duration, int speed);
+	bool update(const vector<vector<char>>& map_index, list<unique_ptr<Being>>& targets, list<unique_ptr<Being>>& players, unsigned int time);
 	double getX();
 	double getY();
 	unsigned int getType() const;
 	int getDamage() const;
 	double getAngleInDeg();
+	const Being* getShooter();//unsafe!!!
 	virtual ~Projectile(){}
 	Hitbox& box;
 };
@@ -56,7 +59,7 @@ protected:
 	int ammo_per_mag;
 	bool picked_up;
 	Being* assoc_class;
-	unsigned int count, speed;
+	unsigned int count = 0, speed;
 	int fly_t_init, det_t_init;
 public:
 	WeaponBase(int wtype, int wskill, int wbase_dmg,  int ammo_mag, int speed, int fly_t_init, int det_t_init);

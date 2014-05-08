@@ -20,11 +20,11 @@ void Hitbox::setY(double y){
 	this->y = y;
 }
 
-double Hitbox::getX(){
+double Hitbox::getX() const{
 	return x;
 }
 
-double Hitbox::getY(){
+double Hitbox::getY() const{
 	return y;
 }
 
@@ -104,15 +104,23 @@ IDs::IDs() {
 map<const type_info*, IDs> BeingResources::textures;
 
 bool Being::move(int dir, bool reverse) {
+	dir = dir & 15;
 	if ((count + speed) < start_time) {
 		int newdir = dir & 15;
 		if (newdir)orientation = newdir;
 		double move_x = reverse ? -move_step_x : move_step_x;
 		double move_y = reverse ? -move_step_y : move_step_y;
-		if (dir & LEFT) x -= move_x;
-		if (dir & RIGHT) x += move_x;
-		if (dir & UP) y -= move_y;
-		if (dir & DOWN) y += move_y;
+		if (dir == LEFT) x -= move_x;
+		else if (dir == RIGHT) x += move_x;
+		else if (dir == UP) y -= move_y;
+		else if (dir == DOWN) y += move_y;
+		else{
+			if (dir & LEFT) x -= move_x / 2.0;
+			if (dir & RIGHT) x += move_x / 2.0;
+			if (dir & UP) y -= move_y / 2.0;
+			if (dir & DOWN) y += move_y / 2.0;
+		}
+
 		HAJA++;
 		if (newdir && !(HAJA % 4))walk = !walk;
 		count = start_time;
@@ -133,32 +141,17 @@ Projectile& Being::shootWeapon(double deg, Hitbox& h) {
 	return (weapons.at(curr_weapon)->shoot(deg, x, y, h));
 }
 
-int Being::tryToShoot(Being* target, Projectile** p){
+int Being::tryToShoot(Being* target, Projectile** p, const vector<vector<char>>& map_index){
 	if (target){
 		double dx = target->x - x;
 		double dy = y - target->y;
 		double deg = (atan2(dx, dy) - 0.5*M_PI);
-		int di2 = orientation;
-		int tx = 0, ty = 0;
-		if (false);
-		else if (di2 & LEFT)tx = -1;
-		else if (di2 & RIGHT)tx = 1;
-		else if (di2 & UP)ty = 1;
-		else if (di2 & DOWN)ty = -1;
-		if (dx*tx >= 0 && dy*ty >= 0){
-			double range = sqrt(pow(target->x - x, 2) + pow(target->y - y, 2));
-			double roundstep = (move_step_x + move_step_y) / 2.0;
-			if (range > weapons.at(curr_weapon)->getFlyT()*roundstep)return OUT_OF_RANGE;
-			if ((weapons.at(curr_weapon)->getCount() + weapons.at(curr_weapon)->getSpeed()) < start_time){
+		if (!isTargetBehindBack(dx, dy)){
+			if (wallInFront(target->x, target->y, deg, map_index)){
 				resetFire();
-				*p = &(shootWeapon(deg, *new Hitbox(tiles_x, tiles_y, tile_granularity)));
-				return BANG;
+				return NOT_IN_LOS;
 			}
-			else{
-				int* percent = new int(((start_time - weapons.at(curr_weapon)->getCount()) * 100) / weapons.at(curr_weapon)->getSpeed());
-				*p = (Projectile*)percent;
-				return CASTING;
-			}
+			return internalShoot(target->x, target->y, deg, p);
 		}
 		else{
 			resetFire();
@@ -170,6 +163,52 @@ int Being::tryToShoot(Being* target, Projectile** p){
 
 void Being::resetFire(){
 	weapons.at(curr_weapon)->getCount() = start_time;
+}
+
+int Being::internalShoot(double target_x, double target_y, double deg, Projectile** p){
+	double range = sqrt(pow(target_x - x, 2) + pow(target_y - y, 2));
+	double roundstep = (move_step_x + move_step_y) / 2.0;
+	if (range > weapons.at(curr_weapon)->getFlyT()*roundstep)return OUT_OF_RANGE;
+	if ((weapons.at(curr_weapon)->getCount() + weapons.at(curr_weapon)->getSpeed()) < start_time){
+		resetFire();
+		*p = &(shootWeapon(deg, *new Hitbox(tiles_x, tiles_y, tile_granularity)));
+		return BANG;
+	}
+	else{
+		int* percent = new int(((start_time - weapons.at(curr_weapon)->getCount()) * 100) / weapons.at(curr_weapon)->getSpeed());
+		*p = (Projectile*)percent;
+		return CASTING;
+	}
+}
+
+bool Being::wallInFront(double target_x, double target_y, double deg, const vector<vector<char>>& map_index){
+	double being_x = x;
+	double being_y = y;
+	static Hitbox h1(*this);
+	h1.setX(being_x);
+	h1.setY(being_y);
+	while (abs(being_x - target_x) > h1.getStepX() || abs(being_y - target_y) > h1.getStepY()){
+		h1.setX(being_x + cos(deg) * h1.getStepX());
+		h1.setY(being_y + sin(deg) * h1.getStepY());
+		int event = h1.checkCollisions(being_x, being_y, map_index);
+		if (event == STATUS_OK || event == TRIGGER){
+			being_x = h1.getX();
+			being_y = h1.getY();
+		}
+		else return true;
+	}
+	return false;
+}
+
+bool Being::isTargetBehindBack(double delta_x, double delta_y){
+	int tx = 0, ty = 0;
+	if (false);
+	else if (orientation & LEFT)tx = -1;
+	else if (orientation & RIGHT)tx = 1;
+	else if (orientation & UP)ty = 1;
+	else if (orientation & DOWN)ty = -1;
+	if (delta_x*tx >= 0 && delta_y*ty >= 0)return false;
+	else return true;
 }
 
 Item& Being::getNextItem() {
@@ -268,6 +307,12 @@ void Being::takeProjectile(Projectile& bullet) {
 
 	if((bullet.getDamage() - def_skill) > der_stats.health) der_stats.health = 0;
 	else der_stats.health -= (bullet.getDamage() - def_skill);
+
+
+	if (bullet.getDamage() - def_skill > curr_threat || curr_target == nullptr){
+		curr_threat = bullet.getDamage() - def_skill;
+		curr_target = bullet.getShooter();
+	}
 }
 
 int Being::getLevel(){
@@ -297,6 +342,92 @@ void Being::levelup() {
 int Being::getExperience() {
 	return experience;
 }
+
+void Being::walkAround(const vector<vector<char>>& map_index){
+	if (!move_dist){
+	A:
+		int t = rnd() % 4;
+		if ((move_dir == LEFT) && ((1 << t) == RIGHT) || (move_dir == RIGHT) && ((1 << t) == LEFT))goto A;
+		if ((move_dir == UP) && ((1 << t) == DOWN) || (move_dir == DOWN) && ((1 << t) == UP))goto A;
+		move_dir = 1 << t;
+		int mx = getTileX();
+		int my = getTileY();
+		switch (move_dir){
+		case UP:
+			for (int i = my; i > 0; --i){
+				if (map_index[mx][i] == 0 || map_index[mx][i] > 16)++move_dist;
+				else break;
+			}
+			break;
+		case DOWN:
+			for (int i = my; i < map_index[mx].size(); ++i){
+				if (map_index[mx][i] == 0 || map_index[mx][i] > 16)++move_dist;
+				else break;
+			}
+			break;
+		case LEFT:
+			for (int i = mx; i > 0; --i){
+				if (map_index[i][my] == 0 || map_index[i][my] > 16)++move_dist;
+				else break;
+			}
+			break;
+		case RIGHT:
+			for (int i = mx; i < map_index.size(); ++i){
+				if (map_index[i][my] == 0 || map_index[i][my] > 16)++move_dist;
+				else break;
+			}
+			break;
+		}
+		move_dist = rnd() % move_dist;
+		move_dist *= tile_granularity;
+	}
+	else{
+		double curr_x = getX();
+		double curr_y = getY();
+		if (move(move_dir, false)){
+			--move_dist;
+			int state = checkCollisions(curr_x, curr_y, map_index);
+			if (state == OUT_OF_BOUNDS){
+				x = curr_x;
+				y = curr_y;
+			}
+		}
+	}
+}
+
+void Being::updateTarget(const vector<vector<char>>& map_index, const list<unique_ptr<Being>>& targets){
+	if (curr_target == nullptr){
+		walkAround(map_index);
+		for (auto& i : targets){
+			Being* ptr = &*i;
+			double dx = ptr->getX() - x;
+			double dy = y - ptr->getY();
+			double deg = (atan2(dx, dy) - 0.5*M_PI);
+			if (!isTargetBehindBack(dx, dy)){
+				if (!wallInFront(ptr->getX(), ptr->getY(), deg, map_index)){
+					if (abs(ptr->getTileX() - getTileX()) < tiles_x / 2 && abs(ptr->getTileY() - getTileY()) < tiles_y / 2){
+						move_dist = 0;
+						curr_threat = 0;
+						curr_target = ptr;
+						break;
+					}
+				}
+			}
+		}
+	}
+	else{
+		bool flag = false;
+		for (auto& i : targets){
+			Being* ptr = &*i;
+			if (ptr == curr_target){
+				flag = true;
+				break;
+			}
+		}
+		if (!flag)curr_target = nullptr;//target dead!
+	}
+}
+
 Being::~Being() {
 	weapons.clear();
 }
@@ -406,56 +537,76 @@ bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& pro
 		cout << "ZOMBIE DEAD" << endl;
 		return false;
 	}
+	updateTarget(map_index, targets);
+	if (curr_target){
 
-	//if(target == nullptr) target = targets.at(rnd()%targets.size());
-	//double tx = target->getX();
-	//double ty = target->getY();
-	//extern int ysize;
-	//extern int xsize;
-
-	//int myx = getTileX(tiles_x);
-	//int myy = getTileY(tiles_y);
-
-	//bool there=true;
-
-	//if (x < tx) {
-	//	if (!map_index[myx + 1][myy])move(RIGHT, false);
-	//	if (map_index[myx + 1][myy])move(UP, true);
-	//	there = false;
-	//}
-	//if(y < ty) {
-	//	if (!map_index[myx][myy + 1])move(DOWN, false);
-	//	if (map_index[myx][myy + 1])move(RIGHT, true);
-	//	there = false;
-	//}
-	//if(x > tx) {
-	//	if (!map_index[myx - 1][myy])move(LEFT, false);
-	//	if (map_index[myx - 1][myy])move(DOWN, true);
-	//	there = false;
-	//}
-	//if(y > ty) {
-	//	if (!map_index[myx][myy - 1])move(UP, false);
-	//	if (map_index[myx][myy - 1])move(LEFT, true);
-	//	there = false;
-	//}
-
-	//if(there) {
-	double curr_x = getX();
-	double curr_y = getY();
-	int colpos = rnd() % 16;
-	bool b = move(colpos, false);
-	if (b){
-		int state = checkCollisions(curr_x, curr_y, map_index);
-		if (state == OUT_OF_BOUNDS){
-			x = curr_x;
-			y = curr_y;
+		double dx = curr_target->getX() - x;
+		double dy = y - curr_target->getY();
+		double deg = (atan2(dx, dy) - 0.5*M_PI);
+		if (abs(dx) > tiles_x || abs(dy) > tiles_y){//give up!
+			curr_target = nullptr;
 		}
-		//	orientation = LEFT;
-		double deg = rnd() % 360;
+		int ori;
+		if (!wallInFront(curr_target->getX(), curr_target->getY(), deg, map_index)){
+			if (dx < 0)ori = LEFT;
+			else ori = RIGHT;
+			if (dy < 0)ori += DOWN;
+			else ori = UP;
+			if (dx || dy){
+				double curr_x = getX();
+				double curr_y = getY();
+				if (move(ori, false)){
+					int state = checkCollisions(curr_x, curr_y, map_index);
+					if (state == OUT_OF_BOUNDS){
+						x = curr_x;
+						y = curr_y;
+					}
+				}
+			}
+		}
+		else{
+				double curr_x = getX();
+				double curr_y = getY();
+				if (move(orientation, false)){
+					int state = checkCollisions(curr_x, curr_y, map_index);
+					if (state == OUT_OF_BOUNDS){
+						x = curr_x;
+						y = curr_y;
+					}
+					if (state == X_COLLIDE){
+						if (dy < 0)orientation = DOWN;
+						else orientation = UP;
+					}
+					if (state == Y_COLLIDE){
+						if (dx < 0)orientation = LEFT;
+						else orientation = RIGHT;
+					}
+					if (state == XY_COLLIDE){
+						if (dy < 0)orientation = UP;
+						else orientation = DOWN;
+						if (dx < 0)orientation += RIGHT;
+						else orientation += LEFT;
+					}
+				}
+		}
 
-		projectiles.push_back(shootWeapon(deg_to_rad(deg), *new Hitbox(tiles_x, tiles_y, tile_granularity)));
+
+
+
+
+		Projectile* p;
+		int event = internalShoot(curr_target->getX(), curr_target->getY(), deg, &p);
+		switch (event){
+		case BANG:
+			projectiles.push_back(*p);
+			break;
+		case CASTING:
+			break;
+		//default:
+			//resetFire();
+		}
 	}
-	//}
+	else resetFire();
 	return true;
 	
 }
