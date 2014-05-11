@@ -307,7 +307,7 @@ void Being::takeProjectile(Projectile& bullet) {
 
 	if((bullet.getDamage() - def_skill) > der_stats.health) der_stats.health = 0;
 	else der_stats.health -= (bullet.getDamage() - def_skill);
-
+	cout << bullet.getShooter() << " " << bullet.getDamage() - def_skill << endl;
 
 	if (bullet.getDamage() - def_skill > curr_threat || curr_target == nullptr){
 		curr_threat = bullet.getDamage() - def_skill;
@@ -435,16 +435,16 @@ Being::~Being() {
 Marine::Marine(double sx, double yx): 
 	Being(sx,yx, 33), small_guns_bonus(0), 
 	big_guns_bonus(0), energy_weapons_bonus(0)	{
-	small_guns = 2 + prim_stats.agility<<1 + prim_stats.luck>>1;
-	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
-	energy_weapons = 2 + prim_stats.perception* + prim_stats.luck>>1;
+	small_guns = 2 + prim_stats.agility*2 + prim_stats.luck/2;
+	big_guns = 2 + prim_stats.endurance*2 + prim_stats.luck/2;
+	energy_weapons = 2 + prim_stats.perception*2 + prim_stats.luck/2;
 	money = 1000;
 	weapons.push_back(std::unique_ptr<WeaponBase>(new AssaultRifle(small_guns, this)));
 }
 
 void Marine::setRange(){
 	range = 100;
-}
+}             
 
 bool Marine::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
 	this->start_time = start_time;
@@ -459,9 +459,10 @@ bool Marine::action(const vector<vector<char>>& map_index, list<Projectile>& pro
 Pyro::Pyro(double sx, double yx): 
 	Being(sx,yx, 33), explosives_bonus(0),
 	big_guns_bonus(0), fire_bonus(0)	{
-	explosives = 2 + prim_stats.perception<<1 + prim_stats.luck>>1;
-	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
-	fire = 2 + prim_stats.agility* + prim_stats.luck>>1;
+	explosives = 2 + prim_stats.perception*2 + prim_stats.luck/2;
+	big_guns = 2 + prim_stats.endurance*2 + prim_stats.luck/2;
+	fire = 2 + prim_stats.agility*2 + prim_stats.luck/2;
+	der_stats.dmg_res += 3;
 	money = 1000;
 	weapons.push_back(std::unique_ptr<Molotov>(new Molotov(explosives, this)));
 }
@@ -479,9 +480,9 @@ bool Pyro::action(const vector<vector<char>>& map_index, list<Projectile>& proje
 Psychokinetic::Psychokinetic(double sx, double yx): 
 	Being(sx,yx, 33), mind_infiltration_bonus(0), 
 	mental_power_bonus(0), fire_bonus(0)	{
-	mind_infiltration = 2 + prim_stats.intelligence<<1 + prim_stats.luck>>1;
-	mental_power = 2 + prim_stats.endurance + prim_stats.intelligence + prim_stats.luck>>1;
-	fire = 2 + prim_stats.agility* + prim_stats.luck>>1;
+	mind_infiltration = 2 + prim_stats.intelligence*2 + prim_stats.luck/2;
+	mental_power = 2 + prim_stats.endurance + prim_stats.intelligence + prim_stats.luck/2;
+	fire = 2 + prim_stats.agility*2 + prim_stats.luck/2;
 	money = 1000;
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Pyrokinesis(fire, this)));
 }
@@ -499,9 +500,9 @@ bool Psychokinetic::action(const vector<vector<char>>& map_index, list<Projectil
 Android::Android(double sx, double yx): 
 	Being(sx,yx, 33), punch_bonus(0), 
 	big_guns_bonus(0), energy_weapons_bonus(0)	{
-	punch = 2 + prim_stats.strength/2 + prim_stats.luck>>1;
-	big_guns = 2 + prim_stats.endurance<<1 + prim_stats.luck>>1;
-	energy_weapons = 2 + prim_stats.perception* + prim_stats.luck>>1;
+	punch = 2 + prim_stats.strength/2 + prim_stats.luck/2;
+	big_guns = 2 + prim_stats.endurance*2 + prim_stats.luck/2;
+	energy_weapons = 2 + prim_stats.perception*2 + prim_stats.luck/2;
 	money = 1000;
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Punch(punch, this)));
 }
@@ -522,7 +523,7 @@ bool Android::action(const vector<vector<char>>& map_index, list<Projectile>& pr
 
 Zombie::Zombie(double sx, double yx): 
 	Being(sx,yx, 50), target(nullptr) {
-	biting = 2 + prim_stats.strength<<1 + prim_stats.luck>>1;
+	biting = 2 + prim_stats.strength/2 + prim_stats.luck/2;
 
 	weapons.push_back(std::unique_ptr<WeaponBase>(new Bite(biting, this)));
 }
@@ -593,21 +594,22 @@ bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& pro
 
 
 
-
-		Projectile* p;
-		int event = internalShoot(curr_target->getX(), curr_target->getY(), deg, &p);
-		switch (event){
-		case BANG:
-			projectiles.push_back(*p);
-			break;
-		case CASTING:
-			break;
-		//default:
-			//resetFire();
+		if(rand()%4 == 0) {
+			Projectile* p;
+			int event = internalShoot(curr_target->getX(), curr_target->getY(), deg, &p);
+			switch (event){
+			case BANG:
+				projectiles.push_back(*p);
+				break;
+			case CASTING:
+				break;
+			//default:
+				//resetFire();
+			}
 		}
 	}
 	else resetFire();
-	return true;
+	return true; 
 	
 }
 

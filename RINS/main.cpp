@@ -282,8 +282,6 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			else itemover = -1;
 
 			double overx = 0.145, overy = 0.145;
-
-			cout << i << " " << itemover << endl;
 			// Hover window with item data.
 			//if(itemover == i) {
 			//Derived& der = it.getDerivedBonuses();

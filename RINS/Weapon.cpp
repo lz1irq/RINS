@@ -138,7 +138,7 @@ void WeaponBase::pickUp() {
 	picked_up = true;
 }
 
-AssaultRifle::AssaultRifle(int wskill, Being* assoc_class) : WeaponBase(BULLET, wskill, 15, 30, 15, 80, 80) {
+AssaultRifle::AssaultRifle(int wskill, Being* assoc_class) : WeaponBase(BULLET, wskill, 9, 30, 15, 80, 80) {
 	this->assoc_class = assoc_class;
 }
 
@@ -146,7 +146,7 @@ Projectile& AssaultRifle::shoot(double angle, double px, double py, Hitbox& h) {
 	return *new Projectile(type, dmg, fly_t_init, det_t_init, angle, px, py, assoc_class, h, NOWAIT, 1, 0, 1);
 }
 
-Pyrokinesis::Pyrokinesis(int wskill, Being* assoc_class) : WeaponBase(FIRE, wskill, 15, 30, 300, 80, 80) {
+Pyrokinesis::Pyrokinesis(int wskill, Being* assoc_class) : WeaponBase(FIRE, wskill, 8, 30, 300, 80, 80) {
 	this->assoc_class = assoc_class;
 }
 
@@ -154,7 +154,7 @@ Projectile& Pyrokinesis::shoot(double angle, double px, double py, Hitbox& h) {
 	return *new Projectile(type, dmg, fly_t_init, det_t_init, angle, px, py, assoc_class, h, NOWAIT, 5, 0, 10);
 }
 
-Molotov::Molotov(int wskill, Being* assoc_class) : WeaponBase(FIRE, wskill, 15, 30, 100, 40, 70) {
+Molotov::Molotov(int wskill, Being* assoc_class) : WeaponBase(FIRE, wskill, 8, 30, 100, 40, 70) {
 	this->assoc_class = assoc_class;
 }
 
@@ -162,7 +162,7 @@ Projectile& Molotov::shoot(double angle, double px, double py, Hitbox& h) {
 	return *new Projectile(type, dmg, fly_t_init, det_t_init, angle, px, py, assoc_class, h, WAIT_WITH_INTERACT, 8, 300, 12);
 }
 
-Punch::Punch(int wskill, Being* assoc_class) : WeaponBase(BULLET, wskill, 15, 30, 40, 5, 5) {
+Punch::Punch(int wskill, Being* assoc_class) : WeaponBase(BULLET, wskill, 7, 30, 40, 5, 5) {
 	this->assoc_class = assoc_class;
 }
 
@@ -170,7 +170,7 @@ Projectile& Punch::shoot(double angle, double px, double py, Hitbox& h) {
 	return *new Projectile(type, dmg, fly_t_init, det_t_init, angle, px, py, assoc_class, h, NOWAIT, 1, 0, 4);
 }
 
-Bite::Bite(int wskill, Being* assoc_class) : WeaponBase(BULLET, wskill, 40, 30, 3000, 5, 5) {
+Bite::Bite(int wskill, Being* assoc_class) : WeaponBase(BULLET, wskill, 8, 30, 3000, 5, 5) {
 	this->assoc_class = assoc_class;
 }
 
