@@ -32,6 +32,7 @@ const Being* Projectile::getShooter(){
 
 bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<Being>>& targets, list<unique_ptr<Being>>& players, unsigned int time){
 	if (last_time + speed < time){
+		rflag = true;
 		last_time = time;
 		box.setX(x + cos(dir) * box.getStepX());
 		box.setY(y + sin(dir) * box.getStepY());
@@ -43,6 +44,7 @@ bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<B
 		else{
 			trigger = true;
 			fly_t = 0;
+			wait_on_det = NOWAIT;
 		}
 		if (fly_t){
 			--fly_t;
@@ -55,14 +57,15 @@ bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<B
 		}
 		else if (wait_on_det == NOWAIT)trigger = true;
 	}
-	if (wait_on_det != WAIT_WITHOUT_INTERACT){
+	if (wait_on_det != WAIT_WITHOUT_INTERACT && rflag){
+		rflag = false;
 		for (auto m = begin(targets); m != end(targets); ++m){
 			int mx = ((*m)->getX() + (*m)->getStepX()*1.5) / (*m)->getStepX();
 			int my = ((*m)->getY() + (*m)->getStepY()*1.5) / (*m)->getStepY();
 			int px = (box.getX() + (*m)->getStepX()*1.5) / box.getStepX();
 			int py = (box.getY() + (*m)->getStepY()*1.5) / box.getStepY();
 			int dist = sqrt(pow(px - mx, 2) + pow(py - my, 2));
-			if (dist < range){
+			if (dist <= range){
 				if (typeid(*(*m)) != sh){
 					(*m)->takeProjectile(*this);
 					trigger = true;
@@ -76,7 +79,7 @@ bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<B
 			int px = (box.getX() + (*m)->getStepX()*1.5) / box.getStepX();
 			int py = (box.getY() + (*m)->getStepY()*1.5) / box.getStepY();
 			int dist = sqrt(pow(px - mx, 2) + pow(py - my, 2));
-			if (dist < range){
+			if (dist <= range){
 				if (typeid(*(*m)) != sh){
 					(*m)->takeProjectile(*this);
 					trigger = true;
@@ -154,7 +157,7 @@ Projectile& Pyrokinesis::shoot(double angle, double px, double py, Hitbox& h) {
 	return *new Projectile(type, dmg, fly_t_init, det_t_init, angle, px, py, assoc_class, h, NOWAIT, 5, 0, 10);
 }
 
-Molotov::Molotov(int wskill, Being* assoc_class) : WeaponBase(FIRE, wskill, 8, 30, 100, 40, 70) {
+Molotov::Molotov(int wskill, Being* assoc_class) : WeaponBase(FIRE, wskill, 1, 30, 100, 40, 70) {
 	this->assoc_class = assoc_class;
 }
 

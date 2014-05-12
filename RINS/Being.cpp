@@ -115,10 +115,10 @@ bool Being::move(int dir, bool reverse) {
 		else if (dir == UP) y -= move_y;
 		else if (dir == DOWN) y += move_y;
 		else{
-			if (dir & LEFT) x -= move_x / 2.0;
-			if (dir & RIGHT) x += move_x / 2.0;
-			if (dir & UP) y -= move_y / 2.0;
-			if (dir & DOWN) y += move_y / 2.0;
+			if (dir & LEFT) x -= move_x * 0.70710678118;
+			if (dir & RIGHT) x += move_x * 0.70710678118;
+			if (dir & UP) y -= move_y * 0.70710678118;
+			if (dir & DOWN) y += move_y * 0.70710678118;
 		}
 
 		HAJA++;
@@ -307,7 +307,7 @@ void Being::takeProjectile(Projectile& bullet) {
 
 	if((bullet.getDamage() - def_skill) > der_stats.health) der_stats.health = 0;
 	else der_stats.health -= (bullet.getDamage() - def_skill);
-	cout << bullet.getShooter() << " " << bullet.getDamage() - def_skill << endl;
+	//cout << bullet.getShooter() << " " << bullet.getDamage() - def_skill << endl;
 
 	if (bullet.getDamage() - def_skill > curr_threat || curr_target == nullptr){
 		curr_threat = bullet.getDamage() - def_skill;
@@ -534,6 +534,7 @@ void Zombie::setRange(){
 
 bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
 	this->start_time = start_time;
+	cout << der_stats.health << endl;
 	if(der_stats.health == 0) {
 		cout << "ZOMBIE DEAD" << endl;
 		return false;
@@ -590,22 +591,16 @@ bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& pro
 					}
 				}
 		}
-
-
-
-
-		if(rand()%4 == 0) {
-			Projectile* p;
-			int event = internalShoot(curr_target->getX(), curr_target->getY(), deg, &p);
-			switch (event){
-			case BANG:
-				projectiles.push_back(*p);
-				break;
-			case CASTING:
-				break;
-			//default:
-				//resetFire();
-			}
+		Projectile* p;
+		int event = internalShoot(curr_target->getX(), curr_target->getY(), deg, &p);
+		switch (event){
+		case BANG:
+			projectiles.push_back(*p);
+			break;
+		case CASTING:
+			break;
+		//default:
+			//resetFire();
 		}
 	}
 	else resetFire();
