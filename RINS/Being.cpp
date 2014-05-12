@@ -535,6 +535,8 @@ void Zombie::setRange(){
 bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
 	this->start_time = start_time;
 	cout << der_stats.health << endl;
+	bool revdir = false;
+	if (der_stats.health < 50)revdir = true;
 	if(der_stats.health == 0) {
 		cout << "ZOMBIE DEAD" << endl;
 		return false;
@@ -557,7 +559,7 @@ bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& pro
 			if (dx || dy){
 				double curr_x = getX();
 				double curr_y = getY();
-				if (move(ori, false)){
+				if (move(ori, revdir)){
 					int state = checkCollisions(curr_x, curr_y, map_index);
 					if (state == OUT_OF_BOUNDS){
 						x = curr_x;
@@ -569,7 +571,7 @@ bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& pro
 		else{
 				double curr_x = getX();
 				double curr_y = getY();
-				if (move(orientation, false)){
+				if (move(orientation, revdir)){
 					int state = checkCollisions(curr_x, curr_y, map_index);
 					if (state == OUT_OF_BOUNDS){
 						x = curr_x;
