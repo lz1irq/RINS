@@ -334,9 +334,12 @@ void Being::addExperience(int xp) {
 void Being::levelup() {
 	++level;
 	experience = 0;
-	der_stats.health = 90 + prim_stats.endurance*2 + 10*level;
+	der_stats.max_health = 90 + prim_stats.endurance*2 + 10*level;
 	der_stats.dmg_res =  prim_stats.agility*1.5 + level/2;
-	cout << "You are now level " << level << endl;
+	for( auto it = weapons.begin(); it != weapons.end(); it++) {
+		(*it)->updateDMG();
+	}
+	cout << "DSADSADSA" << endl;
 }
 
 int Being::getExperience() {
@@ -456,12 +459,21 @@ bool Marine::action(const vector<vector<char>>& map_index, list<Projectile>& pro
 	return true;
 }
 
+void Marine::levelup() {
+	small_guns += 1 ;
+	big_guns += 1 ;
+	energy_weapons += 1 ;
+	Being::levelup();
+	der_stats.health = der_stats.max_health;
+	cout << "Marine is now level " << level << endl;
+}
+
 Pyro::Pyro(double sx, double yx): 
 	Being(sx,yx, 33), explosives_bonus(0),
 	big_guns_bonus(0), fire_bonus(0)	{
 	explosives = 2 + prim_stats.perception*2 + prim_stats.luck/2;
 	big_guns = 2 + prim_stats.endurance*2 + prim_stats.luck/2;
-	fire = 2 + prim_stats.agility*2 + prim_stats.luck/2;
+	fire = 2 + prim_stats.agility + prim_stats.luck/2;
 	der_stats.dmg_res += 3;
 	money = 1000;
 	weapons.push_back(std::unique_ptr<Molotov>(new Molotov(explosives, this)));
@@ -475,6 +487,15 @@ bool Pyro::action(const vector<vector<char>>& map_index, list<Projectile>& proje
 	this->start_time = start_time;
 	if(experience == (level+1)*100 )levelup();
 	return true;
+}
+
+void Pyro::levelup() {
+	explosives += 1 ;
+	big_guns += 1 ;
+	fire += 1 ;
+	Being::levelup();
+	der_stats.health = der_stats.max_health;
+	cout << "Pyro is now level " << level << endl;
 }
 
 Psychokinetic::Psychokinetic(double sx, double yx): 
@@ -495,6 +516,15 @@ bool Psychokinetic::action(const vector<vector<char>>& map_index, list<Projectil
 	this->start_time = start_time;
 	if(experience == (level+1)*100 )levelup();
 	return true;
+}
+
+void Psychokinetic::levelup() {
+	mind_infiltration += 1 ;
+	mental_power += 1 ;
+	fire += 1 ;
+	Being::levelup();
+	der_stats.health = der_stats.max_health;
+	cout << "Psycho is now level " << level << endl;
 }
 
 Android::Android(double sx, double yx): 
@@ -521,6 +551,15 @@ bool Android::action(const vector<vector<char>>& map_index, list<Projectile>& pr
 	return true;
 }
 
+void Android::levelup() {
+	punch += 1 ;
+	big_guns += 1 ;
+	energy_weapons += 1 ;
+	Being::levelup();
+	der_stats.health = der_stats.max_health;
+	cout << "Android is now level " << level << endl;
+}
+
 Zombie::Zombie(double sx, double yx): 
 	Being(sx,yx, 50), target(nullptr) {
 	biting = 2 + prim_stats.strength/2 + prim_stats.luck/2;
@@ -534,7 +573,6 @@ void Zombie::setRange(){
 
 bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
 	this->start_time = start_time;
-	cout << der_stats.health << endl;
 	bool revdir = false;
 	if (der_stats.health < 50)revdir = true;
 	if(der_stats.health == 0) {
@@ -608,6 +646,11 @@ bool Zombie::action(const vector<vector<char>>& map_index, list<Projectile>& pro
 	else resetFire();
 	return true; 
 	
+}
+
+void Zombie::levelup() {
+	biting += 1;
+	Being::levelup();
 }
 
 const int BeingResources::getTextureID(const type_info* ti) {

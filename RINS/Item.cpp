@@ -12,7 +12,8 @@ Derived::Derived(Primary prim, int level):
 	crit_bonus(0), dmg_res_bonus(0),
 	melee_dmg_bonus(0), fire_res(0), fire_res_bonus(0) {
 	crit_chance = prim.luck * 0.01;
-	health = 90 + prim.endurance*2 + 10*level;
+	max_health = 90 + prim.endurance*2 + 10*level;
+	health = max_health;
 	melee_dmg = prim.strength/2;
 	dmg_res = prim.agility*1.5;
 }

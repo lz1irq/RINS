@@ -100,7 +100,7 @@ public:
 	int tryToShoot(Being* target, Projectile** p, const vector<vector<char>>& map_index);
 	void equipItem(Item& item);
 	void unequipItem(Item& item);
-	void levelup();
+	virtual void levelup();
 	void addExperience(int xp);
 	int getExperience();
 
@@ -129,6 +129,7 @@ public:
 	Marine(double sx, double sy);
 	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
 	void setRange() final;
+	void levelup();
 };
 
 class Pyro:public Being, BeingResources {
@@ -140,6 +141,7 @@ public:
 	Pyro(double sx, double sy);
 	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
 	void setRange() final;
+	void levelup();
 };
 
 class Psychokinetic: public Being, BeingResources {
@@ -151,6 +153,7 @@ public:
 	Psychokinetic(double sx, double sy);
 	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
 	void setRange() final;
+	void levelup();
 };
 
 class Zombie: public Being, BeingResources {
@@ -161,6 +164,7 @@ public:
 	Zombie(double sx, double sy);
 	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
 	void setRange() final;
+	void levelup();
 };
 
 class Android: public Being, BeingResources {
@@ -172,6 +176,7 @@ public:
 	Android(double sx, double sy);
 	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
 	void setRange() final;
+	void levelup();
 };
 
 #endif

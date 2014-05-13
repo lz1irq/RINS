@@ -53,7 +53,7 @@ public:
 class WeaponBase {
 protected:
 	unsigned int type;
-	int skill_points;
+	int& skill_points;
 	int base_dmg;
 	int dmg;
 	int ammo;
@@ -63,8 +63,8 @@ protected:
 	unsigned int count = 0, speed;
 	int fly_t_init, det_t_init;
 public:
-	WeaponBase(int wtype, int wskill, int wbase_dmg,  int ammo_mag, int speed, int fly_t_init, int det_t_init);
-	void updateSkillPoints(int uskill);
+	WeaponBase(int wtype, int& wskill, int wbase_dmg,  int ammo_mag, int speed, int fly_t_init, int det_t_init);
+	void updateDMG();	
 	int getDamage() const;
 	int getAmmoPerMag() const;
 	bool isPickedUp() const;
@@ -77,31 +77,31 @@ public:
 
 class AssaultRifle: public WeaponBase{
 public:
-	AssaultRifle(int wskill, Being* assoc_class);
+	AssaultRifle(int& wskill, Being* assoc_class);
 	Projectile& shoot(double angle, double px, double py, Hitbox& h);
 };
 
 class Pyrokinesis : public WeaponBase{
 public:
-	Pyrokinesis(int wskill, Being* assoc_class);
+	Pyrokinesis(int& wskill, Being* assoc_class);
 	Projectile& shoot(double angle, double px, double py, Hitbox& h);
 };
 
 class Molotov : public WeaponBase{
 public:
-	Molotov(int wskill, Being* assoc_class);
+	Molotov(int& wskill, Being* assoc_class);
 	Projectile& shoot(double angle, double px, double py, Hitbox& h);
 };
 
 class Bite : public WeaponBase{
 public:
-	Bite(int wskill, Being* assoc_class);
+	Bite(int& wskill, Being* assoc_class);
 	Projectile& shoot(double angle, double px, double py, Hitbox& h);
 };
 
 class Punch : public WeaponBase{
 public:
-	Punch(int wskill, Being* assoc_class);
+	Punch(int& wskill, Being* assoc_class);
 	Projectile& shoot(double angle, double px, double py, Hitbox& h);
 };
 

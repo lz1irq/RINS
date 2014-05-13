@@ -20,7 +20,7 @@ struct Primary {
 struct Derived {
 	double crit_chance, crit_bonus;
 	int dmg_res, dmg_res_bonus;
-	int health;
+	int max_health, health;
 	int melee_dmg, melee_dmg_bonus;
 	int fire_res, fire_res_bonus;
 	Derived(Primary prim, int level);
