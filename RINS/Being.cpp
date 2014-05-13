@@ -464,7 +464,7 @@ void Marine::levelup() {
 	big_guns += 1 ;
 	energy_weapons += 1 ;
 	Being::levelup();
-	der_stats.health = der_stats.max_health;
+	der_stats.health += 10*level;
 	cout << "Marine is now level " << level << endl;
 }
 
@@ -494,7 +494,7 @@ void Pyro::levelup() {
 	big_guns += 1 ;
 	fire += 1 ;
 	Being::levelup();
-	der_stats.health = der_stats.max_health;
+	der_stats.health += 10*level; 
 	cout << "Pyro is now level " << level << endl;
 }
 
@@ -523,7 +523,7 @@ void Psychokinetic::levelup() {
 	mental_power += 1 ;
 	fire += 1 ;
 	Being::levelup();
-	der_stats.health = der_stats.max_health;
+	der_stats.health += 10*level;
 	cout << "Psycho is now level " << level << endl;
 }
 
@@ -556,7 +556,7 @@ void Android::levelup() {
 	big_guns += 1 ;
 	energy_weapons += 1 ;
 	Being::levelup();
-	der_stats.health = der_stats.max_health;
+	der_stats.health += 10*level;
 	cout << "Android is now level " << level << endl;
 }
 
