@@ -129,6 +129,7 @@ public:
 class Game{
 	SDL_Event event;
 	static int secondaryLoop(void* param);
+	static int network(void* param);
 	bool has_event;
 	int mousex, mousey;
 	Uint32 buttons;
@@ -143,6 +144,7 @@ protected:
 public:
 	virtual void mainLoop() = 0;
 	virtual void graphicsLoop() = 0;
+	virtual void networkLoop() = 0;
 	unsigned int getTicks();
 	char getKey(bool pressed);
 	bool isPressed(const char* key);
