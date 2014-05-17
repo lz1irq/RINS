@@ -990,32 +990,32 @@ public:
 		//menu.addField(*new Button("Singleplayer", m4))
 		//	.addField(*new Button("Multiplayer", m2))
 		//	.addField(*new Button("Sound", m3));
-		Menu& m3 = *new Menu("Sounds like a menu");
+		Menu& m3 = *new Menu("Sounds like a menu", [this](){  });
 		m3.addField(*new CheckBox("Music: ", false, [this](MenuControl& mc){  
 			enable_music = static_cast<CheckBox&>(mc).is_on; if (enable_music)playSong(song1); else stopMusic(); }));
 		//	.addField(*new Button("Main menu", menu));
 
-		Menu& m4 = *new Menu("Choose wisely!");
-		m4.addField(*new ClickBox("Pyro!", [this](MenuControl& mc){ SP_class = 1; SP_init = true; }))
-			.addField(*new ClickBox("Marine!", [this](MenuControl& mc){ SP_class = 0; SP_init = true; }))
-			.addField(*new ClickBox("Android!", [this](MenuControl& mc){ SP_class = 3; SP_init = true; }))
-			.addField(*new ClickBox("Psychokinetic!", [this](MenuControl& mc){ SP_class = 2; SP_init = true; }));
+		Menu& m4 = *new Menu("Choose wisely!", [this](){});
+		m4.addField(*new ClickBox("Pyro!", [this](ClickBox& mc){ SP_class = 1; SP_init = true; }))
+			.addField(*new ClickBox("Marine!", [this](ClickBox& mc){ SP_class = 0; SP_init = true; }))
+			.addField(*new ClickBox("Android!", [this](ClickBox& mc){ SP_class = 3; SP_init = true; }))
+			.addField(*new ClickBox("Psychokinetic!", [this](ClickBox& mc){ SP_class = 2; SP_init = true; }));
 
-		Menu& m5 = *new Menu("Are you... Yeah, sure.");
-		m5.addField(*new ClickBox("Yes!", [this](MenuControl& mc){ quit = true; }))
-			.addField(*new ClickBox("Yes!", [this](MenuControl& mc){ quit = true; }));
+		Menu& m5 = *new Menu("Are you... Yeah, sure.", [this](){});
+		m5.addField(*new ClickBox("Yes!", [this](ClickBox& mc){ quit = true; }))
+			.addField(*new ClickBox("Yes!", [this](ClickBox& mc){ quit = true; }));
 		
-		Menu& m1 = *new Menu("NumPlayers");
-		m1.addField(*new MenuButton(m4, "xx", [this](MenuControl& mc){MP_numplayers = 2; MP_server_init = true; }))
-			.addField(*new MenuButton(m4, "xxxx", [this](MenuControl& mc){MP_numplayers = 4; MP_server_init = true;  }))
-			.addField(*new MenuButton(m4, "xxxxxxxx", [this](MenuControl& mc){MP_numplayers = 8; MP_server_init = true;  }))
-			.addField(*new MenuButton(m4, "xxxxxxxxxxxxxxxx", [this](MenuControl& mc){MP_numplayers = 16; MP_server_init = true;  }));
+		Menu& m1 = *new Menu("NumPlayers", [this](){MP_server_init = false; });
+		m1.addField(*new MenuButton(m4, "xx", [this](MenuButton& mc){MP_numplayers = 2; MP_server_init = true; }))
+			.addField(*new MenuButton(m4, "xxxx", [this](MenuButton& mc){MP_numplayers = 4; MP_server_init = true;  }))
+			.addField(*new MenuButton(m4, "xxxxxxxx", [this](MenuButton& mc){MP_numplayers = 8; MP_server_init = true;  }))
+			.addField(*new MenuButton(m4, "xxxxxxxxxxxxxxxx", [this](MenuButton& mc){MP_numplayers = 16; MP_server_init = true;  }));
 
 
-		Menu& m2 = *new Menu("Multiplayer");
-		m2.addField(*new MenuButton(m1, "Start server...", [this](MenuControl& mc){}));
+		Menu& m2 = *new Menu("Multiplayer", [this](){});
+		m2.addField(*new MenuButton(m1, "Start server...", [this](MenuButton& mc){}));
 
-		curr_m = new Menu("Main");
+		curr_m = new Menu("Main", [this](){});
 		//Menu* m = new Menu();
 		//Menu* t = new Menu();
 
@@ -1023,10 +1023,11 @@ public:
 		//m->addField(*new TextBox("Type: ", [this](MenuControl& mc){cout << dynamic_cast<TextBox&>(mc).done << endl;}))
 		//	.addField(*new CheckBox("You turn me: ", true, [this](MenuControl& mc){cout << "cli-cli" << endl;}));
 
-		curr_m->addField(*new MenuButton(m4, "Singleplayer...", [this](MenuControl& mc){ MP_server_init = false; }))
-			.addField(*new MenuButton(m2, "Multiplayer...", [this](MenuControl& mc){cout << "c02" << endl; }))
-			.addField(*new MenuButton(m3, "Music...", [this](MenuControl& mc){cout << "c03" << endl; }))
-			.addField(*new MenuButton(m5, "Quit...", [this](MenuControl& mc){cout << "c04" << endl; }));
+		curr_m->addField(*new MenuButton(m4, "Singleplayer...", [this](MenuButton& mc){cout << "c01" << endl; }))
+			.addField(*new MenuButton(m2, "Multiplayer...", [this](MenuButton& mc){cout << "c02" << endl; }))
+			.addField(*new MenuButton(m3, "Music...", [this](MenuButton& mc){cout << "c03" << endl; }))
+			.addField(*new MenuButton(m5, "Quit...", [this](MenuButton& mc){cout << "c04" << endl; }));
+			//.addField(*new TextBox("Type: ", [this](TextBox& mc){cout << mc.done << endl; }));
 		//	.addField(*new MenuButton(*m, "B2B", [this](MenuControl& mc){cout << "cli-cli" << endl;}));
 	}
 	catch (Error e){
