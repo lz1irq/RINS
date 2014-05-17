@@ -171,7 +171,10 @@ Menu* Menu::Check(double mx, double my, bool pressed, bool canpress, Game& base)
 		z = true;
 	}
 	if (!z)lastm = -1;
-	if (lastm != -1 && pressed)menu_select = lastm;
+	if (lastm != -1 && pressed){
+		lastmx = mx;
+		menu_select = lastm;
+	}
 	if (menu_select != -1 && canpress){
 		if (lastm == menu_select){
 			if (lastm > -1)options.at(lastm)->exec(*this);
@@ -192,6 +195,10 @@ Menu* Menu::Check(double mx, double my, bool pressed, bool canpress, Game& base)
 	Menu* m = curr;
 	curr = this;
 	return m;
+}
+
+double Menu::getLastMx(){
+	return lastmx;
 }
 
 void MenuButton::action(Menu& m){
@@ -295,6 +302,37 @@ ClickBox::ClickBox(string name, function<void(ClickBox&)> lambda) : MenuControl(
 void ClickBox::Render(double x, double y, double w, double h, Renderer& rend, int font, Textures t, bool m_over){
 	if (t != ON_CLICK)t = IS_SET;
 	rend.applyTexture(getTexture(&typeid(*this), t), x, y, w, h);
+	double tw, th;
+	string msg;
+	rend.getTextWH(font, name.c_str(), tw, th);
+	tw *= hsize / th;
+	th = hsize;
+	RGBA* color;
+	if (m_over)color = textcol[0];
+	else color = textcol[1];
+	rend.displayText(font, name.c_str(), *color, x + w / 2.0 - tw / 2.0, y + h / 2.0 - th / 2.0, tw, th);
+}
+
+
+void SlideBar::action(Menu& m){
+	double mouse_pos = (m.getLastMx()) - (lastx+slidew);
+	if (mouse_pos < 0)mouse_pos = 0;
+	res = mouse_pos / slide_part;
+	if (res > 100)res = 100;
+	slide_percent = res;
+}
+
+SlideBar::SlideBar(int initial, string name, function<void(SlideBar&)> lambda) : MenuControl(name, lambda){
+	if (initial < 0)initial = 0;
+	if (initial > 100)initial = 100;
+	res = initial;
+}
+
+void SlideBar::Render(double x, double y, double w, double h, Renderer& rend, int font, Textures t, bool m_over){
+	lastx = x;
+	if (t != ON_CLICK)t = IS_UNSET;
+	rend.applyTexture(getTexture(&typeid(*this), t), x, y, w, h);
+	rend.applyTexture(getTexture(&typeid(*this), IS_SET), slidew + x + res*slide_disp - slidew / 8 , y, slidew, h);
 	double tw, th;
 	string msg;
 	rend.getTextWH(font, name.c_str(), tw, th);

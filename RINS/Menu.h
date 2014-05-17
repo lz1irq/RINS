@@ -75,6 +75,7 @@ class Menu : private MenuResources{
 	friend class MenuButton;
 	Game* base;
 	string title;
+	double lastmx = 0;
 public:
 	Menu(string title, function<void()> reset);
 	void setCurr(Menu& m);
@@ -86,6 +87,7 @@ public:
 	Menu& addField(MenuControl& m);
 	void Render(Renderer& rend, int font);
 	Menu* Check(double mx, double my, bool pressed, bool canpress, Game& base);
+	double getLastMx();
 };
 
 class MenuButton: public MenuControl{
@@ -118,6 +120,19 @@ class ClickBox: public MenuControl{
 	void action(Menu& m);
 public:
 	ClickBox(string name, function<void(ClickBox&)> lambda);
+	void Render(double x, double y, double w, double h, Renderer& rend, int font, Textures t, bool m_over);
+};
+class SlideBar : public MenuControl{
+	double slidew = 0.01;
+	double lastx;
+	double slide_len = MenuResources::optionxsize - 2*slidew;
+	double slide_part = slide_len / 100.0;
+	double slide_disp = slide_len / 101.0;
+	double res = 0;
+	void action(Menu& m);
+public:
+	int slide_percent = 0;
+	SlideBar(int initial, string name, function<void(SlideBar&)> lambda);
 	void Render(double x, double y, double w, double h, Renderer& rend, int font, Textures t, bool m_over);
 };
 #endif

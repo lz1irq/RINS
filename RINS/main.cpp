@@ -942,7 +942,7 @@ public:
 		player_types[ANDROID] = &createInstance<Android>;
 
 
-		setMusicVolume(MAX_VOL/8);
+		setMusicVolume(MAX_VOL/2);
 		song1 = loadSong("Sounds/level1.mid");
 		MenuResources::optionysize = 0.05;
 		MenuResources::optionspacing = 0.01;
@@ -969,6 +969,9 @@ public:
 		MenuResources::addTexture(loadTexture("Textures/button1.png"), &typeid(ClickBox), IS_UNSET);
 		MenuResources::addTexture(loadTexture("Textures/button1.png"), &typeid(ClickBox), IS_SET);
 		MenuResources::addTexture(loadTexture("Textures/textc.png"), &typeid(ClickBox), ON_CLICK);
+		MenuResources::addTexture(loadTexture("Textures/button1.png"), &typeid(SlideBar), IS_UNSET);
+		MenuResources::addTexture(loadTexture("Textures/slide.png"), &typeid(SlideBar), IS_SET);
+		MenuResources::addTexture(loadTexture("Textures/textc.png"), &typeid(SlideBar), ON_CLICK);
 
 
 		//Menu& m2 = *new Menu();
@@ -991,8 +994,8 @@ public:
 		//	.addField(*new Button("Multiplayer", m2))
 		//	.addField(*new Button("Sound", m3));
 		Menu& m3 = *new Menu("Sounds like a menu", [this](){  });
-		m3.addField(*new CheckBox("Music: ", false, [this](MenuControl& mc){  
-			enable_music = static_cast<CheckBox&>(mc).is_on; if (enable_music)playSong(song1); else stopMusic(); }));
+		m3.addField(*new CheckBox("Music: ", false, [this](CheckBox& mc){  enable_music = mc.is_on; if (mc.is_on)playSong(song1); else stopMusic(); }))
+			.addField(*new SlideBar(50, "Volume:", [this](SlideBar& mc){   setMusicVolume((MAX_VOL / 100.0)*mc.slide_percent);   }));
 		//	.addField(*new Button("Main menu", menu));
 
 		Menu& m4 = *new Menu("Choose wisely!", [this](){});
