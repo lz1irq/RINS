@@ -487,6 +487,8 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	}
 
 	void updateMonsters(){
+		Being* closest = nullptr; //no targets in range
+		double lastdist = 0.1; //0.1 is what??? idk but it works!
 		monster.lock();
 		for (auto m = begin(monsters); m != end(monsters); ++m){
 			bool res = (*m)->action(getMapIndex(), projectiles, targets, getTicks());
@@ -502,8 +504,18 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				curr_target = nullptr;
 			}
 			else{
-				if (mouseOverTarget((*m)->getX(), (*m)->getY()) && pressed){
-					curr_target = &**m;
+				//if (mouseOverTarget((*m)->getX(), (*m)->getY()) && pressed){
+					//curr_target = &**m;
+				//}
+				if (pressed){
+					double mx = getMouseX() + deltax;
+					double my = getMouseY() + deltay;
+					double dist = sqrt(pow(((*m)->getX() - mx), 2) + pow(((*m)->getY() - my), 2));
+					if (dist < lastdist){
+						lastdist = dist;
+						closest = &**m;
+						curr_target = closest;
+					}
 				}
 			}
 		}
@@ -797,12 +809,6 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		if(text[0] == 0) text[0] = '0';
 		text[a] = 0;
 		return text;
-	}
-	bool mouseOverTarget(double tx, double ty){
-		double mx = getMouseX() + deltax;
-		double my = getMouseY() + deltay;
-		if (mx > tx && mx < tx + 1.0 / xsize && my > ty && my < ty + 1.0 / ysize)return true;
-		return false;
 	}
 	void updatePress(){
 		pressed = false;
