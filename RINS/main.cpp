@@ -905,20 +905,20 @@ public:
 		ItemResources::addTextureID(loadTexture("Textures/armour.png"), &typeid(BodyArmour));
 		ItemResources::addTextureID(loadTexture("Textures/amp.png"), &typeid(PsychoAmp));
 
-		bg[0] = loadTexture("Textures/floor1.jpg");
-		bg[1] = loadTexture("Textures/cement.jpg");
-		bg[2] = loadTexture("Textures/dirt2.jpg");
+		bg[BUILDING] = loadTexture("Textures/floor1.jpg");
+		bg[HOSPITAL] = loadTexture("Textures/cement.jpg");
+		bg[LABYRINTH] = loadTexture("Textures/dirt2.jpg");
 
-		wall[0]  = loadTexture("Textures/brick3.png");
-		wall[1]  = loadTexture("Textures/brick4.png");
-		wall[2]  = loadTexture("Textures/brick5.png");
+		wall[BUILDING] = loadTexture("Textures/brick3.png");
+		wall[HOSPITAL] = loadTexture("Textures/brick4.png");
+		wall[LABYRINTH] = loadTexture("Textures/brick5.png");
 
-		side[0][0] = loadTexture("Textures/school_1.png");
-		side[0][1] = loadTexture("Textures/school_2.png");
-		side[1][0] = loadTexture("Textures/hospital_1.png");
-		side[1][1] = loadTexture("Textures/hospital_2.png");
-		side[2][0] = loadTexture("Textures/forest_1.png");
-		side[2][1] = loadTexture("Textures/forest_2.png");
+		side[BUILDING][0] = loadTexture("Textures/school_1.png");
+		side[BUILDING][1] = loadTexture("Textures/school_2.png");
+		side[HOSPITAL][0] = loadTexture("Textures/hospital_1.png");
+		side[HOSPITAL][1] = loadTexture("Textures/hospital_2.png");
+		side[LABYRINTH][0] = loadTexture("Textures/forest_1.png");
+		side[LABYRINTH][1] = loadTexture("Textures/forest_2.png");
 
 		iframe = loadTexture("Textures/itemframe.png");
 		iframesel = loadTexture("Textures/itemframesel.png");

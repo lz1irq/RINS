@@ -9,6 +9,7 @@ using namespace std;
 #define _GLIBCXX_MAP_H
 
 enum blocks{ EXIT = 17, ENTRY, VENDING, DROP };
+enum maps{ BUILDING = 0, HOSPITAL, LABYRINTH};
 class Map{
 	double roomX, roomY;
 	mt19937 pattern;

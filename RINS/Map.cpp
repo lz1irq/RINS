@@ -1,4 +1,5 @@
 #include "Map.h"
+#include <bitset>
 
 //int xsize, ysize; //SHOULD BE FIXED
 Map::Map() : roomX(1), roomY(1){
@@ -247,86 +248,152 @@ void Map::generateRoom(uint32_t seed_, bool exited){
 	room[room_entry_x][room_entry_y] = ENTRY;
 	room[room_exit_x][room_exit_y] = EXIT;
 
-	//generate some basic structures
-	int numstructs = pattern() % 20;
-	numstructs *= roomX*roomY;
-	for (int i = 0; i < numstructs; ++i){
-		int structsize = 2 + (pattern() % 5);
-		int structori = pattern() % 2;//X:Y
-		int structdir = pattern() % 2;
-		int initialx = pattern() % xmax;
-		int initialy = pattern() % ymax;
+	map_type = pattern() % 3;
 
-		int endx, endy;
-		bool begin;
-		switch (structori){
-		case 0: //orientation X
-			endx = initialx + structsize;
-			endy = initialy;
-			if (!structdir)endx = initialx + structsize;
-			else endx = initialx - structsize;
-			begin = true;
-			for (int a = min(initialx, endx); a < max(initialx, endx); ++a){
-				int x = a;
-				int y = endy;
-				try{
-					if (!room.at(x-1).at(y-1)){
-						if (!room.at(x).at(y - 1)){
-							if (!room.at(x + 1).at(y - 1)){
-								if (!room.at(x + 1).at(y)){
-									if (!room.at(x + 1).at(y + 1)){
-										if (!room.at(x).at(y + 1)){
-											if (!room.at(x - 1).at(y + 1)){
-												if (!room.at(x - 1).at(y) || begin == false){
-													room[x][y] = 2;
-												}
-											}
-										}
-									}
+	if (map_type == LABYRINTH){
+		const int fieldsize = (roomX*xsize - 4) / 3;
+		const int fysize = (roomY*ysize - 5) / 3;
+		int index[1024];
+		int index2[1024];
+		int maxind = 0;
+		for (int i = 0; i < fieldsize; ++i){
+			index[i] = i;
+			++maxind;
+		}
+		int ypos = 2;
+		for (int h = 0; h < fysize; ++h){
 
-								}
-							}
-						}
-					}
-				}
-				catch (...){}
-				begin = false;
+			for (int i = 1; i < fieldsize; ++i){
+				bool join = pattern() % 2;
+				if (index[i - 1] != index[i] && join)index[i] = index[i - 1];
 			}
-			break;
-		case 1: //orientation Y
-			endx = initialx;
-			if (!structdir)endy = initialy + structsize;
-			else endy = initialy - structsize;
-			begin = true;
-			for (int a = min(initialy, endy); a < max(initialy, endy); ++a){
-				int x = endx;
-				int y = a;
-				try{
-					if (!room.at(x - 1).at(y - 1)){
-						if (!room.at(x).at(y - 1) || begin == false){
-							if (!room.at(x + 1).at(y - 1)){
-								if (!room.at(x + 1).at(y)){
-									if (!room.at(x + 1).at(y + 1)){
-										if (!room.at(x).at(y + 1)){
-											if (!room.at(x - 1).at(y + 1)){
-												if (!room.at(x - 1).at(y)){
-													room[x][y] = 2;
-												}
-											}
-										}
-									}
-
-								}
-							}
-						}
-					}
+			for (int i = 1; i < fieldsize; ++i){
+				if (index[i - 1] != index[i]){
+					room[2 + i * 3][ypos + 0] = 2;
+					room[2 + i * 3][ypos + 1] = 2;
+					room[2 + i * 3][ypos + 2] = 2;
+					room[2 + i * 3][ypos + 3] = 2;
 				}
-				catch (...){}
-				begin = false;
 			}
-			break;
+			fill_n(index2, fieldsize, -1);
+			int count = 1;
+			for (int i = 1; i < fieldsize; ++i){
+				if (index[i - 1] == index[i])++count;
+				if (index[i - 1] != index[i] || i == fieldsize - 1){
+					//for (int j = 0; j < count; ++j){
+					int where = pattern() % count;
+					index2[i + where - count] = index[i + where - count];
+					//}
+					count = 1;
+				}
+			}
+			for (int i = 1; i < fieldsize; ++i){
+				if (index2[i - 1] != index2[i] && index2[i - 1] == -1 || index2[i] == -1)++maxind;
+				if (index2[i - 1] == -1)index2[i - 1] = maxind;
+				if (index2[i] == -1)index2[i] = maxind;
+			}
+			for (int i = 0; i < fieldsize; ++i){
+				if (index2[i] != index[i]){
+					room[2 + i * 3 + 0][ypos + 3] = 2;
+					room[2 + i * 3 + 1][ypos + 3] = 2;
+					room[2 + i * 3 + 2][ypos + 3] = 2;
+				}
+				index[i] = index2[i];
+			}
+			maxind = 0;
+			int lastind = -1;
+			bool change;
+			for (int i = 0; i < fieldsize; ++i){
+				if (lastind != index2[i])change = true;
+				lastind = index2[i];
+				if (change){
+					index2[i] = maxind;
+					change = false;
+					++maxind;
+				}
+			}
+			ypos += 3;
 		}
 	}
+	else{
+		int numstructs = pattern() % 20;
+		numstructs *= roomX*roomY;
+		for (int i = 0; i < numstructs; ++i){
+			int structsize = 2 + (pattern() % 5);
+			int structori = pattern() % 2;//X:Y
+			int structdir = pattern() % 2;
+			int initialx = pattern() % xmax;
+			int initialy = pattern() % ymax;
+			int endx, endy;
+			bool begin;
+			switch (structori){
+			case 0: //orientation X
+				endx = initialx + structsize;
+				endy = initialy;
+				if (!structdir)endx = initialx + structsize;
+				else endx = initialx - structsize;
+				begin = true;
+				for (int a = min(initialx, endx); a < max(initialx, endx); ++a){
+					int x = a;
+					int y = endy;
+					try{
+						if (!room.at(x-1).at(y-1)){
+							if (!room.at(x).at(y - 1)){
+								if (!room.at(x + 1).at(y - 1)){
+									if (!room.at(x + 1).at(y)){
+										if (!room.at(x + 1).at(y + 1)){
+											if (!room.at(x).at(y + 1)){
+												if (!room.at(x - 1).at(y + 1)){
+													if (!room.at(x - 1).at(y) || begin == false){
+														room[x][y] = 2;
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					catch (...){}
+					begin = false;
+				}
+				break;
+			case 1: //orientation Y
+				endx = initialx;
+				if (!structdir)endy = initialy + structsize;
+				else endy = initialy - structsize;
+				begin = true;
+				for (int a = min(initialy, endy); a < max(initialy, endy); ++a){
+					int x = endx;
+					int y = a;
+					try{
+						if (!room.at(x - 1).at(y - 1)){
+							if (!room.at(x).at(y - 1) || begin == false){
+								if (!room.at(x + 1).at(y - 1)){
+									if (!room.at(x + 1).at(y)){
+										if (!room.at(x + 1).at(y + 1)){
+											if (!room.at(x).at(y + 1)){
+												if (!room.at(x - 1).at(y + 1)){
+													if (!room.at(x - 1).at(y)){
+														room[x][y] = 2;
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					catch (...){}
+					begin = false;
+				}
+				break;
+			}
+		}
+	}
+
 	int numvending = pattern() % 4;
 	for (int i = 0; i < numvending; ++i){
 		int sx = 1 + (pattern() % (xmax - 2));
@@ -334,14 +401,12 @@ void Map::generateRoom(uint32_t seed_, bool exited){
 		room[sx][sy] = VENDING;
 	}
 
-	map_type = pattern() % 3;
 	//generate some basic structures
 
 	//create map map
 	blocks.clear();
 	for (int x = 0; x < room.size(); ++x){
 		for (int y = 0; y < room[x].size(); ++y){
-
 			if (room[x][y]){
 				if (room[x][y] < 16){
 					bool hasleft = x == 0 || room[x - 1][y] > 15 ? false : room[x - 1][y];
@@ -368,6 +433,9 @@ void Map::generateRoom(uint32_t seed_, bool exited){
 					case 6:
 						room[x][y] = 3;
 						break;
+					case 7:
+						room[x][y] = 4;
+						break;
 					case 8:
 						room[x][y] = 2;
 						break;
@@ -377,10 +445,21 @@ void Map::generateRoom(uint32_t seed_, bool exited){
 					case 10:
 						room[x][y] = 2;
 						break;
+					case 11:
+						room[x][y] = 1;
+						break;
 					case 12:
 						room[x][y] = 3;
 						break;
-
+					case 13:
+						room[x][y] = 4;
+						break;
+					case 14:
+						room[x][y] = 3;
+						break;
+					case 15:
+						room[x][y] = 4;
+						break;
 					}
 				}
 				blocks.push_back(Coord((double)x / xsize, (double)y / ysize, room[x][y]));
