@@ -31,6 +31,7 @@ void Map::loadMap(time_t seed){
 	//uint32_t seeds[1];
 	//Seed.generate(&seeds[0], &seeds[1]);
 	//curr_seed = seeds[0];
+	last_room = 1, curr_room = 1;
 	curr_seed = seed;
 	generateRoom(curr_seed, true);
 }

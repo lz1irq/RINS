@@ -22,6 +22,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 	list<unique_ptr<Being>> monsters;
 	list<unique_ptr<Being>> targets;
+	list<Projectile> projectiles;
 	mt19937 pattern;
 
 	int last_tick = 0, timer2 = 0, projectile_tick = 0;
@@ -39,7 +40,6 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	array<Being*(*)(double, double), MAXSIZE> monster_types;
 	array<Being*(*)(double, double), PLAYEND> player_types;
 	array<Item*(*)(), MAXITEMS> item_types;
-	list<Projectile> projectiles;
 
 	Menu* curr_m;
 	bool typing = false, muststop = false;
@@ -59,6 +59,8 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	//int MP_numplayers = 0;
 	//bool MP_init = false;
 	//bool MP_mode = false;
+
+	bool end_of_game = false;
 
 	int iframe, iframesel;
 	bool render_inv = false;
@@ -343,7 +345,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 	void graphicsLoop() final {
 		try{
-			if (!show_menu){
+			if (!show_menu && !end_of_game){
 				lock1.lock();
 				renderMap();
 				lock1.unlock();
@@ -371,6 +373,9 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				curr_m->Render(*this, main_font);
 				//renderMenu();
 				menux.unlock();
+			}
+			else if (end_of_game){
+				displayText(main_font, ("Your score: " + to_string(highscore)).c_str(), RGBA(100, 255, 150, 0), 0.0, 0.0, 0, 0.1);
 			}
 			//else if (MP_noplayers)displayText(main_font, ("Waiting for players to begin..."+to_string(MP_numplayers)).c_str(), RGBA(100, 255, 150, 0), 0.0, 0.0, 0, 0.1);
 
@@ -460,6 +465,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		int x = pattern() % getMapIndex().size();
 		int y = pattern() % getMapIndex()[x].size();
 		if (mustspawn && !getMapIndex()[x][y]){
+			cout << getMaxMonsters() << endl;
 			if (spawned == getMaxMonsters()){
 				if (monsters.size() == 0){
 					completed = true;
@@ -615,9 +621,10 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			//		MP_noplayers = false;
 			//	}
 			//}
-			if (!show_menu){
+			if (!show_menu && !end_of_game){
 				if (updateInternalMapState()) dir = 0;
-				player->action(getMapIndex(), projectiles, targets, getTicks());
+				bool dead = player->action(getMapIndex(), projectiles, targets, getTicks());
+				if (!dead)end_of_game = true;
 				moveAndColide();
 				playerShoot();
 				tryToSpawn();
@@ -736,6 +743,17 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				menux.lock();
 				curr_m = curr_m->Check(getMouseX(), getMouseY(), pressed, cangetpress, *this);
 				menux.unlock();
+			}
+			else if (end_of_game){
+				if (isPressed("ESCAPE")){
+					show_menu = true;
+					end_of_game = false;
+					targets.clear();
+					monsters.clear();
+					projectiles.clear();
+					seed = system_clock::to_time_t(system_clock::now());
+					highscore = 0, spawned = 0, lastroom = 0;
+				}
 			}
 			updatePress();
 		}
