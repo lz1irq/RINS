@@ -215,7 +215,7 @@ void Game::loop(){
 
 int Game::secondaryLoop(void* param) {
 	Game* instance = (Game*)param;
-	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_LOW);
 	while(!(instance->quit)) {
 		instance->graphicsLoop();
 	}
@@ -226,7 +226,7 @@ int Game::network(void* param){
 	Game* instance = (Game*)param;
 	while (!(instance->quit)) {
 		instance->networkLoop();
-		SDL_Delay(2);
+		SDL_Delay(10);
 	}
 	return 0;
 }

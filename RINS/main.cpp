@@ -741,7 +741,8 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				//	}
 				//}
 				getdir();
-				SDL_Delay(0);
+				//SDL_Delay(1);
+				//cout << getTicks() << endl;
 			}
 			else if (show_menu){
 				menux.lock();
