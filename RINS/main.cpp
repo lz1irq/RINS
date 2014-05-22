@@ -465,7 +465,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		int x = pattern() % getMapIndex().size();
 		int y = pattern() % getMapIndex()[x].size();
 		if (mustspawn && !getMapIndex()[x][y]){
-			cout << getMaxMonsters() << endl;
+			//cout << getMaxMonsters() << endl;
 			if (spawned == getMaxMonsters()){
 				if (monsters.size() == 0){
 					completed = true;
@@ -496,12 +496,14 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		Being* closest = nullptr; //no targets in range
 		double lastdist = 0.1; //0.1 is what??? idk but it works!
 		monster.lock();
+		int counter = 0;
 		for (auto m = begin(monsters); m != end(monsters); ++m){
 			bool res = (*m)->action(getMapIndex(), projectiles, targets, getTicks());
 			if (!res){
 				addLoot((*m)->getTileX(), (*m)->getTileY());
 				Being* ptr = &**m;
-				cout << ptr << endl;
+				//cout << ptr << endl;
+				++counter;
 				m = monsters.erase(m);
 				lock1.lock();
 				++highscore;
@@ -525,6 +527,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				}
 			}
 		}
+		if(counter)cout << counter << endl;
 		monster.unlock();
 	}
 
@@ -738,6 +741,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				//	}
 				//}
 				getdir();
+				SDL_Delay(0);
 			}
 			else if (show_menu){
 				menux.lock();

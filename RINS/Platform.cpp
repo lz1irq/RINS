@@ -387,12 +387,13 @@ char* Socket::getNextCommand(Client& c){
 
 }
 
-bool Socket::updateClients(){
+template <class T> bool Socket::updateClients(vector<T>& cli){
 	int active;
 	if (!numused)return true;
 	if ((active = SDLNet_CheckSockets(socketset, 1)) == -1)throw Error(SDLNet_GetError());
 	else if(active > 0){
-		for (auto i = begin(clients); i != end(clients); ++i){
+		auto j = ++begin(cli);
+		for (auto i = begin(clients); i != end(clients); ++i, ++j){
 			if (SDLNet_SocketReady((*i).sock)){
 				int len;
 				if ((*i).len == (*i).bf)continue;
@@ -403,6 +404,7 @@ bool Socket::updateClients(){
 					if ((active=SDLNet_TCP_DelSocket(socketset, (*i).sock)) == -1)throw Error(SDLNet_GetError());
 					else cout << active << endl;
 					i = clients.erase(i);
+					j = cli.erase(j);
 					--numused;
 					return false;
 				}

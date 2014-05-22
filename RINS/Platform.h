@@ -6,6 +6,7 @@
 #include <string.h>
 #include <list>
 #include<iostream>
+#include <vector>
 using namespace std;
 #ifndef _GLIBCXX_PLATFORM_H
 #define _GLIBCXX_PLATFORM_H
@@ -116,7 +117,7 @@ public:
 	int gatherPlayers();
 	void ConnectToServer(int port, const char* ip);
 	void disconncet();
-	bool updateClients();
+	template <class T> bool updateClients(vector<T>& cli);
 	void sendToServer(char* text, int len);
 	list<Client>& getClients();
 	void sendCommand(short num, short datasz, const char* data);
