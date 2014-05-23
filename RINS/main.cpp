@@ -495,7 +495,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	void updateMonsters(){
 		Being* closest = nullptr; //no targets in range
 		double lastdist = 0.1; //0.1 is what??? idk but it works!
-		monster.lock();
+		//monster.lock();
 		int counter = 0;
 		for (auto m = begin(monsters); m != end(monsters); ++m){
 			bool res = (*m)->action(getMapIndex(), projectiles, targets, getTicks());
@@ -504,7 +504,9 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				Being* ptr = &**m;
 				//cout << ptr << endl;
 				++counter;
+				monster.lock();
 				m = monsters.erase(m);
+				monster.unlock();
 				lock1.lock();
 				++highscore;
 				player->addExperience(50);
@@ -528,7 +530,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			}
 		}
 		if(counter)cout << counter << endl;
-		monster.unlock();
+		//monster.unlock();
 	}
 
 	void networkLoop(){
