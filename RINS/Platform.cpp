@@ -179,7 +179,7 @@ void Game::loop(){
 	char tmp[1024] = { 0 };
 	if( (thread_g = SDL_CreateThread(secondaryLoop, "secondaryThread", (void *)this)) == NULL) throw Error( SDL_GetError() );
 	if ((thread_n = SDL_CreateThread(network, "network", (void *)this)) == NULL) throw Error(SDL_GetError());
-	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_LOW);
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
 	while (!quit) {
 		//has_event = SDL_PollEvent(&event);
 		if (SDL_PollEvent(&event)){
@@ -245,6 +245,7 @@ void Game::loop(){
 		buttons = SDL_GetMouseState(&mousex, &mousey);
 		if (SDL_QuitRequested()) quit = true;
 		mainLoop();
+		SDL_Delay(1);
 	}
 	SDL_WaitThread(thread_g, NULL);
 	SDL_WaitThread(thread_n, NULL);
@@ -255,6 +256,7 @@ int Game::secondaryLoop(void* param) {
 	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_LOW);
 	while(!(instance->quit)) {
 		instance->graphicsLoop();
+		SDL_Delay(10);
 	}
 	return 0;
 }
