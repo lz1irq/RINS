@@ -400,18 +400,18 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				switch (event){
 				case OUT_OF_BOUNDS:
 					if (!completed)break;
-					lock1.lock();
 					if (tryRoomChange(player->getTileX(), player->getTileY())){
 						c = getMapEntry();
+						lock1.lock();
 						player->setX(c.x);
 						player->setY(c.y);
+						lock1.unlock();
 						if (getLastExploredRoom() > lastroom){
 							completed = false;
 							spawned = 0;
 							machines.clear();
 						}
 					}
-					lock1.unlock();
 					break;
 				case X_COLLIDE:
 				case Y_COLLIDE:
