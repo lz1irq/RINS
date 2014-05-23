@@ -408,6 +408,7 @@ void Map::generateRoom(uint32_t seed_, bool exited){
 	blocks.clear();
 	for (int x = 0; x < room.size(); ++x){
 		for (int y = 0; y < room[x].size(); ++y){
+			blocks.push_back(Coord((double)x / xsize, (double)y / ysize, 0));
 			if (room[x][y]){
 				if (room[x][y] < 16){
 					bool hasleft = x == 0 || room[x - 1][y] > 15 ? false : room[x - 1][y];

@@ -849,9 +849,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		deltax = player->getX() - alterBeingPosX(player->getX());
 		deltay = player->getY() - alterBeingPosY(player->getY());
 		renderPart(0, 0, 0, 0);
-		applyTexture(bg[maptype], - deltax, -deltay, (double)(getMapIndex().size() / (double)xsize), (double)(getMapIndex()[0].size() / (double)ysize));
-		renderPart(0, 0, 0, 0);
-		if(completed)applyTexture(red, -deltax, -deltay, (double)(getMapIndex().size() / (double)xsize), (double)(getMapIndex()[0].size() / (double)ysize));
+		//applyTexture(bg[maptype], - deltax, -deltay, (double)(getMapIndex().size() / (double)xsize), (double)(getMapIndex()[0].size() / (double)ysize));
 		double room_x, room_y;
 		char wpos, hpos;
 		getRoomSize(room_x, room_y);
@@ -867,6 +865,14 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			double x = block_x - deltax;
 			double y = block_y - deltay;
 			switch (getMapObjects().at(i).type){
+			case 0:
+				applyTexture(bg[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
+				if (completed){
+					renderPart(getMapIndex().size(), getMapIndex()[0].size(), block_x*xsize, block_y*ysize);
+					applyTexture(red, x, y, 1.0 / xsize, 1.0 / ysize);
+					renderPart(0, 0, 0, 0);
+				}
+				break;
 			case 1:
 				applyTexture(wall[maptype], x - 1.0 / (2 * xsize), y, 1.0 / xsize, 1.0 / ysize);
 				applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
@@ -906,10 +912,14 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				applyTexture(droptex, x, y, 1.0 / xsize, 1.0 / ysize);
 				break;
 			default:
+				//cout << "??" << endl;
 				//applyTexture(wall[maptype], x, y, 1.0 / xsize, 1.0 / ysize);
 				break;
 			}
+			renderPart(0, 0, 0, 0);
+			//if (completed && pattern() % 2)applyTexture(red, x, y, 1.0 / xsize, 1.0 / ysize);
 		}
+		//if (completed)applyTexture(red, -deltax, -deltay, (double)(getMapIndex().size() / (double)xsize), (double)(getMapIndex()[0].size() / (double)ysize));
 	}
 public:
 	RINS() try : box(xsize, ysize, 4),
@@ -928,9 +938,9 @@ public:
 		ItemResources::addTextureID(loadTexture("Textures/armour.png"), &typeid(BodyArmour));
 		ItemResources::addTextureID(loadTexture("Textures/amp.png"), &typeid(PsychoAmp));
 
-		bg[BUILDING] = loadTexture("Textures/floor1.jpg");
-		bg[HOSPITAL] = loadTexture("Textures/cement.jpg");
-		bg[LABYRINTH] = loadTexture("Textures/dirt2.jpg");
+		bg[BUILDING] = loadTexture("Textures/floor_tile.png");
+		bg[HOSPITAL] = loadTexture("Textures/cement_tile.png");
+		bg[LABYRINTH] = loadTexture("Textures/dirt_tile.png");
 
 		wall[BUILDING] = loadTexture("Textures/brick3.png");
 		wall[HOSPITAL] = loadTexture("Textures/brick4.png");
@@ -956,7 +966,7 @@ public:
 		exittex = loadTexture("Textures/exit.png");
 		vendtex = loadTexture("Textures/vendtex.png");
 		droptex = loadTexture("Textures/drop.png");
-		red = loadTexture("Textures/red.png");
+		red = loadTexture("Textures/red2.png");
 		setModulateBlending(red);
 
 		main_font = loadFont("Fonts/ARIALUNI.TTF", 42);
