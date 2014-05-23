@@ -346,26 +346,29 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	void graphicsLoop() final {
 		try{
 			if (!show_menu && !end_of_game){
-				lock1.lock();
-				renderMap();
-				lock1.unlock();
-				playerm.lock();
-				displayPlayer();
-				playerm.unlock();
-				monster.lock();
-				displayMonsters();
-				monster.unlock();
-				projectile.lock();
-				displayProjectiles();
-				projectile.unlock();
+				if (lock1.try_lock()){
+					renderMap();
+					lock1.unlock();
+				}
+				if (monster.try_lock()){
+					displayMonsters();
+					monster.unlock();
+				}
+				if (projectile.try_lock()){
+					displayProjectiles();
+					projectile.unlock();
+				}
 				if(render_machine) {
 					renderVendingMachine();
 					renderInventory();
 				}
 				else if(render_inv) renderInventory();
-				lock1.lock();
-				displayHUD();
-				lock1.unlock();
+				if (playerm.try_lock()){
+					displayPlayer();
+					renderPart(0, 0, 0, 0);
+					displayHUD();
+					playerm.unlock();
+				}
 			}
 			else if (show_menu){
 				renderPart(0, 0, 0, 0);
