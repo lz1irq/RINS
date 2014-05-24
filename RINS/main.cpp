@@ -214,27 +214,28 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		int rows = -1;
 		applyTexture(MenuResources::background, xstart, ystart, 0.48,0.85);
 		int itemc = curr_machine->itemCount();
-		machine.lock();
-		for(int i=0;i<itemc;++i) {
-			if(i%3 == 0) ++rows;
+		if(machine.try_lock()){
+			for(int i=0;i<itemc;++i) {
+				if(i%3 == 0) ++rows;
 
-			Item& it = curr_machine->getNextItem();
-			int tid = ItemResources::getTextureID(&typeid(it));
+				Item& it = curr_machine->getNextItem();
+				int tid = ItemResources::getTextureID(&typeid(it));
 
-			double xp = 0.027+(i%3)*itemx+framesp;
-			double yp = rows*itemy + 5*framesp;
+				double xp = 0.027+(i%3)*itemx+framesp;
+				double yp = rows*itemy + 5*framesp;
 
-			double nextx = xstart+0.027+((i+1)%3)*itemx+framesp;
-			if((i+1)%3 == 0 && i>0) nextx+=3*itemx;
-			double nexty = (rows+1)*itemy+5*framesp;
-			double mx = getMouseX();
-			double my = getMouseY();
+				double nextx = xstart+0.027+((i+1)%3)*itemx+framesp;
+				if((i+1)%3 == 0 && i>0) nextx+=3*itemx;
+				double nexty = (rows+1)*itemy+5*framesp;
+				double mx = getMouseX();
+				double my = getMouseY();
 
-			applyTexture(tid, xp, yp, itemx, itemy);
-			if(itemsel == i) applyTexture(iframesel, xp, yp, itemx, itemy);
-			else applyTexture(iframe, xp, yp, itemx, itemy);
+				applyTexture(tid, xp, yp, itemx, itemy);
+				if(itemsel == i) applyTexture(iframesel, xp, yp, itemx, itemy);
+				else applyTexture(iframe, xp, yp, itemx, itemy);
+			}
+			machine.unlock();
 		}
-		machine.unlock();
 	}
 
 	void renderInventory() {
@@ -263,35 +264,36 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		for(int i=0;i<itemc;++i) {
 
 			if(i%3 == 0) ++rows;
-			inv.lock();
-			Item& it = player->getNextItem();
-			int tid = ItemResources::getTextureID(&typeid(it));
-			inv.unlock();
+			if(inv.try_lock()){
+				Item& it = player->getNextItem();
+				int tid = ItemResources::getTextureID(&typeid(it));
+				inv.unlock();
 
-			double xp = xstart+0.027+(i%3)*itemx+framesp;
-			double yp = rows*itemy + 5*framesp;
+				double xp = xstart+0.027+(i%3)*itemx+framesp;
+				double yp = rows*itemy + 5*framesp;
 
-			double nextx = xstart+0.01+((i+1)%3)*itemx+framesp;
-			if((i+1)%3 == 0 && i>0) nextx+=3*itemx;
-			double nexty = (rows+1)*itemy+5*framesp;
-			double mx = getMouseX();
-			double my = getMouseY();
+				double nextx = xstart+0.01+((i+1)%3)*itemx+framesp;
+				if((i+1)%3 == 0 && i>0) nextx+=3*itemx;
+				double nexty = (rows+1)*itemy+5*framesp;
+				double mx = getMouseX();
+				double my = getMouseY();
 
-			applyTexture(tid, xp, yp, itemx, itemy);
-			if(itemseli == i) applyTexture(iframesel, xp, yp, itemx, itemy);
-			else applyTexture(iframe, xp, yp, itemx, itemy);
+				applyTexture(tid, xp, yp, itemx, itemy);
+				if(itemseli == i) applyTexture(iframesel, xp, yp, itemx, itemy);
+				else applyTexture(iframe, xp, yp, itemx, itemy);
 
-			if(mx>xp && mx<nextx && my>yp && my<nexty) itemover = i;
-			else itemover = -1;
+				if(mx>xp && mx<nextx && my>yp && my<nexty) itemover = i;
+				else itemover = -1;
 
-			double overx = 0.145, overy = 0.145;
-			// Hover window with item data.
-			//if(itemover == i) {
-			//Derived& der = it.getDerivedBonuses();
-			//if(1.0-nextx > overx)applyTexture(menu_bg, nextx, nexty, overx, overy);
-			//else applyTexture(menu_bg, xp, nexty, overx, overy);
+				double overx = 0.145, overy = 0.145;
+				// Hover window with item data.
+				//if(itemover == i) {
+				//Derived& der = it.getDerivedBonuses();
+				//if(1.0-nextx > overx)applyTexture(menu_bg, nextx, nexty, overx, overy);
+				//else applyTexture(menu_bg, xp, nexty, overx, overy);
 
-			//}
+				//}
+			}
 		}
 
 	}
