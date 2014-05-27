@@ -6,7 +6,6 @@
 #include <string.h>
 #include <list>
 #include<iostream>
-#include <vector>
 using namespace std;
 #ifndef _GLIBCXX_PLATFORM_H
 #define _GLIBCXX_PLATFORM_H
@@ -92,6 +91,7 @@ private:
 	list<Client> clients;
 	int lenz = 0;
 	char command[10240] = { 0 };
+	bool linked = false;
 public:
 	class Client{
 		friend class Socket;
@@ -111,21 +111,48 @@ public:
 			return cl.sock == sock;
 		}
 	};
-	enum Commands{ KEYBOARD, GETINFO, SERVERINFO, SELF, BULLETZ, ENDBIT, MONSTER };
 	Socket();
 	void startServer(int port);
 	int gatherPlayers();
 	void ConnectToServer(int port, const char* ip);
 	void disconncet();
-	template <class T> bool updateClients(vector<T>& cli);
-	void sendToServer(char* text, int len);
+	template <class T> bool updateClients(list<T>& cli, bool indexed);
+	bool sendToServer(char* text, int len);
 	list<Client>& getClients();
-	void sendCommand(short num, short datasz, const char* data);
+	bool sendCommand(short num, short datasz, const char* data);
 	char* receiveCommand();
 	char* getNextCommand(Client& c);
 	bool commandToClient(list<Client>::iterator&, short num, short datasz, const char* data);
 	~Socket();
 };
+
+template <class T> bool Socket::updateClients(list<T>& cli, bool indexed){
+	int active;
+	if (!numused)return true;
+	if ((active = SDLNet_CheckSockets(socketset, 1)) == -1)throw Error(SDLNet_GetError());
+	else if (active > 0){
+		auto j = begin(cli);
+		for (auto i = begin(clients); i != end(clients); ++i){
+			if (SDLNet_SocketReady((*i).sock)){
+				int len;
+				if ((*i).len == (*i).bf)continue;
+				if ((len = SDLNet_TCP_Recv((*i).sock, &(*i).buf[(*i).len], (*i).bf - (*i).len)) > 0){
+					(*i).len += len;
+				}
+				else {
+					if ((active = SDLNet_TCP_DelSocket(socketset, (*i).sock)) == -1)throw Error(SDLNet_GetError());
+					else cout << active << endl;
+					i = clients.erase(i);
+					if (indexed)j = cli.erase(j);
+					--numused;
+					return false;
+				}
+			}
+			if (indexed)++j;
+		}
+	}
+	return true;
+}
 
 class Game{
 	SDL_Event event;

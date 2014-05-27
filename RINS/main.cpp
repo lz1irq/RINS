@@ -51,16 +51,26 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 	bool SP_init = false;
 	bool MP_server_init = false;
-	bool MP_numplayers = 0;
-	//bool has_MP_server = false;
+	int MP_numplayers = 0;
 	int SP_class;
-	//bool MP_noplayers = false;
 	time_t seed;
-	//int MP_numplayers = 0;
-	//bool MP_init = false;
-	//bool MP_mode = false;
+	int MP_numconn = 1;
+	bool MP_init = false;
+	int conn_confirmed = 0;
+
+	struct login{
+		int mp_class;
+	};
+	struct info{
+		bool is_room_active;
+		int last_room;
+		bool game_end;
+		unsigned int seed;
+		int nplayers;
+	};
 
 	bool end_of_game = false;
+	enum Commands{ MOVE, SHOOT, GETITEM, SELF, MONSTERS, PLAYERS, LOGIN, INFO, BULLETS };
 
 	int iframe, iframesel;
 	bool render_inv = false;
@@ -374,10 +384,15 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			}
 			else if (show_menu){
 				renderPart(0, 0, 0, 0);
-				menux.lock();
-				curr_m->Render(*this, main_font);
-				//renderMenu();
-				menux.unlock();
+				if (!((MP_server_init || MP_init) && SP_init)){
+					menux.lock();
+					curr_m->Render(*this, main_font);
+					menux.unlock();
+				}
+				else{
+					if(MP_server_init)displayText(main_font, ("Waiting for players to begin..." + to_string(MP_numconn) + "/" + to_string(MP_numplayers)).c_str(), RGBA(100, 255, 150, 0), 0.0, 0.0, 0, 0.1);
+					else displayText(main_font, "Waiting for players to begin...", RGBA(100, 255, 150, 0), 0.0, 0.0, 0, 0.1);
+				}
 			}
 			else if (end_of_game){
 				displayText(main_font, ("Your score: " + to_string(highscore)).c_str(), RGBA(100, 255, 150, 0), 0.0, 0.0, 0, 0.1);
@@ -539,98 +554,111 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	}
 
 	void networkLoop(){
-
+		if (MP_server_init && SP_init){
+			if (MP_numconn != MP_numplayers){
+				MP_numconn = gatherPlayers() + 1;
+				updateClients(targets, false);
+			}
+			else{
+				updateClients(targets, false);
+				char* cmd;
+				short cmd_num;
+				short data;
+				list<Client>& cl = getClients();
+				auto i = begin(cl);
+				advance(i, conn_confirmed);
+				for (; i != end(cl); ++i){
+					cmd = getNextCommand(*i);
+					if (cmd){
+						memcpy(&cmd_num, &cmd[0], 2);
+						memcpy(&data, &cmd[2], 2);
+						switch (cmd_num){
+						case LOGIN:
+							if (data != sizeof(login))throw Error("Nope!");
+							login l;
+							memcpy(&l, &cmd[4], data);
+							targets.push_back(unique_ptr<Being>(player_types[l.mp_class](0, 0)));
+							++conn_confirmed;
+							break;
+						default:
+							return;
+						}
+					}
+					else return;
+				}
+				//all the clients are connected and initialized!
+				if (conn_confirmed != MP_numplayers - 1){
+					//someone has disconnected, reset server
+					playerm.lock();
+					targets.clear();
+					playerm.unlock();
+					MP_numconn = 1;
+				}
+				else{
+					//finally ok
+					list<Client>& cl = getClients();
+					auto j = begin(targets);
+					for (auto i = begin(cl); i != end(cl); ++i, ++j){
+						info inf;
+						inf.seed = seed;
+						if (!commandToClient(i, INFO, sizeof(info), (char*)&inf)){
+							playerm.lock();
+							j = targets.erase(j);
+							playerm.unlock();
+						}
+					}
+					MP_server_init = false;
+				}
+			}
+		}
+		else MP_numconn = 1;
+		if (MP_init && SP_init){
+			login l;
+			l.mp_class = SP_class;
+			if (!sendCommand(LOGIN, sizeof(login), (char*)&l)){
+				//server is down
+				SP_init = false;
+			}
+			else {
+				char* cmd;
+				short cmd_num;
+				short data;
+				cmd = receiveCommand();
+				memcpy(&cmd_num, &cmd[0], 2);
+				memcpy(&data, &cmd[2], 2);
+				switch (cmd_num){
+				case INFO:
+					if (data != sizeof(info))throw Error("Nope!");
+					info i;
+					memcpy(&i, &cmd[4], data);
+					seed = i.seed;
+					break;
+				}
+				MP_init = false;
+			}
+		}
+		//initialize - ok
 
 	}
 
 	void mainLoop() final {
 		try {
-			if (SP_init){
-				//if (MP_init){
-				//	server_info si;
-				//	char* c = (char*)&SP_class;
-				//	sendCommand(GETINFO, 4, c);
-				//	c = receiveCommand();
-				//	short cmd;
-				//	short data;
-				//	memcpy(&cmd, &c[0], 2);
-				//	memcpy(&data, &c[2], 2);
-				//	switch (cmd){
-				//	case SERVERINFO:
-				//		if (data != sizeof(si))throw Error("Nope!");
-				//		memcpy(&si, &c[4], sizeof(si));
-				//		seed = si.seed;
-				//		MP_numplayers = si.n_players;
-				//		MP_noplayers = si.gathering;
-				//		//must insert si.game_end!
-				//		break;
-				//	default: throw Error("Nope!");
-				//	}
-				//	if (!MP_noplayers)MP_init = false;
-				//}
-				//if (has_MP_server)MP_noplayers = true;
+			if (SP_init && !MP_server_init && !MP_init){
 				loadMap(seed);
 				c = getMapEntry();
-				targets.push_back(unique_ptr<Being>(player_types[SP_class](c.x, c.y))); player = &**targets.begin();
+				targets.push_back(unique_ptr<Being>(player_types[SP_class](c.x, c.y))); player = &**targets.rbegin();
+				for (auto i = targets.begin(); i != --targets.end(); ++i){
+					(*i)->setX(c.x);
+					(*i)->setY(c.y);
+				}
 				show_menu = false;
 				SP_init = false;
 			}
-			//if (MP_init && !show_menu){
-			//	server_info si;
-			//	char* c = (char*)&SP_class;
-			//	sendCommand(GETINFO, 4, c);
-			//	c = receiveCommand();
-			//	short cmd;
-			//	short data;
-			//	memcpy(&cmd, &c[0], 2);
-			//	memcpy(&data, &c[2], 2);
-			//	switch (cmd){
-			//	case SERVERINFO:
-			//		if (data != sizeof(si))throw Error("Nope!");
-			//		memcpy(&si, &c[4], sizeof(si));
-			//		seed = si.seed;
-			//		MP_numplayers = si.n_players;
-			//		MP_noplayers = si.gathering;
-			//		//must insert si.game_end!
-			//		break;
-			//	default: throw Error("Nope!");
-			//	}
-			//	if (!MP_noplayers){
-			//		MP_init = false;
-			//		MP_mode = true;
-			//	}
-			//}
-			//if (MP_server_init){
-			//	startServer(1337);
-			//	MP_server_init = false;
-			//	cout << "Server init -> success!" << endl;
-			//}
-			//if (MP_noplayers && has_MP_server){
-			//	MP_numplayers = gatherPlayers();
-			//	bool good = true;
-			//	if (!updateClients())good = false;
-			//	list<Socket::Client>& lsc = getClients();
-			//	list<player_info> lpi;
-			//	for (auto i = begin(lsc); i != end(lsc); ++i){
-			//		player_info pi;
-			//		pi.last_command = -1;
-			//		if (!processCommand(getNextCommand(*i), i, pi)){
-			//			good = false;
-			//			break;
-			//		}
-			//		if (pi.last_command != GETINFO){
-			//			good = false;
-			//			break;
-			//		}
-			//		lpi.push_back(pi);
-			//	}
-			//	if (MP_numplayers == 1 && good == true){
-			//		for (auto& i : lpi){
-			//			targets.push_back(unique_ptr<Being>(player_types[i.class_](c.x, c.y)));
-			//		}
-			//		MP_noplayers = false;
-			//	}
-			//}
+			if ((MP_init || MP_server_init) && SP_init){
+				if (isPressed("ESCAPE")){
+					SP_init = false;
+				}
+			}
 			if (!show_menu && !end_of_game){
 				if (updateInternalMapState()) dir = 0;
 				bool dead = player->action(getMapIndex(), projectiles, targets, getTicks());
@@ -640,64 +668,6 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				tryToSpawn();
 				updateMonsters();
 				updateProjectiles();
-				//else{
-				//	char* c = (char*)&dir;
-				//	sendCommand(KEYBOARD, 4, c);
-				//	projectile.lock();
-				//	projectiles.clear();
-				//	projectile.unlock();
-				//	monster.lock();
-				//	monsters.clear();
-				//	monster.unlock();
-				//	short cmd;
-				//	short data;
-				//	Projectile* p;
-				//	Being* b;
-				//	Marine* m;
-				//	for (bool loop = true; loop;){
-				//		c = receiveCommand();
-				//		memcpy(&cmd, &c[0], 2);
-				//		memcpy(&data, &c[2], 2);
-				//		switch (cmd){
-				//		case SELF:
-				//			if (data != sizeof(Marine))throw Error("Nope!1");
-				//			playerm.lock();
-				//			targets.clear();
-				//			m = new Marine(0, 0);
-				//			//swap(*(Marine*)b, *(Marine*)&c[4]);
-				//			//*b = &(Marine*)&c[4];
-				//		    //b = &Marine(*(Marine*)&c[4]);
-				//			//memcpy(b, &c[4], sizeof(Being));
-				//			system("pause");
-				//			memcpy(m, &c[4], sizeof(Marine));
-				//			b = m;
-				//			system("pause");
-				//			cout << sizeof(Being) << " " << sizeof(Marine) << endl;
-				//			system("pause");
-				//			cout << typeid(*b).name();
-				//			system("pause");
-				//			//targets.push_back(unique_ptr<Being>(b));
-				//			player = &**targets.begin();
-				//			playerm.unlock();
-				//			break;
-				//		case ENDBIT:
-				//			loop = false;
-				//			break;
-				//		case BULLETZ:
-				//			if (data != sizeof(Projectile))throw Error("Nope!2");
-				//			p = (Projectile*)&c[4];
-				//			projectiles.push_back(*p);
-				//			break;
-				//		case MONSTER:
-				//			if (data != sizeof(Being))throw Error("Nope!3");
-				//			//b = (Being*)malloc(sizeof(Being));
-				//			//memcpy(b, &c[4], sizeof(Being));
-				//			//monsters.push_back(unique_ptr<Being>(b));
-				//			break;
-				//		default: throw Error("Nope!4");
-				//		}
-				//	}
-				//}
 				if (curr_machine)checkVendingMachines(player->getTileX(), player->getTileY());
 				if (isPressed("P")) render_inv = !render_inv;
 				if (render_machine) {
@@ -705,56 +675,14 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					controlVendingMachine();
 				}
 				else if (render_inv) controlInventory();
-				//if (has_MP_server){
-				//	if (!updateClients()){
-				//		cout << "end game!" << endl;
-				//		exit(0);
-				//	}
-				//	list<Socket::Client>& lsc = getClients();
-				//	list<unique_ptr<Being>>::iterator it2 = targets.begin();
-				//	if (it2 != targets.end())++it2;
-				//	for (auto i = begin(lsc); i != end(lsc); ++i, ++it2){
-				//		player_info pi;
-				//		if (!processCommand(getNextCommand(*i), i, pi)){
-				//			cout << "end game!" << endl;
-				//			exit(0);
-				//		}
-				//		if (pi.last_command == KEYBOARD){
-				//			//cout << pi.keyboard << endl;
-				//			dir = pi.keyboard;
-				//			player = &**it2;
-				//			player->action(getMapIndex(), projectiles, targets, getTicks());
-				//			moveAndColide();
-				//			playerShoot();
-				//			playerm.lock();
-				//			//cout << typeid(*player).name() << endl;
-				//			if (!commandToClient(i, SELF, sizeof(Being), (char*)player)){
-				//				cout << "end game!" << endl;
-				//				exit(0);
-				//			}
-				//			playerm.unlock();
-				//			for (auto& j : projectiles){
-				//				commandToClient(i, BULLETZ, sizeof(Projectile), (char*)&j);
-				//			}
-				//			for (auto& j : monsters){
-				//				commandToClient(i, MONSTER, sizeof(Being), (char*)&j);
-				//			}
-				//			if(!commandToClient(i, ENDBIT, 0, NULL)){
-				//				cout << "end game!" << endl;
-				//				exit(0);
-				//			}
-				//			player = &**targets.begin();
-				//		}
-				//	}
-				//}
 				getdir();
-				//SDL_Delay(1);
-				//cout << getTicks() << endl;
 			}
 			else if (show_menu){
-				menux.lock();
-				curr_m = curr_m->Check(getMouseX(), getMouseY(), pressed, cangetpress, *this);
-				menux.unlock();
+				if (!((MP_server_init || MP_init) && SP_init)){
+					menux.lock();
+					curr_m = curr_m->Check(getMouseX(), getMouseY(), pressed, cangetpress, *this);
+					menux.unlock();
+				}
 			}
 			else if (end_of_game){
 				if (isPressed("ESCAPE")){
@@ -1019,32 +947,11 @@ public:
 		MenuResources::addTexture(loadTexture("Textures/slide.png"), &typeid(SlideBar), IS_SET);
 		MenuResources::addTexture(loadTexture("Textures/textc.png"), &typeid(SlideBar), ON_CLICK);
 
-
-		//Menu& m2 = *new Menu();
-		//m2.addField(*new Button("Start server", *new Command([this](MenuControl& mc){ if (has_MP_server)return; MP_server_init = true; has_MP_server = true;  })))
-		//	.addField(*new TextBox("Connect to: ", *new Command([this](MenuControl& mc){ if (mc.checked()){ ConnectToServer(1337, mc.getText().substr(mc.getID(), string::npos).c_str()); MP_init = true; }})))
-		//	.addField(*new Button("Main menu", menu));
-
-		//Menu& m3 = *new Menu();
-		//m3.addField(*new Checkbox("Enabled", *new Command([this](MenuControl& mc){ enable_music = mc.checked(); if (enable_music)playSong(song1); else stopMusic();}), false))
-		//	.addField(*new Button("Main menu", menu));
-
-		//Menu& m4 = *new Menu();
-		//m4.addField(*new Button("Marine", *new Command([this](MenuControl& mc){ SP_class = 0; SP_init = true; })))
-		//	.addField(*new Button("Pyro", *new Command([this](MenuControl& mc){ SP_class = 1; SP_init = true; })))
-		//	.addField(*new Button("Psychokinetic", *new Command([this](MenuControl& mc){ SP_class = 2; SP_init = true; })))
-		//	.addField(*new Button("Android", *new Command([this](MenuControl& mc){ SP_class = 3; SP_init = true; })))
-		//	.addField(*new Button("Main menu", menu));
-
-		//menu.addField(*new Button("Singleplayer", m4))
-		//	.addField(*new Button("Multiplayer", m2))
-		//	.addField(*new Button("Sound", m3));
 		Menu& m3 = *new Menu("Sounds like a menu", [this](){  });
 		m3.addField(*new CheckBox("Music: ", false, [this](CheckBox& mc){  enable_music = mc.is_on; if (mc.is_on)playSong(song1); else stopMusic(); }))
 			.addField(*new SlideBar(50, "Volume:", [this](SlideBar& mc){   setMusicVolume((MAX_VOL / 100.0)*mc.slide_percent);   }));
-		//	.addField(*new Button("Main menu", menu));
 
-		Menu& m4 = *new Menu("Choose wisely!", [this](){});
+		Menu& m4 = *new Menu("Choose wisely!", [this](){ disconncet();  });
 		m4.addField(*new ClickBox("Pyro!", [this](ClickBox& mc){ SP_class = 1; SP_init = true; }))
 			.addField(*new ClickBox("Marine!", [this](ClickBox& mc){ SP_class = 0; SP_init = true; }))
 			.addField(*new ClickBox("Android!", [this](ClickBox& mc){ SP_class = 3; SP_init = true; }))
@@ -1055,29 +962,24 @@ public:
 			.addField(*new ClickBox("Yes!", [this](ClickBox& mc){ quit = true; }));
 		
 		Menu& m1 = *new Menu("NumPlayers", [this](){MP_server_init = false; });
-		m1.addField(*new MenuButton(m4, "xx", [this](MenuButton& mc){MP_numplayers = 2; MP_server_init = true; }))
-			.addField(*new MenuButton(m4, "xxxx", [this](MenuButton& mc){MP_numplayers = 4; MP_server_init = true;  }))
-			.addField(*new MenuButton(m4, "xxxxxxxx", [this](MenuButton& mc){MP_numplayers = 8; MP_server_init = true;  }))
-			.addField(*new MenuButton(m4, "xxxxxxxxxxxxxxxx", [this](MenuButton& mc){MP_numplayers = 16; MP_server_init = true;  }));
+		m1.addField(*new MenuButton(m4, "xx", [this](MenuButton& mc){MP_numplayers = 2; MP_server_init = true; startServer(1337); }))
+			.addField(*new MenuButton(m4, "xxxx", [this](MenuButton& mc){MP_numplayers = 4; MP_server_init = true;  startServer(1337); }))
+			.addField(*new MenuButton(m4, "xxxxxxxx", [this](MenuButton& mc){MP_numplayers = 8; MP_server_init = true;  startServer(1337); }))
+			.addField(*new MenuButton(m4, "xxxxxxxxxxxxxxxx", [this](MenuButton& mc){MP_numplayers = 16; MP_server_init = true;  startServer(1337); }));
 
+		Menu& m6 = *new Menu("Serverlist", [this](){ disconncet();  });
+		m6.addField(*new MenuButton(m4, "localhost", [this](MenuButton& mc){ ConnectToServer(1337, "127.0.0.1"); MP_init = true; }))
+			.addField(*new TextBox("Add another: ", [this, &m6, &m4](TextBox& mt){ if (mt.done){ m6.addField(*new MenuButton(m4, mt.text, [&mt, this](MenuButton& mc){ ConnectToServer(1337, mt.text.c_str()); MP_init = true; })); mt.text = ""; } }));
 
-		Menu& m2 = *new Menu("Multiplayer", [this](){});
-		m2.addField(*new MenuButton(m1, "Start server...", [this](MenuButton& mc){}));
+		Menu& m2 = *new Menu("Multiplayer", [this](){ disconncet(); });
+		m2.addField(*new MenuButton(m1, "Start server...", [this](MenuButton& mc){}))
+			.addField(*new MenuButton(m6, "Connect to...", [this](MenuButton& mc){}));
 
 		curr_m = new Menu("Main", [this](){});
-		//Menu* m = new Menu();
-		//Menu* t = new Menu();
-
-		//t->addField(*new MenuButton(*m, "Link", [this](MenuControl& mc){cout << "cli-cli" << endl;}));
-		//m->addField(*new TextBox("Type: ", [this](MenuControl& mc){cout << dynamic_cast<TextBox&>(mc).done << endl;}))
-		//	.addField(*new CheckBox("You turn me: ", true, [this](MenuControl& mc){cout << "cli-cli" << endl;}));
-
 		curr_m->addField(*new MenuButton(m4, "Singleplayer...", [this](MenuButton& mc){cout << "c01" << endl; }))
 			.addField(*new MenuButton(m2, "Multiplayer...", [this](MenuButton& mc){cout << "c02" << endl; }))
 			.addField(*new MenuButton(m3, "Music...", [this](MenuButton& mc){cout << "c03" << endl; }))
 			.addField(*new MenuButton(m5, "Quit...", [this](MenuButton& mc){cout << "c04" << endl; }));
-			//.addField(*new TextBox("Type: ", [this](TextBox& mc){cout << mc.done << endl; }));
-		//	.addField(*new MenuButton(*m, "B2B", [this](MenuControl& mc){cout << "cli-cli" << endl;}));
 	}
 	catch (Error e){
 		cout << e.getError() << endl;

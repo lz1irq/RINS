@@ -14,6 +14,8 @@ int MenuResources::back;
 int MenuResources::mframe;
 RGBA* MenuResources::textcol[2];
 
+bool Menu::stop_press = false;
+
 wstring utf8_to_utf16(const string& utf8){
 	Uint16* unicode = new Uint16[utf8.size()]();
 	int count = 0;
@@ -184,6 +186,16 @@ Menu* Menu::Check(double mx, double my, bool pressed, bool canpress, Game& base)
 			}
 		}
 		menu_select = -1;
+	}
+	if (base.isPressed("ESCAPE") && !stop_press){
+		if (prev){
+			reset();
+			curr = prev;
+		}
+		stop_press = true;
+	}
+	if (!base.isPressed("ESCAPE") && stop_press){
+		stop_press = false;
 	}
 	if (pressed && lastm != textfield && textfield != -1){
 		base.endTyping(true);

@@ -76,6 +76,7 @@ class Menu : private MenuResources{
 	Game* base;
 	string title;
 	double lastmx = 0;
+	static bool stop_press;
 public:
 	Menu(string title, function<void()> reset);
 	void setCurr(Menu& m);
