@@ -176,7 +176,6 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		displayText(main_font, to_string(highscore).c_str(),mecol, 1-w, 0.94,w,h);
 	}
 
-	}
 	void renderInventory() {
 		double ystart = 0.01;
 		double xstart = 0.51;
@@ -344,15 +343,16 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				if (projectile.try_lock()){
 					displayProjectiles();
 					projectile.unlock();
-				if(render_inv) renderInventory();
-				if(pstats) renderPlayerStats();
+				}
 				if (playerm.try_lock()){
 					displayPlayer();
 					renderPart(0, 0, 0, 0);
-					displayHUD();
 					playerm.unlock();
+				}
+				if(render_inv) renderInventory();
+				if(pstats) renderPlayerStats();
+				displayHUD();
 				machines.render();
-			}
 			else if (show_menu){
 				renderPart(0, 0, 0, 0);
 				if (!((MP_server_init || MP_init) && SP_init)){
@@ -925,6 +925,12 @@ public:
 		MenuResources::addTexture(loadTexture("Textures/button1.png"), &typeid(SlideBar), IS_UNSET);
 		MenuResources::addTexture(loadTexture("Textures/slide.png"), &typeid(SlideBar), IS_SET);
 		MenuResources::addTexture(loadTexture("Textures/textc.png"), &typeid(SlideBar), ON_CLICK);
+
+		MachineResources::bg = MenuResources::background;
+		MachineResources::frame = loadTexture("Textures/itemframe.png");
+		MachineResources::frame_sel = loadTexture("Textures/itemframesel.png");
+		hpgreen = loadTexture("Textures/hp_green.png");
+		hpred = loadTexture("Textures/hp_red.png");
 
 		Menu& m3 = *new Menu("Sounds like a menu", [this](){  });
 		m3.addField(*new CheckBox("Music: ", false, [this](CheckBox& mc){  enable_music = mc.is_on; if (mc.is_on)playSong(song1); else stopMusic(); }))
