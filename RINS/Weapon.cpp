@@ -70,6 +70,7 @@ bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<B
 					(*m)->takeProjectile(*this);
 					trigger = true;
 					if (fly_t > dist)fly_t = dist;
+					break;
 				}
 			}
 		}
@@ -84,6 +85,7 @@ bool Projectile::update(const vector<vector<char>>& map_index, list<unique_ptr<B
 					(*m)->takeProjectile(*this);
 					trigger = true;
 					if (fly_t > dist)fly_t = dist;
+					break;
 				}
 			}
 		}

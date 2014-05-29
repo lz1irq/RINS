@@ -57,6 +57,7 @@
   <ItemGroup>
     <ClCompile Include="Being.cpp" />
     <ClCompile Include="Item.cpp" />
+    <ClCompile Include="launcher.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Map.cpp" />
     <ClCompile Include="Menu.cpp" />

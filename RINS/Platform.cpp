@@ -12,6 +12,43 @@ Renderer::Renderer(int width, int height, const char* title) : textures(), fonts
 	if ((win = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI)) == nullptr)throw Error(SDL_GetError());
 	if ((ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC)) == nullptr)throw Error(SDL_GetError());
 	SDL_GetWindowSize(win, &W, &H);
+	SDL_Surface *surface;
+	Uint16 pixels[16 * 16] = { 
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff,
+		0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0fff
+	};
+	surface = SDL_CreateRGBSurfaceFrom(pixels, 16, 16, 16, 16 * 2, 0x0f00, 0x00f0, 0x000f, 0xf000);
+	SDL_SetWindowIcon(win, surface);
 	shared_sdl::W = W;
 	shared_sdl::H = H;
 	part.x = H;
@@ -136,13 +173,13 @@ Game::Game() {
 }
 
 void Game::loop(){
-	SDL_Thread* thread;
+	SDL_Thread* thread_g, *thread_n;
 	char curs;
 	int offs;
 	char tmp[1024] = { 0 };
-	if( (thread = SDL_CreateThread(secondaryLoop, "secondaryThread", (void *)this)) == NULL) throw Error( SDL_GetError() );
-	if ((thread = SDL_CreateThread(network, "network", (void *)this)) == NULL) throw Error(SDL_GetError());
-	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_LOW);
+	if( (thread_g = SDL_CreateThread(secondaryLoop, "secondaryThread", (void *)this)) == NULL) throw Error( SDL_GetError() );
+	if ((thread_n = SDL_CreateThread(network, "network", (void *)this)) == NULL) throw Error(SDL_GetError());
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
 	while (!quit) {
 		//has_event = SDL_PollEvent(&event);
 		if (SDL_PollEvent(&event)){
@@ -208,15 +245,18 @@ void Game::loop(){
 		buttons = SDL_GetMouseState(&mousex, &mousey);
 		if (SDL_QuitRequested()) quit = true;
 		mainLoop();
+		SDL_Delay(1);
 	}
-	 SDL_WaitThread(thread, NULL);
+	SDL_WaitThread(thread_g, NULL);
+	SDL_WaitThread(thread_n, NULL);
 }
 
 int Game::secondaryLoop(void* param) {
 	Game* instance = (Game*)param;
-	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_LOW);
 	while(!(instance->quit)) {
 		instance->graphicsLoop();
+		SDL_Delay(10);
 	}
 	return 0;
 }
@@ -225,7 +265,7 @@ int Game::network(void* param){
 	Game* instance = (Game*)param;
 	while (!(instance->quit)) {
 		instance->networkLoop();
-		SDL_Delay(2);
+		SDL_Delay(10);
 	}
 	return 0;
 }
@@ -351,11 +391,6 @@ Socket::Socket(){
 	if ((socketset = SDLNet_AllocSocketSet(16)) == nullptr)throw Error(SDLNet_GetError());
 }
 
-void Socket::startServer(int port){
-	if (SDLNet_ResolveHost(&ip, NULL, port))throw Error(SDLNet_GetError());
-	if (!(sd = SDLNet_TCP_Open(&ip)))throw Error(SDLNet_GetError());
-}
-
 int Socket::gatherPlayers(){
 	TCPsocket csd;
 	if ((csd = SDLNet_TCP_Accept(sd))){
@@ -386,31 +421,6 @@ char* Socket::getNextCommand(Client& c){
 
 }
 
-bool Socket::updateClients(){
-	int active;
-	if (!numused)return true;
-	if ((active = SDLNet_CheckSockets(socketset, 1)) == -1)throw Error(SDLNet_GetError());
-	else if(active > 0){
-		for (auto i = begin(clients); i != end(clients); ++i){
-			if (SDLNet_SocketReady((*i).sock)){
-				int len;
-				if ((*i).len == (*i).bf)continue;
-				if ((len = SDLNet_TCP_Recv((*i).sock, &(*i).buf[(*i).len], (*i).bf - (*i).len)) > 0){
-					(*i).len += len;
-				}
-				else {
-					if ((active=SDLNet_TCP_DelSocket(socketset, (*i).sock)) == -1)throw Error(SDLNet_GetError());
-					else cout << active << endl;
-					i = clients.erase(i);
-					--numused;
-					return false;
-				}
-			}
-		}
-	}
-	return true;
-}
-
 char* Socket::receiveCommand(){
 	int len;
 	bool bad = false;
@@ -430,18 +440,31 @@ char* Socket::receiveCommand(){
 }
 
 void Socket::ConnectToServer(int port, const char* ip_) {
-	if (SDLNet_ResolveHost(&ip, ip_, port))throw Error(SDLNet_GetError());
-	if (!(sd = SDLNet_TCP_Open(&ip)))throw Error(SDLNet_GetError());
+	if (!linked){
+		if (SDLNet_ResolveHost(&ip, ip_, port))throw Error(SDLNet_GetError());
+		if (!(sd = SDLNet_TCP_Open(&ip)))throw Error(SDLNet_GetError());
+		linked = true;
+	}
 
 }
 
-void Socket::sendCommand(short num, short datasz, const char* data){
+
+void Socket::startServer(int port){
+	if (!linked){
+		if (SDLNet_ResolveHost(&ip, NULL, port))throw Error(SDLNet_GetError());
+		if (!(sd = SDLNet_TCP_Open(&ip)))throw Error(SDLNet_GetError());
+		linked = true;
+	}
+}
+
+bool Socket::sendCommand(short num, short datasz, const char* data){
 	char *buf = new char[datasz + 4];
 	memcpy(&buf[0], &num, 2);
 	memcpy(&buf[2], &datasz, 2);
 	memcpy(&buf[4], data, datasz);
-	sendToServer(buf, datasz+4);
+	bool b = sendToServer(buf, datasz+4);
 	delete buf;
+	return b;
 }
 
 bool Socket::commandToClient(list<Client>::iterator& cl, short num, short datasz, const char* data){
@@ -460,11 +483,12 @@ bool Socket::commandToClient(list<Client>::iterator& cl, short num, short datasz
 	return true;
 }
 
-void Socket::sendToServer(char* text, int len){
+bool Socket::sendToServer(char* text, int len){
 	if (SDLNet_TCP_Send(sd, (void *)text, len) < len){
 		SDLNet_TCP_Close(sd);
-		throw Error(SDLNet_GetError());
+		return false;
 	}
+	return true;
 }
 
 list<Socket::Client>& Socket::getClients(){
@@ -472,7 +496,10 @@ list<Socket::Client>& Socket::getClients(){
 }
 
 void Socket::disconncet(){
-	SDLNet_TCP_Close(sd);
+	if (linked){
+		SDLNet_TCP_Close(sd);
+		linked = false;
+	}
 }
 
 Socket::~Socket(){

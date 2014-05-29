@@ -176,7 +176,42 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		displayText(main_font, to_string(highscore).c_str(),mecol, 1-w, 0.94,w,h);
 	}
 
+<<<<<<< HEAD
+=======
+	void renderVendingMachine() {
+		double ystart = 0.01;
+		double xstart = 0.01;
+		double itemx = 0.145;
+		double itemy = 0.145;
+		double framesp = 0.01;
+		int rows = -1;
+		applyTexture(MenuResources::background, xstart, ystart, 0.48,0.85);
+		int itemc = curr_machine->itemCount();
+		if(machine.try_lock()){
+			for(int i=0;i<itemc;++i) {
+				if(i%3 == 0) ++rows;
+
+				Item& it = curr_machine->getNextItem();
+				int tid = ItemResources::getTextureID(&typeid(it));
+
+				double xp = 0.027+(i%3)*itemx+framesp;
+				double yp = rows*itemy + 5*framesp;
+
+				double nextx = xstart+0.027+((i+1)%3)*itemx+framesp;
+				if((i+1)%3 == 0 && i>0) nextx+=3*itemx;
+				double nexty = (rows+1)*itemy+5*framesp;
+				double mx = getMouseX();
+				double my = getMouseY();
+
+				applyTexture(tid, xp, yp, itemx, itemy);
+				if(itemsel == i) applyTexture(iframesel, xp, yp, itemx, itemy);
+				else applyTexture(iframe, xp, yp, itemx, itemy);
+			}
+			machine.unlock();
+		}
 	}
+
+>>>>>>> dc0074994b79cdf808a8e314da0f1024d53c9788
 	void renderInventory() {
 		double ystart = 0.01;
 		double xstart = 0.51;
@@ -203,6 +238,37 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		for(int i=0;i<itemc;++i) {
 
 			if(i%3 == 0) ++rows;
+<<<<<<< HEAD
+			inv.lock();
+			Item& it = player->getNextItem();
+			int tid = ItemResources::getTextureID(&typeid(it));
+			inv.unlock();
+
+			double xp = xstart+0.027+(i%3)*itemx+framesp;
+			double yp = rows*itemy + 5*framesp;
+
+			double nextx = xstart+0.01+((i+1)%3)*itemx+framesp;
+			if((i+1)%3 == 0 && i>0) nextx+=3*itemx;
+			double nexty = (rows+1)*itemy+5*framesp;
+			double mx = getMouseX();
+			double my = getMouseY();
+
+			applyTexture(tid, xp, yp, itemx, itemy);
+			if(itemseli == i) applyTexture(MachineResources::frame_sel, xp, yp, itemx, itemy);
+			else applyTexture(MachineResources::frame, xp, yp, itemx, itemy);
+
+			if(mx>xp && mx<nextx && my>yp && my<nexty) itemover = i;
+			else itemover = -1;
+
+			double overx = 0.145, overy = 0.145;
+			// Hover window with item data.
+			//if(itemover == i) {
+			//Derived& der = it.getDerivedBonuses();
+			//if(1.0-nextx > overx)applyTexture(menu_bg, nextx, nexty, overx, overy);
+			//else applyTexture(menu_bg, xp, nexty, overx, overy);
+
+			//}
+=======
 			if(inv.try_lock()){
 				Item& it = player->getNextItem();
 				int tid = ItemResources::getTextureID(&typeid(it));
@@ -218,8 +284,8 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				double my = getMouseY();
 
 				applyTexture(tid, xp, yp, itemx, itemy);
-			if(itemseli == i) applyTexture(MachineResources::frame_sel, xp, yp, itemx, itemy);
-			else applyTexture(MachineResources::frame, xp, yp, itemx, itemy);
+				if(itemseli == i) applyTexture(iframesel, xp, yp, itemx, itemy);
+				else applyTexture(iframe, xp, yp, itemx, itemy);
 
 				if(mx>xp && mx<nextx && my>yp && my<nexty) itemover = i;
 				else itemover = -1;
@@ -233,6 +299,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 				//}
 			}
+>>>>>>> dc0074994b79cdf808a8e314da0f1024d53c9788
 		}
 
 	}
@@ -332,6 +399,27 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 	void graphicsLoop() final {
 		try{
+<<<<<<< HEAD
+			if (!show_menu){
+				lock1.lock();
+				renderMap();
+				lock1.unlock();
+				playerm.lock();
+				displayPlayer();
+				playerm.unlock();
+				monster.lock();
+				displayMonsters();
+				monster.unlock();
+				projectile.lock();
+				displayProjectiles();
+				projectile.unlock();
+				if(render_inv) renderInventory();
+				if(pstats) renderPlayerStats();
+				lock1.lock();
+				displayHUD();
+				lock1.unlock();
+				machines.render();
+=======
 			if (!show_menu && !end_of_game){
 				if (lock1.try_lock()){
 					renderMap();
@@ -344,14 +432,19 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				if (projectile.try_lock()){
 					displayProjectiles();
 					projectile.unlock();
-				if(render_inv) renderInventory();
-				if(pstats) renderPlayerStats();
+				}
+				if(render_machine) {
+					renderVendingMachine();
+					renderInventory();
+				}
+				else if(render_inv) renderInventory();
 				if (playerm.try_lock()){
 					displayPlayer();
 					renderPart(0, 0, 0, 0);
 					displayHUD();
 					playerm.unlock();
-				machines.render();
+				}
+>>>>>>> dc0074994b79cdf808a8e314da0f1024d53c9788
 			}
 			else if (show_menu){
 				renderPart(0, 0, 0, 0);
@@ -395,8 +488,12 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 						c = getMapEntry();
 						lock1.lock();
 						player->setX(c.x);
+<<<<<<< HEAD
 						player-> setY(c.y);
+=======
+						player->setY(c.y);
 						lock1.unlock();
+>>>>>>> dc0074994b79cdf808a8e314da0f1024d53c9788
 						if (getLastExploredRoom() > lastroom){
 							completed = false;
 							spawned = 0;
@@ -610,7 +707,11 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 	void mainLoop() final {
 		try {
+<<<<<<< HEAD
+			if (SP_init){
+=======
 			if (SP_init && !MP_server_init && !MP_init){
+>>>>>>> dc0074994b79cdf808a8e314da0f1024d53c9788
 				loadMap(seed);
 				c = getMapEntry();
 				targets.push_back(unique_ptr<Being>(player_types[SP_class](c.x, c.y))); player = &**targets.rbegin();
@@ -621,12 +722,16 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				show_menu = false;
 				SP_init = false;
 			}
+<<<<<<< HEAD
+			if (!show_menu){
+=======
 			if ((MP_init || MP_server_init) && SP_init){
 				if (isPressed("ESCAPE")){
 					SP_init = false;
 				}
 			}
 			if (!show_menu && !end_of_game){
+>>>>>>> dc0074994b79cdf808a8e314da0f1024d53c9788
 				if (updateInternalMapState()) dir = 0;
 				bool dead = player->action(getMapIndex(), projectiles, targets, getTicks());
 				if (!dead)end_of_game = true;
@@ -637,6 +742,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				tryToSpawn();
 				updateMonsters();
 				updateProjectiles();
+<<<<<<< HEAD
 
 				if (isPressed("I") && pre_inv == false) pre_inv = true;
 				if(pre_inv && isPressed("I") == false) {
@@ -654,6 +760,15 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 					box.setX(getMouseX() + deltax);
 					box.setY(getMouseY() + deltay);
+=======
+				if (curr_machine)checkVendingMachines(player->getTileX(), player->getTileY());
+				if (isPressed("P")) render_inv = !render_inv;
+				if (render_machine) {
+					controlInventory();
+					controlVendingMachine();
+				}
+				else if (render_inv) controlInventory();
+>>>>>>> dc0074994b79cdf808a8e314da0f1024d53c9788
 				getdir();
 				machines.check(deltax, deltay, player->getTileX(), player->getTileY());
 			}
@@ -922,6 +1037,30 @@ public:
 		MenuResources::addTexture(loadTexture("Textures/button1.png"), &typeid(ClickBox), IS_UNSET);
 		MenuResources::addTexture(loadTexture("Textures/button1.png"), &typeid(ClickBox), IS_SET);
 		MenuResources::addTexture(loadTexture("Textures/textc.png"), &typeid(ClickBox), ON_CLICK);
+<<<<<<< HEAD
+
+		MachineResources::bg = MenuResources::background;
+		MachineResources::frame = loadTexture("Textures/itemframe.png");
+		MachineResources::frame_sel = loadTexture("Textures/itemframesel.png");
+		
+		hpgreen = loadTexture("Textures/hp_green.png");
+		hpred = loadTexture("Textures/hp_red.png");
+
+		Menu& m3 = *new Menu("Sounds like a menu");
+		m3.addField(*new CheckBox("Music: ", false, [this](MenuControl& mc){  
+			enable_music = static_cast<CheckBox&>(mc).is_on; if (enable_music)playSong(song1); else stopMusic(); }));
+		//	.addField(*new Button("Main menu", menu));
+
+		Menu& m4 = *new Menu("Choose wisely!");
+		m4.addField(*new ClickBox("Pyro!", [this](MenuControl& mc){ SP_class = 1; SP_init = true; }))
+			.addField(*new ClickBox("Marine!", [this](MenuControl& mc){ SP_class = 0; SP_init = true; }))
+			.addField(*new ClickBox("Android!", [this](MenuControl& mc){ SP_class = 3; SP_init = true; }))
+			.addField(*new ClickBox("Psychokinetic!", [this](MenuControl& mc){ SP_class = 2; SP_init = true; }));
+
+		Menu& m5 = *new Menu("Are you... Yeah, sure.");
+		m5.addField(*new ClickBox("Yes!", [this](MenuControl& mc){ quit = true; }))
+			.addField(*new ClickBox("Yes!", [this](MenuControl& mc){ quit = true; }));
+=======
 		MenuResources::addTexture(loadTexture("Textures/button1.png"), &typeid(SlideBar), IS_UNSET);
 		MenuResources::addTexture(loadTexture("Textures/slide.png"), &typeid(SlideBar), IS_SET);
 		MenuResources::addTexture(loadTexture("Textures/textc.png"), &typeid(SlideBar), ON_CLICK);
@@ -929,7 +1068,7 @@ public:
 		Menu& m3 = *new Menu("Sounds like a menu", [this](){  });
 		m3.addField(*new CheckBox("Music: ", false, [this](CheckBox& mc){  enable_music = mc.is_on; if (mc.is_on)playSong(song1); else stopMusic(); }))
 			.addField(*new SlideBar(50, "Volume:", [this](SlideBar& mc){   setMusicVolume((MAX_VOL / 100.0)*mc.slide_percent);   }));
-		
+
 		Menu& m4 = *new Menu("Choose wisely!", [this](){ disconncet();  });
 		m4.addField(*new ClickBox("Pyro!", [this](ClickBox& mc){ SP_class = 1; SP_init = true; }))
 			.addField(*new ClickBox("Marine!", [this](ClickBox& mc){ SP_class = 0; SP_init = true; }))
@@ -939,6 +1078,7 @@ public:
 		Menu& m5 = *new Menu("Are you... Yeah, sure.", [this](){});
 		m5.addField(*new ClickBox("Yes!", [this](ClickBox& mc){ quit = true; }))
 			.addField(*new ClickBox("Yes!", [this](ClickBox& mc){ quit = true; }));
+>>>>>>> dc0074994b79cdf808a8e314da0f1024d53c9788
 		
 		Menu& m1 = *new Menu("NumPlayers", [this](){MP_server_init = false; });
 		m1.addField(*new MenuButton(m4, "xx", [this](MenuButton& mc){MP_numplayers = 2; MP_server_init = true; startServer(1337); }))

@@ -481,7 +481,6 @@ bool Marine::action(const vector<vector<char>>& map_index, list<Projectile>& pro
 	this->start_time = start_time;
 	if(experience == (level+1)*100 )levelup();
 	if (der_stats.health == 0){
-		//cout << "MARINE DEAD" << endl;
 		return false;
 	}
 	return true;
@@ -516,6 +515,9 @@ void Pyro::setRange(){
 bool Pyro::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
 	this->start_time = start_time;
 	if(experience == (level+1)*100 )levelup();
+	if (der_stats.health == 0){
+		return false;
+	}
 	return true;
 }
 
@@ -546,6 +548,9 @@ void Psychokinetic ::setRange(){
 bool Psychokinetic::action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) {
 	this->start_time = start_time;
 	if(experience == (level+1)*100 )levelup();
+	if (der_stats.health == 0){
+		return false;
+	}
 	return true;
 }
 
