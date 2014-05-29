@@ -103,6 +103,13 @@ IDs::IDs() {
 
 map<const type_info*, IDs> BeingResources::textures;
 
+Derived& Being::getDerivedStats() {
+	return der_stats;
+}
+Primary& Being::getPrimaryStats() {
+	return prim_stats;
+}
+
 bool Being::move(int dir, bool reverse) {
 	dir = dir & 15;
 	if ((count + speed) < start_time) {
@@ -131,6 +138,10 @@ bool Being::move(int dir, bool reverse) {
 
 int Being::getHealth() {
 	return der_stats.health;
+}
+
+int Being::getMaxHealth() {
+	return der_stats.max_health;
 }
 
 int Being::getOrientation() const {
@@ -212,41 +223,53 @@ bool Being::isTargetBehindBack(double delta_x, double delta_y){
 }
 
 Item& Being::getNextItem() {
+	inv.lock();
 	++it;
 	if(it == items.end()) it = items.begin();
+	inv.unlock();
 	return *(*it);
 }
 
 int Being::itemCount() {
 	return items.size();
 }
+
 Item& Being::getItem(int item) {
 	return *(items.at(item));
 }
 
 bool Being::buyItem(Item& item) {
-	if(money < item.getPrice()) return false;
+	inv.lock();
+	if(money < item.getPrice()) {
+		inv.unlock();
+		return false;
+	}
 	else {
 		money -= item.getPrice();
 		items.push_back(&item);
 		it = items.end();
 		--it;
 	}
+	inv.unlock();
 	return true;
 }
 
 Item& Being::sellItem(int item) {
+	inv.lock();
 	Item& tosell = *(items.at(item));
 	money += tosell.getPrice();
 	items.erase(items.begin() + item);
 	cout << "Sold " << tosell.getName() << endl;
 	it = items.end();
 	--it;
+	inv.unlock();
 	return tosell;
 }
 void Being::addItem(Item& i){
-		items.push_back(&i);
-		it = items.end();
+	inv.lock();
+	items.push_back(&i);
+	it = items.end();
+	inv.unlock();
 }
 
 int Being::getMoney() {
@@ -431,18 +454,23 @@ void Being::updateTarget(const vector<vector<char>>& map_index, const list<uniqu
 	}
 }
 
+map<const char*, int>& Being::getClassSkills() {
+	return classSkills;
+}
+
 Being::~Being() {
 	weapons.clear();
 }
 
-Marine::Marine(double sx, double yx): 
-	Being(sx,yx, 33), small_guns_bonus(0), 
-	big_guns_bonus(0), energy_weapons_bonus(0)	{
-	small_guns = 2 + prim_stats.agility*2 + prim_stats.luck/2;
-	big_guns = 2 + prim_stats.endurance*2 + prim_stats.luck/2;
-	energy_weapons = 2 + prim_stats.perception*2 + prim_stats.luck/2;
+Marine::Marine(double sx, double yx): Being(sx,yx, 33) {
+	classSkills["Small Guns"] = 2 + prim_stats.agility*2 + prim_stats.luck/2;
+	classSkills["Small Guns Bonus"] = 0;
+	classSkills["Big Guns"] = 2 + prim_stats.endurance*2 + prim_stats.luck/2;
+	classSkills["Big Guns Bonus"] = 0;
+	classSkills["Energy Weapons"] = 2 + prim_stats.perception*2 + prim_stats.luck/2;
+	classSkills["Energy Weapons Bonus"] = 0;
 	money = 1000;
-	weapons.push_back(std::unique_ptr<WeaponBase>(new AssaultRifle(small_guns, this)));
+	weapons.push_back(std::unique_ptr<WeaponBase>(new AssaultRifle(classSkills.at("Small Guns"), this)));
 }
 
 void Marine::setRange(){
@@ -460,23 +488,25 @@ bool Marine::action(const vector<vector<char>>& map_index, list<Projectile>& pro
 }
 
 void Marine::levelup() {
-	small_guns += 1 ;
-	big_guns += 1 ;
-	energy_weapons += 1 ;
+	classSkills.at("Small Guns") += 1 ;
+	classSkills.at("Big Guns") += 1 ;
+	classSkills.at("Energy Weapons") += 1 ;
 	Being::levelup();
 	der_stats.health += 10*level;
 	cout << "Marine is now level " << level << endl;
 }
 
-Pyro::Pyro(double sx, double yx): 
-	Being(sx,yx, 33), explosives_bonus(0),
-	big_guns_bonus(0), fire_bonus(0)	{
-	explosives = 2 + prim_stats.perception*2 + prim_stats.luck/2;
-	big_guns = 2 + prim_stats.endurance*2 + prim_stats.luck/2;
-	fire = 2 + prim_stats.agility + prim_stats.luck/2;
+Pyro::Pyro(double sx, double yx): Being(sx,yx, 33) {
+	classSkills["Explosives"] = 2 + prim_stats.perception*2 + prim_stats.luck/2;
+	classSkills["Big Guns"] = 2 + prim_stats.endurance*2 + prim_stats.luck/2;
+	classSkills["Fire"] = 2 + prim_stats.agility + prim_stats.luck/2;
+	classSkills["Explosives Bonus"] = 0;
+	classSkills["Big Guns Bonus"] = 0;
+	classSkills["Fire Bonus"] = 0;
+
 	der_stats.dmg_res += 3;
 	money = 1000;
-	weapons.push_back(std::unique_ptr<Molotov>(new Molotov(explosives, this)));
+	weapons.push_back(std::unique_ptr<Molotov>(new Molotov(classSkills.at("Explosives"), this)));
 }
 
 void Pyro::setRange(){
@@ -490,22 +520,23 @@ bool Pyro::action(const vector<vector<char>>& map_index, list<Projectile>& proje
 }
 
 void Pyro::levelup() {
-	explosives += 1 ;
-	big_guns += 1 ;
-	fire += 1 ;
+	classSkills.at("Explosives") += 1 ;
+	classSkills.at("Big Guns") += 1 ;
+	classSkills.at("Fire") += 1 ;
 	Being::levelup();
 	der_stats.health += 10*level; 
 	cout << "Pyro is now level " << level << endl;
 }
 
-Psychokinetic::Psychokinetic(double sx, double yx): 
-	Being(sx,yx, 33), mind_infiltration_bonus(0), 
-	mental_power_bonus(0), fire_bonus(0)	{
-	mind_infiltration = 2 + prim_stats.intelligence*2 + prim_stats.luck/2;
-	mental_power = 2 + prim_stats.endurance + prim_stats.intelligence + prim_stats.luck/2;
-	fire = 2 + prim_stats.agility*2 + prim_stats.luck/2;
+Psychokinetic::Psychokinetic(double sx, double yx): Being(sx,yx, 33) {
+	classSkills["Mind Infiltration"] = 2 + prim_stats.intelligence*2 + prim_stats.luck/2;
+	classSkills["Mental Power"] = 2 + prim_stats.endurance + prim_stats.intelligence + prim_stats.luck/2;
+	classSkills["Fire"] = 2 + prim_stats.agility*2 + prim_stats.luck/2;
+	classSkills["Mind Infiltration Bonus"] = 0;
+	classSkills["Mental Power Bonus"] = 0;
+	classSkills["Fire Bonus"] = 0;
 	money = 1000;
-	weapons.push_back(std::unique_ptr<WeaponBase>(new Pyrokinesis(fire, this)));
+	weapons.push_back(std::unique_ptr<WeaponBase>(new Pyrokinesis(classSkills.at("Fire"), this)));
 }
 
 void Psychokinetic ::setRange(){
@@ -519,22 +550,23 @@ bool Psychokinetic::action(const vector<vector<char>>& map_index, list<Projectil
 }
 
 void Psychokinetic::levelup() {
-	mind_infiltration += 1 ;
-	mental_power += 1 ;
-	fire += 1 ;
+	classSkills.at("Mind Infiltration") += 1 ;
+	classSkills.at("Mental Power") += 1 ;
+	classSkills.at("Fire") += 1 ;
 	Being::levelup();
 	der_stats.health += 10*level;
 	cout << "Psycho is now level " << level << endl;
 }
 
-Android::Android(double sx, double yx): 
-	Being(sx,yx, 33), punch_bonus(0), 
-	big_guns_bonus(0), energy_weapons_bonus(0)	{
-	punch = 2 + prim_stats.strength/2 + prim_stats.luck/2;
-	big_guns = 2 + prim_stats.endurance*2 + prim_stats.luck/2;
-	energy_weapons = 2 + prim_stats.perception*2 + prim_stats.luck/2;
+Android::Android(double sx, double yx): Being(sx,yx, 33) {
+	classSkills["Punch"] = 2 + prim_stats.strength/2 + prim_stats.luck/2;
+	classSkills["Big Guns"] = 2 + prim_stats.endurance*2 + prim_stats.luck/2;
+	classSkills["Energy Weapons"] = 2 + prim_stats.perception*2 + prim_stats.luck/2;
+	classSkills["Punch Bonus"] = 0;
+	classSkills["Big Guns Bonus"] = 0;
+	classSkills["Energy Weapons Bonus"] = 0;
 	money = 1000;
-	weapons.push_back(std::unique_ptr<WeaponBase>(new Punch(punch, this)));
+	weapons.push_back(std::unique_ptr<WeaponBase>(new Punch(classSkills.at("Punch"), this)));
 }
 
 void Android::setRange(){
@@ -552,9 +584,9 @@ bool Android::action(const vector<vector<char>>& map_index, list<Projectile>& pr
 }
 
 void Android::levelup() {
-	punch += 1 ;
-	big_guns += 1 ;
-	energy_weapons += 1 ;
+	classSkills.at("Punch") += 1 ;
+	classSkills.at("Big Guns") += 1 ;
+	classSkills.at("Energy Weapons") += 1 ;
 	Being::levelup();
 	der_stats.health += 10*level;
 	cout << "Android is now level " << level << endl;
@@ -562,9 +594,9 @@ void Android::levelup() {
 
 Zombie::Zombie(double sx, double yx): 
 	Being(sx,yx, 50), target(nullptr) {
-	biting = 2 + prim_stats.strength/2 + prim_stats.luck/2;
+	classSkills["Biting"] = 2 + prim_stats.strength/2 + prim_stats.luck/2;
 
-	weapons.push_back(std::unique_ptr<WeaponBase>(new Bite(biting, this)));
+	weapons.push_back(std::unique_ptr<WeaponBase>(new Bite(classSkills.at("Biting"), this)));
 }
 
 void Zombie::setRange(){

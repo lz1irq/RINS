@@ -45,9 +45,6 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	bool typing = false, muststop = false;
 	bool show_menu = true;
 	bool enable_music = false;
-	Machine* curr_machine = nullptr;
-	bool over_machine = false;
-	bool render_machine = false;
 
 	bool SP_init = false;
 	bool MP_server_init = false;
@@ -60,10 +57,12 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	//bool MP_init = false;
 	//bool MP_mode = false;
 
-	int iframe, iframesel;
-	bool render_inv = false;
+
+	bool render_inv = false, pre_inv = false;
 	int itemsel = -1, itemseli = -1;
 	int itemover = -1;
+
+	bool pstats = false, pre_pstats = false;
 
 	struct player_info{
 		int keyboard;
@@ -72,8 +71,9 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	};
 
 	int song1;
-	map<pair<int, int>, Machine> machines;
+	MachineManager machines;
 
+	int hpgreen, hpred;
 	
 	 bool mouseOverTile(int tx, int ty){
 		box.setX(getMouseX() + deltax);
@@ -82,46 +82,6 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		return false;
 	}
 
-	 void controlVendingMachine() {
-		 double ystart = 0.01;
-		 double xstart = 0.01;
-		 double itemx = 0.145;
-		 double itemy = 0.145;
-		 double framesp = 0.01;
-		 int rows = -1;
-		 int itemc = curr_machine->itemCount();
-		 machine.lock();
-		 for(int i=0;i<itemc;++i) {
-			 if(i%3 == 0) ++rows;
-			 Item& it = curr_machine->getNextItem();
-			 double xp = 0.024+(i%3)*itemx+framesp;
-			 double yp = rows*itemy + 5*framesp;
-
-			 double nextx = 0.024+((i+1)%3)*itemx+framesp;
-			 if((i+1)%3 == 0 && i>0) nextx+=3*itemx;
-			 double nexty = (rows+1)*itemy+5*framesp;
-			 double mx = getMouseX();
-			 double my = getMouseY();
-
-			 if(itemsel == -1) {
-				 if(mx>xp && mx<nextx && my>yp && my<nexty && pressed) {
-					 itemsel = i;
-				 }
-			 }
-			 if(itemsel == i) {
-				 if(cangetpress){
-					 if(mx>xp && mx<nextx && my>yp && my<nexty) {
-						 if(player->buyItem(it)) cout << "Player bought " << it.getName() << endl;
-						 else cout << "Not enough money to buy " << it.getName() << endl;
-						 itemsel = -1;
-					 }
-					 else itemsel = -1;
-				 }
-			 }
-
-		 }
-		 machine.unlock();
-	 }
 
 	 void controlInventory() {
 		 double ystart = 0.01;
@@ -143,11 +103,6 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			 double nexty = (rows+1)*itemy+5*framesp;
 			 double mx = getMouseX();
 			 double my = getMouseY();
-
-
-
-
-
 			 if(itemseli == -1) {
 				 if(mx>xp && mx<nextx && my>yp && my<nexty && pressed) {
 					 itemseli = i;
@@ -157,8 +112,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				 if(cangetpress){
 					 if(mx>xp && mx<nextx && my>yp && my<nexty) {
 						 itemseli = -1;
-						 inv.lock();
-						 if(render_machine) player->sellItem(i);
+						 if(machines.isRendering()) player->sellItem(i);
 						 else { //(un)equip the item
 							 if(it.isEquipped()) {
 								 player->unequipItem(it);
@@ -169,70 +123,45 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 								 cout << "Player equipped " << it.getName() << endl;
 							 }
 						 }
-						 inv.unlock();
 					 }
 					 else itemseli = -1;
 				 }
 			 }
 
 		 }
+		 return;
 	 }
 
 	void renderHUD() {
 		RGBA mecol(255, 255, 0, 0);
 		double w,h;
-
-		getTextWH(main_font, "HEALTH:", w, h);
-		w *= 0.06/h;
-		h = 0.06;
-		displayText(main_font, "HEALTH:",mecol, 0.0, 0.9,w,h);
-
+		double hudmul = 0.05;
+		/* numeric health display
 		getTextWH(main_font, to_string(player->getHealth()).c_str(), w, h);
 		w *= 0.06/h;
 		h = 0.06;
-		displayText(main_font, to_string(player->getHealth()).c_str(),mecol, 0.005, 0.94,w,h);
+		displayText(main_font, to_string(player->getHealth()).c_str(),mecol, 0.005, 0.94,w,h); */
+
+		renderPart(0,0,0,0);
+		double hp_percent = (double) player->getHealth()/player->getMaxHealth();
+		applyTexture(hpred, 0.005, 0.9, 0.15, 0.05);
+		if(player->getHealth() > 0)applyTexture(hpgreen, 0.005, 0.9, hp_percent*0.15, 0.05);
+
+		getTextWH(main_font, "HEALTH", w, h);
+		w *= hudmul/h;
+		h = hudmul;
+		displayText(main_font, "HEALTH",mecol, 0.005, 0.9,w,h);
 		
+		// score
 		getTextWH(main_font, "SCORE:", w, h);
-		w *= 0.06/h;
-		h = 0.06;
+		w *= hudmul/h;
+		h = hudmul;
 		displayText(main_font, "SCORE:",mecol, 1 - w, 0.9,w,h);
 				
 		getTextWH(main_font, to_string(highscore).c_str(), w, h);
-		w *= 0.06/h;
-		h = 0.06;
+		w *= hudmul/h;
+		h = hudmul;
 		displayText(main_font, to_string(highscore).c_str(),mecol, 1-w, 0.94,w,h);
-	}
-
-	void renderVendingMachine() {
-		double ystart = 0.01;
-		double xstart = 0.01;
-		double itemx = 0.145;
-		double itemy = 0.145;
-		double framesp = 0.01;
-		int rows = -1;
-		applyTexture(MenuResources::background, xstart, ystart, 0.48,0.85);
-		int itemc = curr_machine->itemCount();
-		machine.lock();
-		for(int i=0;i<itemc;++i) {
-			if(i%3 == 0) ++rows;
-
-			Item& it = curr_machine->getNextItem();
-			int tid = ItemResources::getTextureID(&typeid(it));
-
-			double xp = 0.027+(i%3)*itemx+framesp;
-			double yp = rows*itemy + 5*framesp;
-
-			double nextx = xstart+0.027+((i+1)%3)*itemx+framesp;
-			if((i+1)%3 == 0 && i>0) nextx+=3*itemx;
-			double nexty = (rows+1)*itemy+5*framesp;
-			double mx = getMouseX();
-			double my = getMouseY();
-
-			applyTexture(tid, xp, yp, itemx, itemy);
-			if(itemsel == i) applyTexture(iframesel, xp, yp, itemx, itemy);
-			else applyTexture(iframe, xp, yp, itemx, itemy);
-		}
-		machine.unlock();
 	}
 
 	void renderInventory() {
@@ -276,8 +205,8 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			double my = getMouseY();
 
 			applyTexture(tid, xp, yp, itemx, itemy);
-			if(itemseli == i) applyTexture(iframesel, xp, yp, itemx, itemy);
-			else applyTexture(iframe, xp, yp, itemx, itemy);
+			if(itemseli == i) applyTexture(MachineResources::frame_sel, xp, yp, itemx, itemy);
+			else applyTexture(MachineResources::frame, xp, yp, itemx, itemy);
 
 			if(mx>xp && mx<nextx && my>yp && my<nexty) itemover = i;
 			else itemover = -1;
@@ -294,18 +223,60 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 
 	}
 
-		
-	void checkVendingMachines(int x, int y) {
-		if(!over_machine) {
-			if(mouseOverTile(x,y) && pressed) over_machine = true;
-		}
-		else {
-			if (cangetpress){
-				over_machine = false;
-				if (mouseOverTile(x, y)) {
-					render_machine = true;
-				}
-			}
+	void dispStat(const char* name, int stat, double xstart, double& ystart, double offset) {
+		RGBA mecol(255, 255, 0, 0);
+		double w,h;
+		renderPart(0,0,0,0);
+		getTextWH(main_font, name, w, h);
+		w *= 0.04/h;
+		h = 0.02;
+		displayText(main_font, name, mecol, xstart, ystart,w,h);
+
+		getTextWH(main_font, to_string(stat).c_str(), w, h);
+		w *= 0.04/h;
+		h = 0.02;
+		displayText(main_font, to_string(stat).c_str(),mecol, xstart+20*offset, ystart,w,h);
+
+		ystart += h*1.5;
+	}
+
+	void renderPlayerStats() {
+		double ystart = 0.01;
+		double xstart = 0.01;
+		double itemx = 0.145;
+		double itemy = 0.145;
+		double framesp = 0.01;
+		double pxstart = xstart+8*framesp+1.5/xsize;
+		double pystart = ystart+6*framesp;
+		int rows = -1;
+		applyTexture(MenuResources::background, xstart, ystart, 0.48,0.85);
+		renderPart(4,2,1,0);
+		applyTexture(BeingResources::getTextureID(&typeid(*player)), xstart + 4*framesp, pystart+2*framesp, 1.5/xsize, 1.5/ysize);
+
+		Derived der = player->getDerivedStats();
+		Primary prim = player->getPrimaryStats();
+
+		dispStat("Strength", prim.strength, pxstart, pystart, framesp);
+		dispStat("Perception", prim.perception, pxstart, pystart, framesp);
+		dispStat("Endurance", prim.endurance, pxstart, pystart, framesp);
+		dispStat("Intelligence", prim.intelligence, pxstart, pystart, framesp);
+		dispStat("Agility", prim.agility, pxstart, pystart, framesp);
+		dispStat("Luck", prim.luck, pxstart, pystart, framesp);
+
+		pxstart = xstart + 4.0*framesp;
+		pystart = 4.8/xsize;
+		double off = 1.7;
+		dispStat("Crit Chance", der.crit_chance, pxstart, pystart, framesp*off);
+		if(der.crit_bonus > 0) dispStat("Crit Chance Bonus", der.crit_bonus, pxstart, pystart, framesp*off);
+		dispStat("Damage Resistance", der.dmg_res, pxstart, pystart, framesp*off);
+		if(der.dmg_res_bonus > 0) dispStat("Damage Resistance Bonus", der.dmg_res_bonus, pxstart, pystart, framesp*off);
+		dispStat("Fire Resistance", der.fire_res, pxstart, pystart, framesp*off);									  
+		if(der.fire_res_bonus > 0) dispStat("Fire Resistance Bonus", der.fire_res_bonus, pxstart, pystart, framesp*off);
+
+		pxstart = xstart + 4.0*framesp;
+		pystart = 10.5/xsize;
+		for (auto& kv : player->getClassSkills()) {
+			if(kv.second > 0) dispStat(kv.first, kv.second, pxstart, pystart, framesp*off);
 		}
 	}
 
@@ -325,6 +296,10 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			if (i->getWalk())renderPart(4, 2, 2 + ((int)log2(i->getOrientation()) >> 1), 1 - ((int)log2(i->getOrientation()) % 2));
 			else renderPart(4, 2, ((int)log2(i->getOrientation()) >> 1), 1 - ((int)log2(i->getOrientation()) % 2));
 			applyTexture(BeingResources::getTextureID(&typeid(*i)), i->getX() - deltax, i->getY() - deltay, 1.0 / xsize, 1.0 / ysize);
+			renderPart(0,0,0,0);
+			double hp_percent = (double) i->getHealth()/i->getMaxHealth();
+			applyTexture(hpred,   i->getX() - deltax, i->getY() - 0.02- deltay , 0.08, 0.012);
+			applyTexture(hpgreen, i->getX() - deltax, i->getY() - 0.02- deltay , 0.08*hp_percent, 0.012);
 		}
 	}
 	void displayProjectiles(){
@@ -356,14 +331,12 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				projectile.lock();
 				displayProjectiles();
 				projectile.unlock();
-				if(render_machine) {
-					renderVendingMachine();
-					renderInventory();
-				}
-				else if(render_inv) renderInventory();
+				if(render_inv) renderInventory();
+				if(pstats) renderPlayerStats();
 				lock1.lock();
 				displayHUD();
 				lock1.unlock();
+				machines.render();
 			}
 			else if (show_menu){
 				renderPart(0, 0, 0, 0);
@@ -389,8 +362,8 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		if (b){
 			if (lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
 			else{
+				machines.unset();
 				render_inv = false;
-				render_machine = false;
 				int event = player->checkCollisions(lastxpos, lastypos, getMapIndex());
 				switch (event){
 				case OUT_OF_BOUNDS:
@@ -399,7 +372,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					if (tryRoomChange(player->getTileX(), player->getTileY())){
 						c = getMapEntry();
 						player->setX(c.x);
-						player->setY(c.y);
+						player-> setY(c.y);
 						if (getLastExploredRoom() > lastroom){
 							completed = false;
 							spawned = 0;
@@ -414,26 +387,22 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					if (lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
 					break;
 				case TRIGGER:
-					if (getMapIndex()[player->getTileX()][player->getTileY()] == VENDING || getMapIndex()[player->getTileX()][player->getTileY()] == DROP){//dropped items are free and can contain money?
-						pair<int, int> p = make_pair(player->getTileX(), player->getTileY());
-						if (machines.find(p) == machines.end()){
-							machines[p] = *new Machine();
-							int items = pattern() % 10;
-							for (int i = 0; i < 10; ++i){
-								int item = pattern() % MAXITEMS;
-								machines[p].addItem(*item_types[item]());
+					if (getMapIndex()[player->getTileX()][player->getTileY()] == VENDING || getMapIndex()[player->getTileX()][player->getTileY()] == DROP) {
+							pair<int, int> p = make_pair(player->getTileX(),player->getTileY());
+							if(!machines.exists(p)) {
+								machines.add(p);
+								int items = pattern() % 10;
+								for (int i = 0; i < 10; ++i){
+									int item = pattern() % MAXITEMS;
+									machines.addItem(p,*item_types[item]());
+								}
 							}
+							machines.set(p);
 						}
-						else{
-							;
-							curr_machine = &machines.at(make_pair(player->getTileX(), player->getTileY()));
-							;
-						}
-					}
 					break;
+					}
 				}
 			}
-		}
 	}
 
 	void playerShoot(){
@@ -518,207 +487,41 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	void mainLoop() final {
 		try {
 			if (SP_init){
-				//if (MP_init){
-				//	server_info si;
-				//	char* c = (char*)&SP_class;
-				//	sendCommand(GETINFO, 4, c);
-				//	c = receiveCommand();
-				//	short cmd;
-				//	short data;
-				//	memcpy(&cmd, &c[0], 2);
-				//	memcpy(&data, &c[2], 2);
-				//	switch (cmd){
-				//	case SERVERINFO:
-				//		if (data != sizeof(si))throw Error("Nope!");
-				//		memcpy(&si, &c[4], sizeof(si));
-				//		seed = si.seed;
-				//		MP_numplayers = si.n_players;
-				//		MP_noplayers = si.gathering;
-				//		//must insert si.game_end!
-				//		break;
-				//	default: throw Error("Nope!");
-				//	}
-				//	if (!MP_noplayers)MP_init = false;
-				//}
-				//if (has_MP_server)MP_noplayers = true;
 				loadMap(seed);
 				c = getMapEntry();
 				targets.push_back(unique_ptr<Being>(player_types[SP_class](c.x, c.y))); player = &**targets.begin();
 				show_menu = false;
 				SP_init = false;
 			}
-			//if (MP_init && !show_menu){
-			//	server_info si;
-			//	char* c = (char*)&SP_class;
-			//	sendCommand(GETINFO, 4, c);
-			//	c = receiveCommand();
-			//	short cmd;
-			//	short data;
-			//	memcpy(&cmd, &c[0], 2);
-			//	memcpy(&data, &c[2], 2);
-			//	switch (cmd){
-			//	case SERVERINFO:
-			//		if (data != sizeof(si))throw Error("Nope!");
-			//		memcpy(&si, &c[4], sizeof(si));
-			//		seed = si.seed;
-			//		MP_numplayers = si.n_players;
-			//		MP_noplayers = si.gathering;
-			//		//must insert si.game_end!
-			//		break;
-			//	default: throw Error("Nope!");
-			//	}
-			//	if (!MP_noplayers){
-			//		MP_init = false;
-			//		MP_mode = true;
-			//	}
-			//}
-			//if (MP_server_init){
-			//	startServer(1337);
-			//	MP_server_init = false;
-			//	cout << "Server init -> success!" << endl;
-			//}
-			//if (MP_noplayers && has_MP_server){
-			//	MP_numplayers = gatherPlayers();
-			//	bool good = true;
-			//	if (!updateClients())good = false;
-			//	list<Socket::Client>& lsc = getClients();
-			//	list<player_info> lpi;
-			//	for (auto i = begin(lsc); i != end(lsc); ++i){
-			//		player_info pi;
-			//		pi.last_command = -1;
-			//		if (!processCommand(getNextCommand(*i), i, pi)){
-			//			good = false;
-			//			break;
-			//		}
-			//		if (pi.last_command != GETINFO){
-			//			good = false;
-			//			break;
-			//		}
-			//		lpi.push_back(pi);
-			//	}
-			//	if (MP_numplayers == 1 && good == true){
-			//		for (auto& i : lpi){
-			//			targets.push_back(unique_ptr<Being>(player_types[i.class_](c.x, c.y)));
-			//		}
-			//		MP_noplayers = false;
-			//	}
-			//}
 			if (!show_menu){
 				if (updateInternalMapState()) dir = 0;
 				player->action(getMapIndex(), projectiles, targets, getTicks());
 				moveAndColide();
+				machines.updateVars(deltax, deltay, pressed, cangetpress);
+				machines.control(player);
 				playerShoot();
 				tryToSpawn();
 				updateMonsters();
 				updateProjectiles();
-				//else{
-				//	char* c = (char*)&dir;
-				//	sendCommand(KEYBOARD, 4, c);
-				//	projectile.lock();
-				//	projectiles.clear();
-				//	projectile.unlock();
-				//	monster.lock();
-				//	monsters.clear();
-				//	monster.unlock();
-				//	short cmd;
-				//	short data;
-				//	Projectile* p;
-				//	Being* b;
-				//	Marine* m;
-				//	for (bool loop = true; loop;){
-				//		c = receiveCommand();
-				//		memcpy(&cmd, &c[0], 2);
-				//		memcpy(&data, &c[2], 2);
-				//		switch (cmd){
-				//		case SELF:
-				//			if (data != sizeof(Marine))throw Error("Nope!1");
-				//			playerm.lock();
-				//			targets.clear();
-				//			m = new Marine(0, 0);
-				//			//swap(*(Marine*)b, *(Marine*)&c[4]);
-				//			//*b = &(Marine*)&c[4];
-				//		    //b = &Marine(*(Marine*)&c[4]);
-				//			//memcpy(b, &c[4], sizeof(Being));
-				//			system("pause");
-				//			memcpy(m, &c[4], sizeof(Marine));
-				//			b = m;
-				//			system("pause");
-				//			cout << sizeof(Being) << " " << sizeof(Marine) << endl;
-				//			system("pause");
-				//			cout << typeid(*b).name();
-				//			system("pause");
-				//			//targets.push_back(unique_ptr<Being>(b));
-				//			player = &**targets.begin();
-				//			playerm.unlock();
-				//			break;
-				//		case ENDBIT:
-				//			loop = false;
-				//			break;
-				//		case BULLETZ:
-				//			if (data != sizeof(Projectile))throw Error("Nope!2");
-				//			p = (Projectile*)&c[4];
-				//			projectiles.push_back(*p);
-				//			break;
-				//		case MONSTER:
-				//			if (data != sizeof(Being))throw Error("Nope!3");
-				//			//b = (Being*)malloc(sizeof(Being));
-				//			//memcpy(b, &c[4], sizeof(Being));
-				//			//monsters.push_back(unique_ptr<Being>(b));
-				//			break;
-				//		default: throw Error("Nope!4");
-				//		}
-				//	}
-				//}
-				if (curr_machine)checkVendingMachines(player->getTileX(), player->getTileY());
-				if (isPressed("P")) render_inv = !render_inv;
-				if (render_machine) {
-					controlInventory();
-					controlVendingMachine();
+
+				if (isPressed("I") && pre_inv == false) pre_inv = true;
+				if(pre_inv && isPressed("I") == false) {
+					render_inv = !render_inv;
+					pre_inv = false;
 				}
-				else if (render_inv) controlInventory();
-				//if (has_MP_server){
-				//	if (!updateClients()){
-				//		cout << "end game!" << endl;
-				//		exit(0);
-				//	}
-				//	list<Socket::Client>& lsc = getClients();
-				//	list<unique_ptr<Being>>::iterator it2 = targets.begin();
-				//	if (it2 != targets.end())++it2;
-				//	for (auto i = begin(lsc); i != end(lsc); ++i, ++it2){
-				//		player_info pi;
-				//		if (!processCommand(getNextCommand(*i), i, pi)){
-				//			cout << "end game!" << endl;
-				//			exit(0);
-				//		}
-				//		if (pi.last_command == KEYBOARD){
-				//			//cout << pi.keyboard << endl;
-				//			dir = pi.keyboard;
-				//			player = &**it2;
-				//			player->action(getMapIndex(), projectiles, targets, getTicks());
-				//			moveAndColide();
-				//			playerShoot();
-				//			playerm.lock();
-				//			//cout << typeid(*player).name() << endl;
-				//			if (!commandToClient(i, SELF, sizeof(Being), (char*)player)){
-				//				cout << "end game!" << endl;
-				//				exit(0);
-				//			}
-				//			playerm.unlock();
-				//			for (auto& j : projectiles){
-				//				commandToClient(i, BULLETZ, sizeof(Projectile), (char*)&j);
-				//			}
-				//			for (auto& j : monsters){
-				//				commandToClient(i, MONSTER, sizeof(Being), (char*)&j);
-				//			}
-				//			if(!commandToClient(i, ENDBIT, 0, NULL)){
-				//				cout << "end game!" << endl;
-				//				exit(0);
-				//			}
-				//			player = &**targets.begin();
-				//		}
-				//	}
-				//}
+				if(machines.isRendering()) render_inv = true;
+				if (render_inv) controlInventory();
+
+				if (isPressed("P") && pre_pstats== false) pre_pstats = true;
+				if(pre_pstats && isPressed("P") == false) {
+					pstats = !pstats;
+					pre_pstats = false;
+				}
+
+					box.setX(getMouseX() + deltax);
+					box.setY(getMouseY() + deltay);
 				getdir();
+				machines.check(deltax, deltay, player->getTileX(), player->getTileY());
 			}
 			else if (show_menu){
 				menux.lock();
@@ -884,7 +687,9 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	}
 public:
 	RINS() try : box(xsize, ysize, 4),
-		Renderer(640, 640, "RINS"), dir(0), c(0, 0, 0) {
+		Renderer(900, 900, "RINS"), 
+		dir(0), c(0, 0, 0),
+		machines(*this, *this, box, 0){
 		//Projectile::box = &box;
 		Being::bx = &box;
 		seed = system_clock::to_time_t(system_clock::now());
@@ -913,9 +718,6 @@ public:
 		side[1][1] = loadTexture("Textures/hospital_2.png");
 		side[2][0] = loadTexture("Textures/forest_1.png");
 		side[2][1] = loadTexture("Textures/forest_2.png");
-
-		iframe = loadTexture("Textures/itemframe.png");
-		iframesel = loadTexture("Textures/itemframesel.png");
 
 		//enum {BULLET, FIRE, PSYCHO, ENERGY};
 		WeaponResources::addTexture(loadTexture("Textures/bullet.png"), BULLET);
@@ -970,26 +772,13 @@ public:
 		MenuResources::addTexture(loadTexture("Textures/button1.png"), &typeid(ClickBox), IS_SET);
 		MenuResources::addTexture(loadTexture("Textures/textc.png"), &typeid(ClickBox), ON_CLICK);
 
+		MachineResources::bg = MenuResources::background;
+		MachineResources::frame = loadTexture("Textures/itemframe.png");
+		MachineResources::frame_sel = loadTexture("Textures/itemframesel.png");
+		
+		hpgreen = loadTexture("Textures/hp_green.png");
+		hpred = loadTexture("Textures/hp_red.png");
 
-		//Menu& m2 = *new Menu();
-		//m2.addField(*new Button("Start server", *new Command([this](MenuControl& mc){ if (has_MP_server)return; MP_server_init = true; has_MP_server = true;  })))
-		//	.addField(*new TextBox("Connect to: ", *new Command([this](MenuControl& mc){ if (mc.checked()){ ConnectToServer(1337, mc.getText().substr(mc.getID(), string::npos).c_str()); MP_init = true; }})))
-		//	.addField(*new Button("Main menu", menu));
-
-		//Menu& m3 = *new Menu();
-		//m3.addField(*new Checkbox("Enabled", *new Command([this](MenuControl& mc){ enable_music = mc.checked(); if (enable_music)playSong(song1); else stopMusic();}), false))
-		//	.addField(*new Button("Main menu", menu));
-
-		//Menu& m4 = *new Menu();
-		//m4.addField(*new Button("Marine", *new Command([this](MenuControl& mc){ SP_class = 0; SP_init = true; })))
-		//	.addField(*new Button("Pyro", *new Command([this](MenuControl& mc){ SP_class = 1; SP_init = true; })))
-		//	.addField(*new Button("Psychokinetic", *new Command([this](MenuControl& mc){ SP_class = 2; SP_init = true; })))
-		//	.addField(*new Button("Android", *new Command([this](MenuControl& mc){ SP_class = 3; SP_init = true; })))
-		//	.addField(*new Button("Main menu", menu));
-
-		//menu.addField(*new Button("Singleplayer", m4))
-		//	.addField(*new Button("Multiplayer", m2))
-		//	.addField(*new Button("Sound", m3));
 		Menu& m3 = *new Menu("Sounds like a menu");
 		m3.addField(*new CheckBox("Music: ", false, [this](MenuControl& mc){  
 			enable_music = static_cast<CheckBox&>(mc).is_on; if (enable_music)playSong(song1); else stopMusic(); }));

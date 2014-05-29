@@ -7,6 +7,7 @@
 #include <array>
 #include <typeinfo>
 #include <algorithm>
+#include <mutex>
 using namespace std;
 
 struct IDs {
@@ -85,10 +86,13 @@ protected:
 	unsigned int speed, count = 0;
 	unsigned int start_time;
 
+	mutex inv;
+	map<const char*, int> classSkills;
 
 public:
 	Being(double x, double y, int speed);
 	int getHealth();
+	int getMaxHealth();
 	virtual bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) = 0;
 	void addWeapon(WeaponBase* wpn);
 	bool move(int dir, bool reverse);
@@ -103,6 +107,9 @@ public:
 	virtual void levelup();
 	void addExperience(int xp);
 	int getExperience();
+	Derived& getDerivedStats();
+	Primary& getPrimaryStats();
+	map<const char*, int>& getClassSkills();
 
 	Item& getNextItem();
 	int itemCount();
@@ -121,11 +128,10 @@ template<typename T> Being * createInstance(double x, double y) { return new T(x
 template<class T> Being* copyInstance(T& copy){ return new T(copy); }
 
 class Marine: public Being, BeingResources {
-private:
+public:
 	int small_guns, small_guns_bonus;
 	int big_guns, big_guns_bonus;
 	int energy_weapons, energy_weapons_bonus;
-public:
 	Marine(double sx, double sy);
 	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
 	void setRange() final;
@@ -133,11 +139,10 @@ public:
 };
 
 class Pyro:public Being, BeingResources {
-private:
+public:
 	int explosives, explosives_bonus;
 	int big_guns, big_guns_bonus;
 	int fire, fire_bonus;
-public:
 	Pyro(double sx, double sy);
 	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
 	void setRange() final;
@@ -145,11 +150,10 @@ public:
 };
 
 class Psychokinetic: public Being, BeingResources {
-private:
+public:
 	int mind_infiltration, mind_infiltration_bonus;
 	int mental_power, mental_power_bonus;
 	int fire, fire_bonus;
-public:
 	Psychokinetic(double sx, double sy);
 	bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) final;
 	void setRange() final;
