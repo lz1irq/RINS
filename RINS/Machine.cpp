@@ -27,9 +27,13 @@ game(mgame), box(mbox), render_machine(false)
 {}
 
 bool MachineManager::mouseOverTile(double deltax, double deltay, int tx, int ty){
-	box.setX(game.getMouseX() + deltax);
-	box.setY(game.getMouseY() + deltay);
-	if(box.getTileX() == tx && box.getTileY() == ty)return true;
+	int mx = ((game.getMouseX() + deltax) / box.getStepX());
+	double msx = mx*box.getStepX();
+	int my = ((game.getMouseY() + deltay) / box.getStepY());
+	double msy = my*box.getStepY();
+	box.setX(msx);
+	box.setY(msy);
+	if(box.getTileX() == tx && box.getTileY()-1 == ty)return true;
 	return false;
 }
 
