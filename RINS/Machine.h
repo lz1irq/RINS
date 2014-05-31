@@ -1,7 +1,6 @@
 #ifndef _GLIBCXX_MACHINE_H
 #define _GLIBCXX_MACHINE_H
 #include <list>
-#include <mutex>
 #include "Item.h"
 #include "Being.h"
 #include "Platform.h"
@@ -31,7 +30,6 @@ class MachineManager {
 	Hitbox box;
 	int font;
 	Machine* curr_machine;
-	mutex machine;
 	bool over_machine, render_machine;
 	int curr_x, curr_y;
 

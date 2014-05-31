@@ -42,13 +42,10 @@ bool MachineManager::isRendering() {
 }
 
 void MachineManager::addItem(pair<int, int> mach, Item& it) {
-	machine.lock();
 	machines.at(mach)->addItem(it);
-	machine.unlock();
 }
 
 void MachineManager::render() {
-	machine.lock();
 	if(render_machine) {
 		rend.applyTexture(MachineResources::bg, xstart, ystart, 0.48,0.85);
 		int itemc = curr_machine->itemCount();
@@ -70,10 +67,8 @@ void MachineManager::render() {
 			rend.applyTexture(tid, xp, yp, itemx, itemy);
 		}
 	}
-	machine.unlock();
 }
 void MachineManager::control(Being* player) {
-	machine.lock();
 	if(render_machine) {
 		int itemc = curr_machine->itemCount();
 		int rows = -1;
@@ -106,7 +101,6 @@ void MachineManager::control(Being* player) {
 			}
 		}
 	}
-	machine.unlock();
 }
 
 void MachineManager::check(double dx, double dy, int x, int y) {
@@ -121,6 +115,7 @@ void MachineManager::check(double dx, double dy, int x, int y) {
 				over_machine = false;
 				if (mouseOverTile(dx, dy, curr_x, curr_y)) {
 					render_machine = true;
+					cout << "BAT GEORGIIIIII!" << endl;
 				}
 				else curr_machine = nullptr;
 			}
@@ -129,20 +124,16 @@ void MachineManager::check(double dx, double dy, int x, int y) {
 }
 
 void MachineManager::set(pair<int,int> mach) {
-	machine.lock();
 	curr_x = mach.first;
 	curr_y = mach.second;
 	curr_machine = machines.at(mach);
-	machine.unlock();
 }
 
 void MachineManager::unset() {
-	machine.lock();
 	curr_x = -1;
 	curr_y = -1;
 	curr_machine = 0;
 	render_machine = false;
-	machine.unlock();
 }
 
 bool MachineManager::exists(pair<int, int> mach) {
@@ -151,10 +142,7 @@ bool MachineManager::exists(pair<int, int> mach) {
 }
 
 void MachineManager::add(pair<int, int> mach) {
-	machine.lock();
 	this->machines[mach] = new Machine();
-	machine.unlock();
-
 }
 
 void MachineManager::updateVars(double udeltax, double udeltay, bool upressed, bool ucangetpress) {
