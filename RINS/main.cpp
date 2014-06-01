@@ -156,7 +156,6 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		double hudmul = 0.05;
 		double ys = 0.2;
 		double xs = 0.05;
-		renderPart(0,0,0,0);
 		//background
 		applyTexture(hud_bg, 0.0, 1-ys, 1, ys);
 
@@ -191,7 +190,9 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		displayText(main_font, to_string(highscore).c_str(), mecol, 1 - 4.2*xs + pw, 0.9, w, h);
 
 		//weapons
-
+		for(int i=0;i<player->weaponCount();++i) {
+			applyTexture(WeaponResources::getWeaponTexture(&typeid(player->getWeapon(i))), xs*(5.7+i), 0.85, 0.1, 0.1);
+		}
 
 		//attack cast bar
 		if(cast_prog >= 0) {

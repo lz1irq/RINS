@@ -208,6 +208,10 @@ WeaponBase& Being::getWeapon(int wp_id) {
 	return *(weapons.at(wp_id));
 }
 
+int Being::weaponCount() {
+	return weapons.size();
+}
+
 bool Being::wallInFront(double target_x, double target_y, double deg, const vector<vector<char>>& map_index){
 	double being_x = x;
 	double being_y = y;

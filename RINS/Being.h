@@ -110,6 +110,7 @@ public:
 	int tryToShoot(Being* target, Projectile** p, const vector<vector<char>>& map_index);
 	bool setCurrentWeapon(int new_wp);
 	int getCurrentWeapon();
+	int weaponCount();
 	WeaponBase& getWeapon(int wp_id);
 
 	//items and money
