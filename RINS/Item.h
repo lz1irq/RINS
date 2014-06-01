@@ -1,6 +1,6 @@
 #ifndef _GLIBCXX_ITEM_H
 #define _GLIBCXX_ITEM_H
-
+#define MAX_ITEMS 12
 #include <iostream>
 #include <vector>
 #include <map>

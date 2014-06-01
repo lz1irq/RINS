@@ -239,25 +239,19 @@ Item& Being::getItem(int item) {
 }
 
 bool Being::buyItem(Item& item) {
-	inv.lock();
-	if(money < item.getPrice()) {
-		inv.unlock();
-		return false;
-	}
+	if(money < item.getPrice()) return false;
 	else {
 		money -= item.getPrice();
-		items.push_back(&item);
-		it = items.end();
-		--it;
+		return addItem(item);
 	}
-	inv.unlock();
-	return true;
+
 }
 
 Item& Being::sellItem(int item) {
 	inv.lock();
 	Item& tosell = *(items.at(item));
 	money += tosell.getPrice();
+	if(tosell.isEquipped())unequipItem(tosell);
 	items.erase(items.begin() + item);
 	cout << "Sold " << tosell.getName() << endl;
 	it = items.end();
@@ -265,18 +259,42 @@ Item& Being::sellItem(int item) {
 	inv.unlock();
 	return tosell;
 }
-void Being::addItem(Item& i){
+bool Being::addItem(Item& i){
 	inv.lock();
-	items.push_back(&i);
-	it = items.end();
+	if(items.size() < MAX_ITEMS) {
+		items.push_back(&i);
+		it = items.end();
+		--it;
+		inv.unlock();
+		return true;
+		
+	}
 	inv.unlock();
+	return false;
+}
+
+Item& Being::removeItem(int item) {
+	inv.lock();
+	Item& torm = *(items.at(item));
+	items.erase(items.begin() + item);
+	it = items.end();
+	--it;
+	inv.unlock();
+	return torm;
 }
 
 int Being::getMoney() {
 	return money;
 }
 
-void Being::equipItem(Item& item) {
+bool Being::equipItem(Item& item) {
+	for(auto &i: items) {
+		if(i->isEquipped() && i->getName() == item.getName()) {
+			cout << "You can't equip the same type of item more than once!" << endl;
+			return false;
+		}
+	}
+
 	if( item.checkClass(&typeid(*this))) {
 		Primary prim = item.getPrimaryBonuses();
 		Derived der = item.getDerivedBonuses();
@@ -295,29 +313,40 @@ void Being::equipItem(Item& item) {
 		der_stats.melee_dmg_bonus += der.melee_dmg_bonus;
 
 		item.setEquipped(true);
+		cout << "Player equipped " << item.getName() << endl;
+		return true;
 	}
-	else cout << "Can't equip this item" << endl;
+	else { 
+		cout << "Can't equip this item" << endl;
+		return false;
+	}
 
 }
 
 void Being::unequipItem(Item& item) {
-	Primary prim = item.getPrimaryBonuses();
-	Derived der = item.getDerivedBonuses();
-	Specific spec = item.getSpecificBonuses();
+	for(auto &i : items) {
+		if(i == &item) {
+			Primary prim = item.getPrimaryBonuses();
+			Derived der = item.getDerivedBonuses();
+			Specific spec = item.getSpecificBonuses();
+			
+			prim_stats.agility_bonus -= prim.agility_bonus;
+			prim_stats.endurance_bonus -= prim.endurance_bonus;
+			prim_stats.intelligence_bonus -= prim.intelligence_bonus;
+			prim_stats.luck_bonus -= prim.luck_bonus;
+			prim_stats.perception_bonus -= prim.perception_bonus;
+			prim_stats.strength_bonus -= prim.strength_bonus;
+			
+			der_stats.crit_bonus -= der.crit_bonus;
+			der_stats.dmg_res_bonus -= der.dmg_res_bonus;
+			der_stats.fire_res_bonus -= der.fire_res_bonus;
+			der_stats.melee_dmg_bonus -= der.melee_dmg_bonus;
+			
+			item.setEquipped(false);
+			cout << "Player unequipped " << item.getName() << endl;
+		}
+	}
 
-	prim_stats.agility_bonus -= prim.agility_bonus;
-	prim_stats.endurance_bonus -= prim.endurance_bonus;
-	prim_stats.intelligence_bonus -= prim.intelligence_bonus;
-	prim_stats.luck_bonus -= prim.luck_bonus;
-	prim_stats.perception_bonus -= prim.perception_bonus;
-	prim_stats.strength_bonus -= prim.strength_bonus;
-
-	der_stats.crit_bonus -= der.crit_bonus;
-	der_stats.dmg_res_bonus -= der.dmg_res_bonus;
-	der_stats.fire_res_bonus -= der.fire_res_bonus;
-	der_stats.melee_dmg_bonus -= der.melee_dmg_bonus;
-
-	item.setEquipped(false);
 }
 
 void Being::takeProjectile(Projectile& bullet) {

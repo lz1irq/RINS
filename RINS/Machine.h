@@ -10,10 +10,14 @@ using namespace std;
 class Machine{
 	list<Item*> items;
 	list<Item*>::iterator it = items.end();
+	bool paid;
 public:
-	void addItem(Item& i);
+	Machine(bool mpaid);
+	bool addItem(Item& i);
+	void removeItem(int item);
 	Item& getNextItem();
 	int itemCount();
+	bool isPaid();
 };
 
 enum MACHINE_TEXTURES{BG=0, FRAME, FRAME_SEL};
@@ -48,16 +52,18 @@ class MachineManager {
 
 public:
 	MachineManager(Game& mgame, Renderer& mrend, Hitbox& mbox, int mfont);
-	void add(pair<int, int> mach);
+	void add(pair<int, int> mach, bool paid);
 	void check(double dx, double dy, int x, int y);
 	void set(pair<int, int> mach);
 	void unset();
 	void render();
 	void control(Being* player);
-	void addItem(pair<int, int>, Item& it);
+	bool addItem(pair<int, int> mach, Item& it);
 	void updateVars(double deltax, double deltay, bool pressed, bool cangetpress);
 	bool exists(pair<int, int> mach);
 	bool isRendering();
+	bool currentIsPaid();
+	pair<int, int> getCurrentCoords();
 	void clear();
 };
 

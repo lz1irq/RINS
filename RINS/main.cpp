@@ -123,24 +123,30 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				if (cangetpress){
 					if (mx>xp && mx<nextx && my>yp && my < nexty) {
 						itemseli = -1;
-						if (machines.isRendering()) player->sellItem(i);
-						else { //(un)equip the item
-							if (it.isEquipped()) {
-								player->unequipItem(it);
-								cout << "Player unequipped " << it.getName() << endl;
+						Item& selected = player->getItem(i);
+						if (machines.isRendering()) {
+							if(machines.currentIsPaid()) {
+								machinem.lock();
+								if(!machines.addItem(machines.getCurrentCoords(), selected)) cout << "Machine is full!" << endl;
+								else player->sellItem(i);
+								machinem.unlock();
 							}
 							else {
-								player->equipItem(it);
-								cout << "Player equipped " << it.getName() << endl;
+								machinem.lock();
+								if(!machines.addItem(machines.getCurrentCoords(), selected)) cout << "Machine is full!" << endl;
+								else player->removeItem(i);
+								machinem.unlock();
 							}
+						}
+						else { //(un)equip the item
+							if (it.isEquipped()) player->unequipItem(it);
+							else player->equipItem(it);
 						}
 					}
 					else itemseli = -1;
-				}
+				}       
 			}
-
 		}
-		return;
 	}
 
 	void renderHUD() {
@@ -414,21 +420,22 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 				case X_COLLIDE:
 				case Y_COLLIDE:
 				case XY_COLLIDE:
-					if (lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();
+					if (lastxpos == player->getX() && lastypos == player->getY())player->resetWalk();  
 					break;
 				case TRIGGER:
 					if (getMapIndex()[player->getTileX()][player->getTileY()] == VENDING || getMapIndex()[player->getTileX()][player->getTileY()] == DROP) {
 						pair<int, int> p = make_pair(player->getTileX(), player->getTileY());
 						if(machinem.try_lock()) {
 							if (!machines.exists(p)) {
-								machines.add(p);
+								machines.add(p,getMapIndex()[player->getTileX()][player->getTileY()] == VENDING ? true:false);
+								machines.set(p);
 								int items = pattern() % 10;
 								for (int i = 0; i < 10; ++i){
 									int item = pattern() % MAXITEMS;
-									machines.addItem(p, *item_types[item]());
+									machines.addItem(machines.getCurrentCoords(), *item_types[item]());
 								}
 							}
-							machines.set(p);
+							else machines.set(p);
 							machinem.unlock();
 						}
 					}

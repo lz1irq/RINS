@@ -1,8 +1,13 @@
 #include "Machine.h"
 
-void Machine::addItem(Item& i){
-	items.push_back(&i);
-	it = items.end();
+bool Machine::addItem(Item& i){
+	if(items.size() < MAX_ITEMS) {
+		items.push_back(&i);
+		it = items.end();
+		--it;
+		return true;
+	}
+	return false;
 }
 
 Item& Machine::getNextItem() {
@@ -11,8 +16,25 @@ Item& Machine::getNextItem() {
 	return *(*it);
 }
 
+void Machine::removeItem(int item) {
+	list<Item*>::iterator tit = items.begin();
+	for(int i=0;i<item;++i) {
+		++tit;
+	}
+	Item& torm = *(*tit);
+	items.erase(tit);
+	it = items.end();
+	--it;
+}
+
+Machine::Machine(bool mpaid): paid(mpaid) {} 
+
 int Machine::itemCount() {
 	return items.size();
+}
+
+bool Machine::isPaid() {
+	return paid;
 }
 
 int MachineResources::bg = 0;
@@ -41,8 +63,8 @@ bool MachineManager::isRendering() {
 	return render_machine;
 }
 
-void MachineManager::addItem(pair<int, int> mach, Item& it) {
-	machines.at(mach)->addItem(it);
+bool MachineManager::addItem(pair<int, int> mach, Item& it) {
+	return machines.at(mach)->addItem(it);
 }
 
 void MachineManager::render() {
@@ -84,23 +106,36 @@ void MachineManager::control(Being* player) {
 			double mx = game.getMouseX();
 			double my = game.getMouseY();
 
-			cout << mx << " " << my << endl;
-
 			if(itemsel == -1) {
 				if(mx>xp && mx<nextx && my>yp && my<nexty && pressed) itemsel = i;
 			 }
 			if(itemsel == i) {
 				if(cangetpress){
 					if(mx>xp && mx<nextx && my>yp && my<nexty) {
-						if(player->buyItem(it)) cout << "Player bought " << it.getName() << endl;
-						else cout << "Not enough money to buy " << it.getName() << endl;
-						itemsel = -1;
-					 }
-					else itemsel = -1;
+						if(curr_machine->isPaid()) {
+							if(player->buyItem(it)) {
+								curr_machine->removeItem(i);
+								cout << "Player bought " << it.getName() << endl;
+							}
+							else cout << "Not enough money to buy " << it.getName() << endl;
+						}
+						else {
+							if(player->addItem(it)) {
+								curr_machine->removeItem(i);
+								cout << "Player looted " << it.getName() << endl;
+							}
+						}
+					 }   
+					itemsel = -1;
 				}
 			}
 		}
 	}
+}
+
+bool MachineManager::currentIsPaid() {
+	if(curr_machine) return curr_machine->isPaid();
+	return false;
 }
 
 void MachineManager::check(double dx, double dy, int x, int y) {
@@ -113,14 +148,18 @@ void MachineManager::check(double dx, double dy, int x, int y) {
 		else {
 			if (cangetpress){
 				over_machine = false;
-				if (mouseOverTile(dx, dy, curr_x, curr_y)) {
-					render_machine = true;
-					cout << "BAT GEORGIIIIII!" << endl;
-				}
+				if (mouseOverTile(dx, dy, curr_x, curr_y)) render_machine = true;
 				else curr_machine = nullptr;
 			}
 		}
 	}
+}
+
+/*
+trying to get additem to work when returning item from player inventory
+*/
+pair<int, int> MachineManager::getCurrentCoords() {
+	return make_pair(curr_x, curr_y);
 }
 
 void MachineManager::set(pair<int,int> mach) {
@@ -141,8 +180,8 @@ bool MachineManager::exists(pair<int, int> mach) {
 	return false;
 }
 
-void MachineManager::add(pair<int, int> mach) {
-	this->machines[mach] = new Machine();
+void MachineManager::add(pair<int, int> mach, bool paid) {
+	this->machines[mach] = new Machine(paid);
 }
 
 void MachineManager::updateVars(double udeltax, double udeltay, bool upressed, bool ucangetpress) {

@@ -102,8 +102,6 @@ public:
 	int getOrientation() const;
 	void takeProjectile(Projectile& bullet);
 	int tryToShoot(Being* target, Projectile** p, const vector<vector<char>>& map_index);
-	void equipItem(Item& item);
-	void unequipItem(Item& item);
 	virtual void levelup();
 	void addExperience(int xp);
 	int getExperience();
@@ -117,7 +115,10 @@ public:
 	bool buyItem(Item& item);
 	Item& sellItem(int item);
 	int getMoney();
-	void addItem(Item& i);
+	bool addItem(Item& i);
+	Item& removeItem(int item);
+	bool equipItem(Item& item);
+	void unequipItem(Item& item);
 
 	void resetFire();
 	static Hitbox* bx;
