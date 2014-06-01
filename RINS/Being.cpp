@@ -192,6 +192,22 @@ int Being::internalShoot(double target_x, double target_y, double deg, Projectil
 	}
 }
 
+bool Being::setCurrentWeapon(int new_wp) {
+	if(new_wp > 0 && new_wp < weapons.size()) {
+		curr_weapon = new_wp;
+		return true;
+	}
+	return false;
+}
+
+int Being::getCurrentWeapon() {
+	return curr_weapon;
+}
+
+WeaponBase& Being::getWeapon(int wp_id) {
+	return *(weapons.at(wp_id));
+}
+
 bool Being::wallInFront(double target_x, double target_y, double deg, const vector<vector<char>>& map_index){
 	double being_x = x;
 	double being_y = y;
@@ -259,6 +275,7 @@ Item& Being::sellItem(int item) {
 	inv.unlock();
 	return tosell;
 }
+
 bool Being::addItem(Item& i){
 	inv.lock();
 	if(items.size() < MAX_ITEMS) {
@@ -358,7 +375,9 @@ void Being::takeProjectile(Projectile& bullet) {
 	else if(dmg_type == FIRE) def_skill = der_stats.fire_res + der_stats.fire_res_bonus;
 
 	if((bullet.getDamage() - def_skill) > der_stats.health) der_stats.health = 0;
-	else der_stats.health -= (bullet.getDamage() - def_skill);
+	else {
+		if(bullet.getDamage() - def_skill > 0)der_stats.health -= (bullet.getDamage() - def_skill);
+	}
 	//cout << bullet.getShooter() << " " << bullet.getDamage() - def_skill << endl;
 
 	if (bullet.getDamage() - def_skill > curr_threat || curr_target == nullptr){
@@ -383,15 +402,16 @@ mt19937 Being::rnd;
 void Being::addExperience(int xp) {
 	experience += xp;
 }
+
 void Being::levelup() {
 	++level;
 	experience = 0;
-	der_stats.max_health = 90 + prim_stats.endurance*2 + 10*level;
+	//der_stats.max_health = 90 + prim_stats.endurance*2 + 10*level;
 	der_stats.dmg_res =  prim_stats.agility*1.5 + level/2;
 	for( auto it = weapons.begin(); it != weapons.end(); it++) {
 		(*it)->updateDMG();
 	}
-	cout << "DSADSADSA" << endl;
+
 }
 
 int Being::getExperience() {
@@ -520,6 +540,7 @@ void Marine::levelup() {
 	classSkills.at("Big Guns") += 1 ;
 	classSkills.at("Energy Weapons") += 1 ;
 	Being::levelup();
+	der_stats.max_health += 10*level;
 	der_stats.health += 10*level;
 	cout << "Marine is now level " << level << endl;
 }
@@ -555,6 +576,7 @@ void Pyro::levelup() {
 	classSkills.at("Big Guns") += 1 ;
 	classSkills.at("Fire") += 1 ;
 	Being::levelup();
+	der_stats.max_health += 10*level;
 	der_stats.health += 10*level; 
 	cout << "Pyro is now level " << level << endl;
 }
@@ -588,6 +610,7 @@ void Psychokinetic::levelup() {
 	classSkills.at("Mental Power") += 1 ;
 	classSkills.at("Fire") += 1 ;
 	Being::levelup();
+	der_stats.max_health += 10*level;
 	der_stats.health += 10*level;
 	cout << "Psycho is now level " << level << endl;
 }
@@ -622,6 +645,7 @@ void Android::levelup() {
 	classSkills.at("Big Guns") += 1 ;
 	classSkills.at("Energy Weapons") += 1 ;
 	Being::levelup();
+	der_stats.max_health += 10*level;
 	der_stats.health += 10*level;
 	cout << "Android is now level " << level << endl;
 }

@@ -6,6 +6,7 @@
 #include <string.h>
 #include <memory>
 #include <cmath>
+#include <typeinfo>
 using namespace std;
 enum {BULLET, FIRE, PSYCHO, ENERGY};
 enum {LEFT=1,RIGHT=2,UP=4,DOWN=8};
@@ -44,10 +45,13 @@ public:
 };
 
 class WeaponResources {
-	static map<int, int> textures;
+	static map<int, int> ammo_textures;
+	static map<const type_info*, int> weapon_textures;
 public:
-	static int getTexture(int ti);
-	static void addTexture(int newID, int ti);
+	static int getAmmoTexture(int ti);
+	static void addAmmoTexture(int newID, int ti);
+	static int getWeaponTexture(const type_info* ti);
+	static void addWeaponTexture(int newID, const type_info* ti);
 };
 
 class WeaponBase {

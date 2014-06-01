@@ -69,10 +69,11 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	bool end_of_game = false;
 	enum Commands{ MOVE, SHOOT, GETITEM, SELF, MONSTERS, PLAYERS, LOGIN, INFO, BULLETS };
 
-
 	bool render_inv = false, pre_inv = false;
+	double cast_prog = -1;
 	int itemsel = -1, itemseli = -1;
 	int itemover = -1;
+	int hud_bg;
 
 	bool pstats = false, pre_pstats = false;
 
@@ -150,35 +151,53 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	}
 
 	void renderHUD() {
-		RGBA mecol(255, 255, 0, 0);
+		RGBA mecol(255, 100, 255, 0);
 		double w, h;
 		double hudmul = 0.05;
-		/* numeric health display
-		getTextWH(main_font, to_string(player->getHealth()).c_str(), w, h);
-		w *= 0.06/h;
-		h = 0.06;
-		displayText(main_font, to_string(player->getHealth()).c_str(),mecol, 0.005, 0.94,w,h); */
+		double ys = 0.2;
+		double xs = 0.05;
+		renderPart(0,0,0,0);
+		//background
+		applyTexture(hud_bg, 0.0, 1-ys, 1, ys);
 
-		renderPart(0, 0, 0, 0);
-		double hp_percent = (double)player->getHealth() / player->getMaxHealth();
-		applyTexture(hpred, 0.005, 0.9, 0.15, 0.05);
-		if (player->getHealth() > 0)applyTexture(hpgreen, 0.005, 0.9, hp_percent*0.15, 0.05);
-
-		getTextWH(main_font, "HEALTH", w, h);
+		//hp
+		getTextWH(main_font, "HP:", w, h);
 		w *= hudmul / h;
 		h = hudmul;
-		displayText(main_font, "HEALTH", mecol, 0.005, 0.9, w, h);
+		displayText(main_font, "HP:", mecol, xs, 0.9, w, h);
+		double pw = w;
 
-		// score
-		getTextWH(main_font, "SCORE:", w, h);
+		int hp_percent = player->getHealth()*100/player->getMaxHealth();
+		getTextWH(main_font, (to_string(hp_percent)).c_str(), w, h);
 		w *= hudmul / h;
 		h = hudmul;
-		displayText(main_font, "SCORE:", mecol, 1 - w, 0.9, w, h);
+		displayText(main_font, to_string(hp_percent).c_str(), mecol, xs+pw, 0.9, w, h);
+		pw += w;
 
+		getTextWH(main_font, "%", w, h);
+		w *= hudmul / h;
+		h = hudmul;
+		displayText(main_font, "%", mecol, xs+pw, 0.9, w, h);
+
+		//score
+		getTextWH(main_font, "SC:", w, h);
+		w *= hudmul / h;
+		h = hudmul;
+		displayText(main_font, "SC:", mecol, 1-4.2*xs, 0.9, w, h);
+		pw = w;
 		getTextWH(main_font, to_string(highscore).c_str(), w, h);
 		w *= hudmul / h;
 		h = hudmul;
-		displayText(main_font, to_string(highscore).c_str(), mecol, 1 - w, 0.94, w, h);
+		displayText(main_font, to_string(highscore).c_str(), mecol, 1 - 4.2*xs + pw, 0.9, w, h);
+
+		//weapons
+
+
+		//attack cast bar
+		if(cast_prog >= 0) {
+			//applyTexture(hpgreen, 0.2, 0.9, cast_prog*0.15, 0.05);
+		}
+
 	}
 
 	void renderInventory() {
@@ -324,7 +343,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 		renderPart(0, 0, 0, 0);
 		for (auto &i : projectiles){
 			setRotationAngle(i.getAngleInDeg());
-			applyTexture(WeaponResources::getTexture(i.getType()), i.getX() - deltax + 1.5*box.getStepX(), i.getY() - deltay + 1.5*box.getStepY(), box.getStepX() * 2, box.getStepY() * 2);
+			applyTexture(WeaponResources::getAmmoTexture(i.getType()), i.getX() - deltax + 1.5*box.getStepX(), i.getY() - deltay + 1.5*box.getStepY(), box.getStepX() * 2, box.getStepY() * 2);
 			setRotationAngle(0);
 		}
 	}
@@ -354,9 +373,9 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					renderPart(0, 0, 0, 0);
 					playerm.unlock();
 				}
+				displayHUD();
 				if (render_inv) renderInventory();
 				if (pstats) renderPlayerStats();
-				displayHUD();
 				machinem.lock();
 					machines.render();
 				machinem.unlock();
@@ -452,15 +471,20 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 			switch (event){
 			case BANG:
 				projectiles.push_back(*p);
+				cast_prog = -1;
 				break;
 			case CASTING:
 				int* percent;
 				percent = (int*)p;
+				cast_prog = (double)(*percent)/100.0;
 				delete percent;
 				break;
 			}
 		}
-		else player->resetFire();
+		else {
+			player->resetFire();
+			cast_prog = -1;
+		}
 	}
 
 	void tryToSpawn(){
@@ -892,10 +916,11 @@ public:
 			side[LABYRINTH][1] = loadTexture("Textures/forest_2.png");
 
 			//enum {BULLET, FIRE, PSYCHO, ENERGY};
-			WeaponResources::addTexture(loadTexture("Textures/bullet.png"), BULLET);
-			WeaponResources::addTexture(loadTexture("Textures/bullet4.png"), FIRE);
-			WeaponResources::addTexture(loadTexture("Textures/bullet3.png"), PSYCHO);
-			WeaponResources::addTexture(loadTexture("Textures/bullet2.png"), ENERGY);
+			WeaponResources::addAmmoTexture(loadTexture("Textures/bullet.png"), BULLET);
+			WeaponResources::addAmmoTexture(loadTexture("Textures/bullet4.png"), FIRE);
+			WeaponResources::addAmmoTexture(loadTexture("Textures/bullet3.png"), PSYCHO);
+			WeaponResources::addAmmoTexture(loadTexture("Textures/bullet2.png"), ENERGY);
+			WeaponResources::addWeaponTexture(loadTexture("Textures/assault.png"), &typeid(AssaultRifle));
 
 			entrytex = loadTexture("Textures/entry.png");
 			exittex = loadTexture("Textures/exit.png");
@@ -952,6 +977,7 @@ public:
 			MachineResources::frame_sel = loadTexture("Textures/itemframesel.png");
 			hpgreen = loadTexture("Textures/hp_green.png");
 			hpred = loadTexture("Textures/hp_red.png");
+			hud_bg = loadTexture("Textures/hud_bg.png");
 
 			Menu& m3 = *new Menu("Sounds like a menu", [this](){});
 			m3.addField(*new CheckBox("Music: ", false, [this](CheckBox& mc){  enable_music = mc.is_on; if (mc.is_on)playSong(song1); else stopMusic(); }))

@@ -183,12 +183,21 @@ Projectile& Bite::shoot(double angle, double px, double py, Hitbox& h) {
 }
 
 
-map<int, int> WeaponResources::textures;
+map<int, int> WeaponResources::ammo_textures;
+map<const type_info*, int> WeaponResources::weapon_textures;
 
-int WeaponResources::getTexture(int ti){
-	return textures[ti];
+int WeaponResources::getAmmoTexture(int ti){
+	return ammo_textures[ti];
 }
 
-void WeaponResources::addTexture(int newID, int ti) {
-	textures[ti] = newID;
+void WeaponResources::addAmmoTexture(int newID, int ti) {
+	ammo_textures[ti] = newID;
+}
+
+int WeaponResources::getWeaponTexture(const type_info* ti){
+	return weapon_textures[ti];
+}
+
+void WeaponResources::addWeaponTexture(int newID, const type_info* ti) {
+	weapon_textures[ti] = newID;
 }

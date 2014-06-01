@@ -15,7 +15,6 @@ struct IDs {
 	IDs();
 };
 
-
 class BeingResources {
 	static map<const type_info*, IDs> textures;
 public:
@@ -94,14 +93,11 @@ public:
 	int getHealth();
 	int getMaxHealth();
 	virtual bool action(const vector<vector<char>>& map_index, list<Projectile>& projectiles, const list<unique_ptr<Being>>& targets, unsigned int start_time) = 0;
-	void addWeapon(WeaponBase* wpn);
 	bool move(int dir, bool reverse);
 	int getLevel();
 	bool getWalk();
 	void resetWalk();
 	int getOrientation() const;
-	void takeProjectile(Projectile& bullet);
-	int tryToShoot(Being* target, Projectile** p, const vector<vector<char>>& map_index);
 	virtual void levelup();
 	void addExperience(int xp);
 	int getExperience();
@@ -109,6 +105,14 @@ public:
 	Primary& getPrimaryStats();
 	map<const char*, int>& getClassSkills();
 
+	//weapons
+	void takeProjectile(Projectile& bullet);
+	int tryToShoot(Being* target, Projectile** p, const vector<vector<char>>& map_index);
+	bool setCurrentWeapon(int new_wp);
+	int getCurrentWeapon();
+	WeaponBase& getWeapon(int wp_id);
+
+	//items and money
 	Item& getNextItem();
 	int itemCount();
 	Item& getItem(int item);
