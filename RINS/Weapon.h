@@ -32,7 +32,15 @@ class Projectile {
 	bool trigger = false;
 	bool rflag = true;
 public:
+	struct projectile{
+		double x;
+		double y;
+		double dir;
+		unsigned int type;
+	};
 	Projectile(unsigned int ptype, int pdamage, int pfly_t, int pdet_t, double angle, double px, double py, Being* shooter, Hitbox& h, int  wait_on_det, int range, int det_duration, int speed);
+	Projectile(projectile& pj, Hitbox& h);
+	projectile& serialize();
 	bool update(const vector<vector<char>>& map_index, list<unique_ptr<Being>>& targets, list<unique_ptr<Being>>& players, unsigned int time);
 	double getX();
 	double getY();

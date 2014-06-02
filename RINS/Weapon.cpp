@@ -18,6 +18,18 @@ fly_t(pfly_t), det_t(pdet_t), sh(typeid(*shooter)), det_duration(det_duration),
 dir(angle), x(px), y(py), shooter(shooter), speed(speed)
 {}
 
+Projectile::Projectile(projectile& pj, Hitbox& h): box(h), sh(typeid(nullptr)){
+	x = pj.x;
+	y = pj.y;
+	dir = pj.dir;
+	type = pj.type;
+}
+
+Projectile::projectile& Projectile::serialize(){
+	projectile* p = new projectile{ x, y, dir, type };
+	return *p;
+}
+
 unsigned int Projectile::getType() const {
 	return type;
 }

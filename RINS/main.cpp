@@ -54,6 +54,8 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	int MP_numconn = 1;
 	bool MP_init = false;
 	int conn_confirmed = 0;
+	bool MP_running = false;
+	bool MP_server_running = false;
 
 	struct login{
 		int mp_class;
@@ -67,7 +69,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 	};
 
 	bool end_of_game = false;
-	enum Commands{ MOVE, SHOOT, GETITEM, SELF, MONSTERS, PLAYERS, LOGIN, INFO, BULLETS };
+	enum Commands{ MOVE, SHOOT, GETITEM, SELF, MONSTERS, PLAYERS, LOGIN, INFO, BULLETS, END };
 
 	bool render_inv = false, pre_inv = false;
 	double cast_prog = -1;
@@ -617,6 +619,7 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 						}
 					}
 					MP_server_init = false;
+					MP_server_running = true;
 				}
 			}
 		}
@@ -644,9 +647,79 @@ class RINS : public Game, public Renderer, public Audio, public Map, public Sock
 					break;
 				}
 				MP_init = false;
+				MP_running = true;
 			}
 		}
 		//initialize - ok
+		if (MP_running){
+
+			bool good = sendCommand(BULLETS, 0, 0);
+			if (!good){
+				///////////////////////////////////////////???/////////////////////////////////
+			}
+			projectile.lock();
+			projectiles.clear();
+				char* cmd;
+				short cmd_num;
+				short data;
+				A:
+				cmd = receiveCommand();
+				memcpy(&cmd_num, &cmd[0], 2);
+				memcpy(&data, &cmd[2], 2);
+				switch (cmd_num){
+				case BULLETS:
+					Projectile::projectile pj;
+					if (data != sizeof(pj))throw Error("Nope!");
+					memcpy(&pj, &cmd[4], data);
+					projectiles.push_back(*new Projectile(pj, box));
+					break;
+				default: break;
+				}
+				if (cmd_num != END)goto A;
+			projectile.unlock();
+		}
+		if (MP_server_running){
+			updateClients(targets, false);
+			char* cmd;
+			short cmd_num;
+			short data;
+			bool good;
+			list<Client>& cl = getClients();
+			for (auto i = begin(cl); i != end(cl); ++i){
+				cmd = getNextCommand(*i);
+				if (cmd){
+					memcpy(&cmd_num, &cmd[0], 2);
+					memcpy(&data, &cmd[2], 2);
+					switch (cmd_num){
+					case BULLETS:
+						if (data != 0)throw Error("Nope!");
+						auto cl = targets.begin();
+						for (auto b = begin(projectiles); b != end(projectiles); ++b, ++cl){
+							Projectile::projectile pj;
+							pj = b->serialize();
+							double clx = (*cl)->getX();
+							double cly = (*cl)->getY();
+							if (abs(clx - pj.x) < 1 && abs(cly - pj.y) < 1){
+								good = commandToClient(i, BULLETS, sizeof(pj), (char*)&pj);
+								if (!good){
+									playerm.lock();
+									cl = targets.erase(cl);
+									playerm.unlock();
+								}
+							}
+						}
+						good = commandToClient(i, END, 0, nullptr);
+						if (!good){
+							playerm.lock();
+							cl = targets.erase(cl);
+							playerm.unlock();
+						}
+						break;
+					}
+				}
+				else return;
+			}
+		}
 
 	}
 
