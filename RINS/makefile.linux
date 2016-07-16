@@ -1,0 +1,11 @@
+LIBS =   -lSDL2 -lSDL2_mixer -lSDL2_ttf -lSDL2_image -lSDL2_net -g3
+CXXINCS = -I/usr/include/SDL2
+
+all:
+	mkdir -p Release
+	g++ Platform.cpp Being.cpp Map.cpp Weapon.cpp Menu.cpp Item.cpp Machine.cpp main.cpp -o Release/RINS.exe $(LIBS) $(CXXINCS) -std=c++11
+	g++ launcher.cpp -o RINS_Launcher.exe
+clean:
+	rm *.exe
+
+rebuild: clean all
