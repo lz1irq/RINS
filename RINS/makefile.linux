@@ -1,4 +1,4 @@
-LIBS =   -lSDL2 -lSDL2_mixer -lSDL2_ttf -lSDL2_image -lSDL2_net -g3
+LIBS =   -lSDL2 -lSDL2_mixer -lSDL2_ttf -lSDL2_image -lSDL2_net -g3 -m3dnow -mmmx -msse -mpopcnt
 CXXINCS = -I/usr/include/SDL2
 
 all:
